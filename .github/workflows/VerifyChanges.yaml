@@ -1,0 +1,126 @@
+name: Verify Changes
+
+on:
+  merge_group:
+  pull_request:
+    branches: "**"
+  push:
+    branches: ["main"]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Select Xcode 16.4
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.4.0.app
+      - name: Lint
+        run: |
+          Scripts/lint
+  build-and-test:
+    name: Build and Test (${{ matrix.platform }})
+    needs: lint
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: iOS
+            xcode_destination: "platform=iOS Simulator,name=iPhone 16 Pro"
+          - platform: macOS
+            xcode_destination: "platform=macOS,arch=arm64"
+          - platform: tvOS
+            xcode_destination: "platform=tvOS Simulator,name=Apple TV 4K (3rd generation)"
+          - platform: watchOS
+            xcode_destination: "platform=watchOS Simulator,name=Apple Watch Series 10 (46mm)"
+    env:
+      DEV_BUILDS: DevBuilds/Sources
+      XCCOV_PRETTY_VERSION: 1.2.0
+      XCODE_SCHEME: DevConfiguration-Package
+      XCODE_DESTINATION: ${{ matrix.xcode_destination }}
+      XCODE_TEST_PLAN: DevConfiguration
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Checkout DevBuilds
+        uses: actions/checkout@v4
+        with:
+          repository: DevKitOrganization/DevBuilds
+          path: DevBuilds
+      - name: Download xccovPretty
+        if: github.event_name != 'push'
+        run: |
+          gh release download ${{ env.XCCOV_PRETTY_VERSION }} \
+              --repo DevKitOrganization/xccovPretty \
+              --pattern "xccovPretty-macos.tar.gz" \
+              -O - | tar -xz
+          chmod +x xccovPretty
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: irgaly/xcode-cache@v1
+        with:
+          key: xcode-cache-deriveddata-${{ github.workflow }}-${{ matrix.platform }}-${{ github.sha }}
+          restore-keys: |
+            xcode-cache-deriveddata-${{ github.workflow }}-${{ matrix.platform }}-
+            xcode-cache-deriveddata-
+          deriveddata-directory: .build/DerivedData
+          sourcepackages-directory: .build/DerivedData/SourcePackages
+          swiftpm-package-resolved-file: Package.resolved
+          verbose: true
+      - name: Select Xcode 16.4
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.4.0.app
+      - name: Build for Testing
+        run: |
+          "$DEV_BUILDS"/build_and_test.sh --action build-for-testing
+      - name: Test
+        if: github.event_name != 'push'
+        run: |
+          "$DEV_BUILDS"/build_and_test.sh --action test
+      - name: Log Code Coverage
+        if: github.event_name != 'push'
+        run: |
+          xcrun xccov view --report .build/DevConfiguration-Package_test.xcresult --json \
+              | ./xccovPretty --github-comment \
+              > .build/xccovPretty-${{ matrix.platform }}.output
+      - name: Upload Logs
+        uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with:
+          name: Logs-${{ matrix.platform }}
+          path: .build/*.log
+          include-hidden-files: true
+      - name: Upload XCResults
+        uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with:
+          name: XCResults-${{ matrix.platform }}
+          path: .build/*.xcresult
+          include-hidden-files: true
+      - name: Upload xccovPretty output
+        if: github.event_name != 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: xccovPrettyOutput-${{ matrix.platform }}
+          path: .build/xccovPretty-${{ matrix.platform }}.output
+          include-hidden-files: true
+  post-pr-comments:
+    name: Post PR Comments
+    needs: build-and-test
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - name: Download xccovPretty output
+        uses: actions/download-artifact@v4
+        with:
+          name: xccovPrettyOutput-iOS
+      - name: Post Code Coverage Comment
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          file-path: xccovPretty-iOS.output
+          comment-tag: codeCoverage-iOS

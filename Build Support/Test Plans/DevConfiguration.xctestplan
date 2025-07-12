@@ -1,0 +1,34 @@
+{
+  "configurations" : [
+    {
+      "id" : "D4211755-E8F7-47FF-8191-92A8AE4F1284",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : {
+      "targets" : [
+        {
+          "containerPath" : "container:",
+          "identifier" : "DevConfiguration",
+          "name" : "DevConfiguration"
+        }
+      ]
+    },
+    "defaultTestExecutionTimeAllowance" : 60,
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "DevConfigurationTests",
+        "name" : "DevConfigurationTests"
+      }
+    }
+  ],
+  "version" : 1
+}
