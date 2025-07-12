@@ -39,7 +39,7 @@ jobs:
     env:
       DEV_BUILDS: DevBuilds/Sources
       XCCOV_PRETTY_VERSION: 1.2.0
-      XCODE_SCHEME: DevConfiguration-Package
+      XCODE_SCHEME: DevConfiguration
       XCODE_DESTINATION: ${{ matrix.xcode_destination }}
       XCODE_TEST_PLAN: DevConfiguration
     steps:
@@ -83,7 +83,7 @@ jobs:
       - name: Log Code Coverage
         if: github.event_name != 'push'
         run: |
-          xcrun xccov view --report .build/DevConfiguration-Package_test.xcresult --json \
+          xcrun xccov view --report .build/DevConfiguration_test.xcresult --json \
               | ./xccovPretty --github-comment \
               > .build/xccovPretty-${{ matrix.platform }}.output
       - name: Upload Logs
