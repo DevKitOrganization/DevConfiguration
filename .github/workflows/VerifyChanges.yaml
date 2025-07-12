@@ -39,7 +39,7 @@ jobs:
     env:
       DEV_BUILDS: DevBuilds/Sources
       XCCOV_PRETTY_VERSION: 1.2.0
-      XCODE_SCHEME: DevConfiguration
+      XCODE_SCHEME: DevConfiguration-Package
       XCODE_DESTINATION: ${{ matrix.xcode_destination }}
       XCODE_TEST_PLAN: DevConfiguration
     steps:
@@ -68,9 +68,7 @@ jobs:
             xcode-cache-deriveddata-
           deriveddata-directory: .build/DerivedData
           sourcepackages-directory: .build/DerivedData/SourcePackages
-          swiftpm-package-resolved-file: |
-            **/*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
-            Package.resolved
+          swiftpm-package-resolved-file: Package.resolved
           verbose: true
       - name: Select Xcode 16.4
         run: |
@@ -85,7 +83,7 @@ jobs:
       - name: Log Code Coverage
         if: github.event_name != 'push'
         run: |
-          xcrun xccov view --report .build/DevConfiguration_test.xcresult --json \
+          xcrun xccov view --report .build/DevConfiguration-Package_test.xcresult --json \
               | ./xccovPretty --github-comment \
               > .build/xccovPretty-${{ matrix.platform }}.output
       - name: Upload Logs
