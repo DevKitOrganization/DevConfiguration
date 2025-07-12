@@ -22,12 +22,16 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(url: "https://github.com/DevKitOrganization/DevFoundation", from: "1.0.0-beta.8"),
         .package(url: "https://github.com/DevKitOrganization/DevTesting", from: "1.0.0-beta.7"),
     ],
     targets: [
         .target(
             name: "DevConfiguration",
-            swiftSettings: swiftSettings
+            dependencies: [
+                "DevFoundation",
+            ],
+            swiftSettings: swiftSettings,
         ),
         .testTarget(
             name: "DevConfigurationTests",

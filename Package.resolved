@@ -1,6 +1,15 @@
 {
-  "originHash" : "222f113614d29faab34495fcc0b3117443743f1bed9ee6a27b0e343febfa0c14",
+  "originHash" : "d62daceee414431369ce93ce6cc38faf9e4e3aa027dfef455db6fd7874803e66",
   "pins" : [
+    {
+      "identity" : "devfoundation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/DevKitOrganization/DevFoundation",
+      "state" : {
+        "revision" : "d16a4c414e3f32ab3d98b82b88b2842ba5e6064a",
+        "version" : "1.0.0-beta.8"
+      }
+    },
     {
       "identity" : "devtesting",
       "kind" : "remoteSourceControl",
@@ -8,6 +17,15 @@
       "state" : {
         "revision" : "32dd16262b17b291279adda9cfc7dd683ed7e6ee",
         "version" : "1.0.0-beta.7"
+      }
+    },
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser.git",
+      "state" : {
+        "revision" : "309a47b2b1d9b5e991f36961c983ecec72275be3",
+        "version" : "1.6.1"
       }
     }
   ],
