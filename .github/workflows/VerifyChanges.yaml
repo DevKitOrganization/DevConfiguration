@@ -68,7 +68,9 @@ jobs:
             xcode-cache-deriveddata-
           deriveddata-directory: .build/DerivedData
           sourcepackages-directory: .build/DerivedData/SourcePackages
-          swiftpm-package-resolved-file: Package.resolved
+          swiftpm-package-resolved-file: |
+            **/*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+            Package.resolved
           verbose: true
       - name: Select Xcode 16.4
         run: |
