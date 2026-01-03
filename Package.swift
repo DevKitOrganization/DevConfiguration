@@ -23,6 +23,7 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(url: "https://github.com/apple/swift-configuration", from: "1.0.0"),
         .package(url: "https://github.com/DevKitOrganization/DevFoundation.git", from: "1.7.0"),
         .package(url: "https://github.com/DevKitOrganization/DevTesting", from: "1.5.0"),
     ],
