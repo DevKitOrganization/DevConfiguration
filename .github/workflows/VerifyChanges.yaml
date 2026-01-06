@@ -51,7 +51,7 @@ jobs:
       DEV_BUILDS: DevBuilds/Sources
       OTHER_XCBEAUTIFY_FLAGS: --renderer github-actions
       XCCOV_PRETTY_VERSION: 1.2.0
-      XCODE_SCHEME: DevConfiguration-Package
+      XCODE_SCHEME: DevConfiguration
       XCODE_DESTINATION: ${{ matrix.xcode_destination }}
       XCODE_TEST_PLAN: AllTests
       XCODE_TEST_PRODUCTS_PATH: .build/DevConfiguration.xctestproducts
