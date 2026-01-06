@@ -169,13 +169,13 @@ Example events:
 
 ---
 
-## 5. Composed Reader Architecture
+## 5. Simplified Architecture
 
-**Design Decision:** Split into two types for separation of concerns.
+**Design Decision:** Single public type with protocol-based typed access.
 
-### StructuredConfigReader (Core Type)
+### StructuredConfigReader
 
-Core typed accessor that bridges `ConfigVariable<T>` to swift-configuration's `ConfigReader`.
+Typed accessor that bridges `ConfigVariable<T>` to swift-configuration's `ConfigReader`.
 
 ```swift
 public final class StructuredConfigReader: StructuredConfigurationReading {
@@ -183,8 +183,13 @@ public final class StructuredConfigReader: StructuredConfigurationReading {
     private let eventBus: EventBus
     private let accessReporter: TelemetryAccessReporter
 
-    public init(providers: [ConfigProvider], eventBus: EventBus, accessReporter: TelemetryAccessReporter)
+    /// Initialize with custom provider array
+    /// Internally appends RegisteredVariablesProvider to end of array (lowest precedence)
+    public init(providers: [any ConfigProvider], eventBus: EventBus)
+}
 
+// Protocol conformance via extensions
+extension StructuredConfigReader {
     // Protocol conformance: 8 overloads (4 primitives + 4 arrays)
     public func value(for variable: ConfigVariable<Bool>) -> Bool
     public func value(for variable: ConfigVariable<[Bool]>) -> [Bool]
@@ -196,72 +201,53 @@ public final class StructuredConfigReader: StructuredConfigurationReading {
 - Value resolution with required accessors (`requiredBool()`, `requiredStringArray()`, etc.)
 - Error handling (catch all, return fallback)
 - Telemetry emission via AccessReporter integration
-- Caching
+- Internal RegisteredVariablesProvider management (appended to provider array)
 
 **Does NOT Handle:**
-- Provider stack management
-- Default provider configuration
-- Source code override API + other conveniences
+- Provider stack composition (consumer's responsibility)
+- Caching (may add later for telemetry deduplication only)
 
-### ConfigurationDataSource (Convenience Type)
+**Provider Management:**
+- Consumers pass their own provider array
+- Provider order determines precedence (first = highest priority)
+- StructuredConfigReader internally appends RegisteredVariablesProvider to end
+- No `addProvider` API — provider order should be explicit at initialization
 
-High-level convenience layer with standard provider management.
-
+**Example Usage:**
 ```swift
-public final class ConfigurationDataSource: StructuredConfigurationReading {
-    private let reader: StructuredConfigReader
-    private let sourceOverrideProvider: MutableInMemoryProvider
+// Consumer creates their own provider stack
+let providers: [any ConfigProvider] = [
+    AmplitudeProvider(),             // Highest priority
+    EnvironmentVariablesProvider(),
+    // RegisteredVariablesProvider automatically added by StructuredConfigReader
+]
 
-    /// Standard init: auto-configured providers
-    public init(eventBus: EventBus)
+let reader = StructuredConfigReader(
+    providers: providers,
+    eventBus: eventBus
+)
 
-    /// Low-level init: custom providers
-    public init(providers: [ConfigProvider], eventBus: EventBus)
-
-    // Protocol delegation to StructuredConfigReader (8 overloads)
-    public func value(for variable: ConfigVariable<Bool>) -> Bool
-    // ... etc
-}
+let darkMode = reader.value(for: .darkMode)
 ```
 
-**Responsibilities:**
-- Standard provider stack management (overrides → CLI → environment)
-- Source code override API
-- Provider lifecycle management
-- Protocol delegation to StructuredConfigReader
-
-**Standard Provider Stack:**
-1. Command Line Arguments (`CommandLineArgumentsProvider`)
-2. Environment Variables (`EnvironmentVariablesProvider`)
-3. Source Code Overrides (`MutableInMemoryProvider`)
-4. Remote/Async Providers (custom type)
-5. Registered Fallbacks
-
-**Provider ordering**: Fixed at initialization. No `addProvider` — provider order determines precedence and should be explicit upfront for clarity.
-
-**Async providers**: Some providers (e.g., remote services) may not have values immediately. Pattern:
+**Async Providers:**
+Some providers (e.g., remote services) may not have values immediately:
 
 - Providers initialize synchronously but return no values until ready
 - Consumer controls lifecycle via explicit `await provider.fetch()`
-- On activation: cache clears, reader emits update signal (via `@Observable` or stream)
+- On activation: reader emits update signal (via `@Observable` or stream)
 - Multiple remote providers activate independently
 
 ```swift
-// Remote provider template
-public protocol RemoteConfigProvider: ConfigProvider {
-    var isReady: Bool { get }
-    func fetch() async throws
-}
-
-// Consumer controls lifecycle
+// Remote provider pattern
 let amplitudeProvider = AmplitudeProvider(...)
-let dataSource = await ConfigurationVariableDataSource(
-    providers: [amplitudeProvider, jsonFileProvider],
+let reader = StructuredConfigReader(
+    providers: [amplitudeProvider],
     eventBus: eventBus
 )
 
 // Later, when app is ready
-await amplitudeProvider.fetch()  // Cache clears, signal emitted
+await amplitudeProvider.fetch()  // Signal emitted
 ```
 
 ---
@@ -404,9 +390,11 @@ internal final class RegisteredVariablesProvider: ConfigProvider {
 
 ---
 
-## 8. Variable Access Caching
+## 8. Variable Access Caching (Deferred)
 
-Caching avoids costly re-decoding and prevents over-emitting telemetry for variable access issues.
+**Note:** Caching has been deferred. May be added later solely for telemetry deduplication.
+
+Original rationale: Caching avoids costly re-decoding and prevents over-emitting telemetry for variable access issues.
 
 ### Cache Key
 

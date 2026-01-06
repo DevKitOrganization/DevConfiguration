@@ -9,9 +9,9 @@ Created by Duncan Lewis, 2026-01-03
 
 ## Overview
 
-**Slice 1 Scope:** ConfigVariable + StructuredConfigurationReading + Telemetry + Standard Init
+**Slice 1 Scope:** ConfigVariable + StructuredConfigurationReading + Telemetry
 
-**Value Delivered:** End-to-end variable access with observability and standard provider setup
+**Value Delivered:** End-to-end variable access with observability
 
 **Supported Types:**
 - **Primitives:** `Bool`, `String`, `Int`, `Double`
@@ -21,21 +21,20 @@ Created by Duncan Lewis, 2026-01-03
 
 ## Architecture
 
-**Two-Type Design:**
-1. **StructuredConfigReader**: Core type for typed value access and telemetry
-2. **ConfigurationVariableDataSource**: High-level convenience with default provider management
+**Simplified Single-Type Design:**
+- **StructuredConfigReader**: Single public type for typed configuration access
+- Consumers manage their own provider stacks
+- Protocol extensions provide typed access
 
-**Division of Responsibilities:**
+**Responsibilities:**
+- Value resolution via protocol extensions
+- Telemetry via AccessReporter integration
+- Internal RegisteredVariablesProvider management (Slice 3)
+- Error handling (catch errors, return fallback)
 
-| Concern | StructuredConfigReader | ConfigurationVariableDataSource |
-|---------|------------------------|----------------------------------|
-| Value resolution | ✅ Implements | ❌ Delegates |
-| Telemetry | ✅ Emits events | ❌ Transparent |
-| Caching | ✅ Manages cache (Slice 4) | ❌ Transparent |
-| Provider stack | ❌ Accepts array | ✅ Configures defaults |
-| Override API | ❌ Not exposed | ✅ Public methods (Slice 6) |
-| swift-config integration | ✅ Direct usage | ❌ Via StructuredConfigReader |
-| Standard init | ❌ No defaults | ✅ Auto-configures |
+**Does NOT Handle:**
+- Provider stack composition (consumer's responsibility)
+- Caching (deferred)
 
 See [Architecture Plan.md](./Architecture%20Plan.md) section 5 for architectural overview.
 
@@ -256,77 +255,27 @@ public final class StructuredConfigReader: StructuredConfigurationReading {
 - Only post failure telemetry in catch block
 - Fallback always returned on error
 - No manual source tracking - AccessEvent has provider name
+- Protocol extensions provide default implementations
+
+**Example Usage:**
+```swift
+// Consumer creates their own provider stack
+let providers: [any ConfigProvider] = [
+    EnvironmentVariablesProvider(),
+    // RegisteredVariablesProvider automatically added by StructuredConfigReader (Slice 3)
+]
+
+let reader = StructuredConfigReader(
+    providers: providers,
+    eventBus: eventBus
+)
+
+let darkMode = reader.value(for: .darkMode)
+```
 
 ---
 
-### 5. ConfigurationVariableDataSource (Convenience Type)
-
-**Purpose:** High-level convenience with standard provider management
-
-**Public Interface:**
-```swift
-public final class ConfigurationVariableDataSource: StructuredConfigurationReading {
-    /// Standard init: auto-configured providers
-    public init(eventBus: EventBus)
-
-    /// Low-level init: custom providers
-    public init(providers: [any ConfigProvider], eventBus: EventBus)
-
-    // Protocol conformance: delegates to StructuredConfigReader (8 overloads)
-    public func value(for variable: ConfigVariable<Bool>) -> Bool
-    public func value(for variable: ConfigVariable<[Bool]>) -> [Bool]
-    // ... etc
-
-    // Source override API (Slice 6 - deferred)
-    // public func setOverride<T>(_ value: T, for variable: ConfigVariable<T>)
-    // public func clearOverride<T>(for variable: ConfigVariable<T>)
-}
-```
-
-**Standard Init Implementation:**
-```swift
-public init(eventBus: EventBus) {
-    // Create source override provider EXPLICITLY (not by array index)
-    let sourceOverrideProvider = MutableInMemoryProvider(
-        name: "source-overrides",
-        initialValues: [:]
-    )
-
-    // Build provider array
-    let providers: [any ConfigProvider] = [
-        sourceOverrideProvider,                // Highest precedence
-        CommandLineArgumentsProvider(),
-        EnvironmentVariablesProvider(),
-        // RegisteredVariablesProvider() - Slice 5
-    ]
-
-    // Create core reader
-    self.reader = StructuredConfigReader(
-        providers: providers,
-        eventBus: eventBus
-    )
-
-    // Store provider reference for Editor UI (Slice 6)
-    self.sourceOverrideProvider = sourceOverrideProvider
-}
-
-// Protocol delegation
-public func value(for variable: ConfigVariable<Bool>) -> Bool {
-    reader.value(for: variable)
-}
-// ... etc for all 8 overloads
-```
-
-**Key Design Decisions:**
-- Source override provider created **explicitly** before array
-- Stored directly (not via array index)
-- Delegates all `value(for:)` calls to StructuredConfigReader
-- Both classes (not structs) for mutable state
-- Low-level init available for advanced use cases
-
----
-
-### 6. Telemetry Events
+### 5. Telemetry Events
 
 **DidAccessVariableBusEvent:**
 ```swift
@@ -397,53 +346,55 @@ public struct AccessEvent {
 
 ---
 
-## Standard Provider Stack
+## Example Provider Stacks
 
-**ConfigurationVariableDataSource Standard Init:**
+**Consumer-Managed Configuration:**
 
-**Precedence (High → Low):**
-1. **Source Code Overrides** - `MutableInMemoryProvider`
-   - Name: "source-overrides"
-   - Empty initial values
-   - Created explicitly, stored for Editor UI (Slice 6)
+Consumers manage their own provider stacks by passing an array of providers to `StructuredConfigReader`. Provider order determines precedence (first = highest priority). `RegisteredVariablesProvider` is automatically appended internally (Slice 3) at lowest precedence.
 
-2. **Command Line Arguments** - `CommandLineArgumentsProvider`
-   - Requires `CommandLineArgumentsSupport` trait
-   - Pattern: `--feature.darkMode=true`, `--tags swift config`
-
-3. **Environment Variables** - `EnvironmentVariablesProvider`
-   - Key transformation: `feature.darkMode` → `FEATURE_DARKMODE`
-
-4. **Registered Fallbacks** - (Slice 5)
-   - `RegisteredVariablesProvider` (custom, composes MutableInMemoryProvider)
-   - Lowest precedence, above inline fallback
-
-**Not Included:**
-- JSON file providers (use low-level init)
-- Remote providers (Slice 3)
-
-**Rationale:**
-- Covers 90% use case: local development + testing
-- Production configs (JSON, remote) require explicit setup
-
----
-
-## Package.swift Configuration
-
-### Enable CommandLineArgumentsSupport Trait
-
+**Example: Local Development**
 ```swift
-.target(
-    name: "DevConfiguration",
-    dependencies: [
-        .product(name: "Configuration", package: "swift-configuration"),
-        .product(name: "DevFoundation", package: "DevFoundation"),
-    ],
-    swiftSettings: [
-        .define("CommandLineArguments")
-    ]
+let providers: [any ConfigProvider] = [
+    EnvironmentVariablesProvider(),
+]
+
+let reader = StructuredConfigReader(
+    providers: providers,
+    eventBus: eventBus
 )
 ```
+
+**Example: Testing with Overrides**
+```swift
+let overrides = MutableInMemoryProvider(
+    name: "test-overrides",
+    initialValues: ["feature.darkMode": true]
+)
+
+let providers: [any ConfigProvider] = [
+    overrides,
+    EnvironmentVariablesProvider(),
+]
+
+let reader = StructuredConfigReader(providers: providers, eventBus: eventBus)
+```
+
+**Example: Production with CLI Support**
+```swift
+let providers: [any ConfigProvider] = [
+    CommandLineArgumentsProvider(),  // Requires CommandLineArgumentsSupport trait
+    EnvironmentVariablesProvider(),
+    // Add JSON/file providers as needed
+]
+
+let reader = StructuredConfigReader(providers: providers, eventBus: eventBus)
+```
+
+**Notes:**
+- CLI arguments pattern: `--feature.darkMode=true`, `--tags swift config`
+- Environment key transformation: `feature.darkMode` → `FEATURE_DARKMODE`
+- JSON/file providers: Consumer adds as needed for their use case
+- Remote providers: See Slice 2 for async provider support
 
 ---
 
@@ -461,12 +412,7 @@ public struct AccessEvent {
    - `TelemetryAccessReporter` - AccessReporter implementation
    - `DidAccessVariableBusEvent` - struct using ConfigContent
    - `VariableResolutionFailedBusEvent` - struct with `any Error`
-5. **ConfigurationVariableDataSource** - implement with TODOs (if needed):
-   - Standard init with explicit provider creation
-   - Protocol delegation (8 overloads)
-6. **Fill in remaining data types** (if any)
-7. **Enable `CommandLineArgumentsSupport`** in Package.swift
-8. **End-to-end verification**
+5. **End-to-end verification**
 
 **Rationale:**
 - Implement main types first with TODOs to define interfaces
@@ -496,22 +442,18 @@ public struct AccessEvent {
 - Fallback on type mismatch
 - Fallback on provider errors
 - Telemetry emission (success via AccessReporter + failure direct)
-
-**ConfigurationVariableDataSource:**
-- Standard init provider stack
-- Provider precedence
-- Explicit provider creation (not array index)
-- Protocol delegation (all 8 overloads)
+- Provider array initialization
+- AccessReporter integration
 
 **Integration Tests:**
 - End-to-end value resolution
 - Provider precedence verification
-- CLI argument parsing
 - Environment variable transformation
 - Telemetry event flow (both success and failure)
+- Multiple provider stack patterns
 
 ### Test Patterns
-- Use `InMemoryProvider` for deterministic tests
+- Use `MutableInMemoryProvider` for deterministic tests
 - Mock EventBus to verify telemetry
 - Use DevTesting stub framework
 - See `Documentation/TestingGuidelines.md`
@@ -528,9 +470,7 @@ public struct AccessEvent {
 - [ ] Value resolution uses required accessors (throwing)
 - [ ] AccessReporter handles success telemetry automatically
 - [ ] Error telemetry includes full context
-- [ ] Standard provider stack: overrides → CLI → env
-- [ ] Source override provider created explicitly (not by index)
-- [ ] `CommandLineArgumentsSupport` trait enabled
+- [ ] StructuredConfigReader accepts provider array
 - [ ] All 8 type overloads work (primitives + arrays)
 - [ ] Provider precedence respected
 - [ ] Unit tests achieve >99% coverage
@@ -544,8 +484,8 @@ public struct AccessEvent {
 ### Variable Overlays (Post-Slice 1)
 - JSON/YAML file-based configuration
 - Environment-specific configs (dev, staging, prod)
-- Too app-specific for standard stack
-- Use low-level init for custom file providers
+- Too app-specific for core library
+- Consumers add custom file providers to their provider stack
 
 ### Caching (Slice 4)
 - Cache resolved values by (key, type)
@@ -589,13 +529,13 @@ public struct AccessEvent {
 |----------|----------|
 | ConfigKey init | Consumer choice via two initializers |
 | Provider attribution | AccessReporter posts events directly |
-| CLI provider | Enable trait, include in stack |
+| CLI provider | Consumer adds to provider stack if needed |
 | Error Sendability | `any Error` is Sendable (verified) |
 | isSecret | Defer to Slice 5 metadata |
 | AccessReporter | Implement for telemetry |
-| JSON provider | Exclude, add as future feature |
+| JSON provider | Consumer adds to provider stack if needed |
 | Array support | Add 4 array overloads |
-| Provider creation | Explicit creation, not array index |
+| Standard provider stack | Removed - consumers manage their own |
 
 ---
 
