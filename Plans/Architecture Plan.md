@@ -6,20 +6,20 @@ Typesafe configuration wrapper on Apple's swift-configuration.
 
 ## 1. Variable Definitions
 
-Variables defined anywhere by consumers; encouraged pattern is static properties on a shared type:
+Variables defined anywhere by consumers; encouraged pattern is static properties on the `ConfigVariable` type:
 
 ```swift
-enum Config {
+extension ConfigVariable where Value == Bool {
     static let darkMode = ConfigVariable(
         key: "feature.darkMode",
         fallback: false
     )
 }
 
-// Access: config.value(for: Config.darkMode)
+// Access: config.value(for: .darkMode)
 ```
 
-**Key format**: Plain `String`, passed directly to swift-config. Key transformation is provider-specific:
+**Key format**: `ConfigKey` (from swift-configuration). Consumers can use string convenience initializer or construct ConfigKey explicitly. Key transformation is provider-specific:
 - JSON/YAML: `feature.darkMode` → nested lookup `{ "feature": { "darkMode": ... } }`
 - Environment: `feature.darkMode` → `FEATURE_DARKMODE`
 - Custom providers: define their own transformation
@@ -29,13 +29,19 @@ enum Config {
 ```swift
 @dynamicMemberLookup
 public struct ConfigVariable<Value> {
-    public let key: String
+    public let key: ConfigKey  // From swift-configuration
     public let fallback: Value
     private var metadata: VariableMetadata
-    
+
+    // Convenience: string → ConfigKey
+    public init(key: String, fallback: Value)
+
+    // Direct: explicit ConfigKey
+    public init(key: ConfigKey, fallback: Value)
+
     /// Builder-style metadata setter
     public func metadata<M>(_ keyPath: WritableKeyPath<VariableMetadata, M>, _ value: M) -> Self
-    
+
     /// Dynamic member access to metadata values
     public subscript<M>(dynamicMember keyPath: WritableKeyPath<VariableMetadata, M>) -> M
 }
@@ -88,37 +94,50 @@ let flag = ConfigVariable(key: "feature.x", fallback: false)
 let expires = flag.expirationDate
 ```
 
-### Supported Value Types
-
-| Type | Resolution |
-|------|------------|
-| `Bool` | `.bool(forKey:default:)` |
-| `String` | `.string(forKey:default:)` |
-| `Int` | `.int(forKey:default:)` |
-| `Double` | `.double(forKey:default:)` |
-| `T: Codable` | String → JSON decode |
-
-No `Float` support — use `Double`. Rich types require `Codable` (not just `Decodable`) to support registration.
-
 ---
 
 ## 2. Variable Access
 
-- Always synchronous
+- Always synchronous (async support for remote providers)
 - Never fails — fallback returned on error
 - Method overloads for compile-time dispatch
 
 ```swift
-public protocol ConfigurationReading {
+public protocol StructuredConfigurationReading {
+    // Primitives
     func value(for variable: ConfigVariable<Bool>) -> Bool
     func value(for variable: ConfigVariable<String>) -> String
     func value(for variable: ConfigVariable<Int>) -> Int
     func value(for variable: ConfigVariable<Double>) -> Double
+
+    // Arrays
+    func value(for variable: ConfigVariable<[Bool]>) -> [Bool]
+    func value(for variable: ConfigVariable<[String]>) -> [String]
+    func value(for variable: ConfigVariable<[Int]>) -> [Int]
+    func value(for variable: ConfigVariable<[Double]>) -> [Double]
+
+    // Rich types
     func value<T: Codable>(for variable: ConfigVariable<T>) -> T
 }
 ```
 
-Resolution dispatches to swift-config's typed accessors internally, catches errors, returns fallback.
+Resolution dispatches to swift-configuration's typed accessors (`requiredBool()`, `requiredStringArray()`, etc.), catches errors, returns fallback.
+
+### Supported Value Types
+
+| Type | Resolution |
+|------|------------|
+| `Bool` | `requiredBool(forKey:)` |
+| `String` | `requiredString(forKey:)` |
+| `Int` | `requiredInt(forKey:)` |
+| `Double` | `requiredDouble(forKey:)` |
+| `[Bool]` | `requiredBoolArray(forKey:)` |
+| `[String]` | `requiredStringArray(forKey:)` |
+| `[Int]` | `requiredIntArray(forKey:)` |
+| `[Double]` | `requiredDoubleArray(forKey:)` |
+| `T: Codable` | String → JSON decode |
+
+No `Float` support — use `Double`. Rich types require `Codable` (not just `Decodable`) to support registration.
 
 ---
 
@@ -150,17 +169,73 @@ Example events:
 
 ---
 
-## 5. StructuredConfigReader (Wrapper Object)
+## 5. Composed Reader Architecture
 
-Core wrapper that owns the swift-config `ConfigReader` and implements `ConfigurationReading`.
+**Design Decision:** Split into two types for separation of concerns.
+
+### StructuredConfigReader (Core Type)
+
+Core typed accessor that bridges `ConfigVariable<T>` to swift-configuration's `ConfigReader`.
 
 ```swift
-public final class StructuredConfigReader: ConfigurationReading {
+public final class StructuredConfigReader: StructuredConfigurationReading {
     private let reader: ConfigReader
-    
-    public init(providers: [ConfigProvider], eventBus: EventBus) async
+    private let eventBus: EventBus
+    private let accessReporter: TelemetryAccessReporter
+
+    public init(providers: [ConfigProvider], eventBus: EventBus, accessReporter: TelemetryAccessReporter)
+
+    // Protocol conformance: 8 overloads (4 primitives + 4 arrays)
+    public func value(for variable: ConfigVariable<Bool>) -> Bool
+    public func value(for variable: ConfigVariable<[Bool]>) -> [Bool]
+    // ... etc
 }
 ```
+
+**Responsibilities:**
+- Value resolution with required accessors (`requiredBool()`, `requiredStringArray()`, etc.)
+- Error handling (catch all, return fallback)
+- Telemetry emission via AccessReporter integration
+- Caching
+
+**Does NOT Handle:**
+- Provider stack management
+- Default provider configuration
+- Source code override API + other conveniences
+
+### ConfigurationDataSource (Convenience Type)
+
+High-level convenience layer with standard provider management.
+
+```swift
+public final class ConfigurationDataSource: StructuredConfigurationReading {
+    private let reader: StructuredConfigReader
+    private let sourceOverrideProvider: MutableInMemoryProvider
+
+    /// Standard init: auto-configured providers
+    public init(eventBus: EventBus)
+
+    /// Low-level init: custom providers
+    public init(providers: [ConfigProvider], eventBus: EventBus)
+
+    // Protocol delegation to StructuredConfigReader (8 overloads)
+    public func value(for variable: ConfigVariable<Bool>) -> Bool
+    // ... etc
+}
+```
+
+**Responsibilities:**
+- Standard provider stack management (overrides → CLI → environment)
+- Source code override API
+- Provider lifecycle management
+- Protocol delegation to StructuredConfigReader
+
+**Standard Provider Stack:**
+1. Command Line Arguments (`CommandLineArgumentsProvider`)
+2. Environment Variables (`EnvironmentVariablesProvider`)
+3. Source Code Overrides (`MutableInMemoryProvider`)
+4. Remote/Async Providers (custom type)
+5. Registered Fallbacks
 
 **Provider ordering**: Fixed at initialization. No `addProvider` — provider order determines precedence and should be explicit upfront for clarity.
 
@@ -180,7 +255,7 @@ public protocol RemoteConfigProvider: ConfigProvider {
 
 // Consumer controls lifecycle
 let amplitudeProvider = AmplitudeProvider(...)
-let structuredReader = await StructuredConfigReader(
+let dataSource = await ConfigurationVariableDataSource(
     providers: [amplitudeProvider, jsonFileProvider],
     eventBus: eventBus
 )
@@ -241,33 +316,23 @@ Registration informs the reader of expected variables, stores fallback values as
 ### Registration API
 
 ```swift
-// Protocol for type-erased registration
-public protocol RegistrableVariable {
-    var key: String { get }
-    var metadata: VariableMetadata { get }
-    func registerFallback(to provider: RegisteredFallbacksProvider)
-}
-
-// ConfigVariable conforms when Value is registrable
-extension ConfigVariable: RegistrableVariable where Value == Bool { ... }
-extension ConfigVariable: RegistrableVariable where Value == String { ... }
-extension ConfigVariable: RegistrableVariable where Value == Int { ... }
-extension ConfigVariable: RegistrableVariable where Value == Double { ... }
-extension ConfigVariable: RegistrableVariable where Value: Codable { ... }
-
 extension StructuredConfigReader {
-    // Single variable (convenience)
-    func register(_ variable: some RegistrableVariable)
-    
-    // Array of heterogeneous variables
-    func register(_ variables: [any RegistrableVariable])
+    func register(_ variable: ConfigVariable<Bool>) { … }
+    func register(_ variable: ConfigVariable<String>) { … }
+    func register(_ variable: ConfigVariable<Int>) { … }
+    func register(_ variable: ConfigVariable<Double>) { … }
+    func register(_ variable: ConfigVariable<[Bool]>) { … }
+    func register(_ variable: ConfigVariable<[String]>) { … }
+    func register(_ variable: ConfigVariable<[Int]>) { … }
+    func register(_ variable: ConfigVariable<[Double]>) { … }
+    func register<Value>(_ variable: ConfigVariable<Value>) where Value: Codable { … }
 }
 ```
 
 Usage:
 ```swift
-structuredReader.register(Config.darkMode)
-structuredReader.register([Config.darkMode, Config.timeout, Config.userSettings])
+structuredReader.register(.darkMode)
+structuredReader.register(.timeout)
 ```
 
 **Note:** Rich types require `Codable` (not just `Decodable`) to support registration — fallback values must be encoded for storage in the internal provider.
@@ -277,43 +342,51 @@ structuredReader.register([Config.darkMode, Config.timeout, Config.userSettings]
 A custom `ConfigProvider` owned by `StructuredConfigReader`, inserted at lowest precedence:
 
 ```swift
-internal final class RegisteredFallbacksProvider: ConfigProvider {
+internal final class RegisteredVariablesProvider: ConfigProvider {
+    private let provider: MutableInMemoryProvider
     private var registeredKeys: Set<String> = []
     private var metadata: [String: VariableMetadata] = [:]  // for editor UI
-    private var boolValues: [String: Bool] = [:]
-    private var intValues: [String: Int] = [:]
-    private var doubleValues: [String: Double] = [:]
-    private var stringValues: [String: String] = [:]  // includes encoded Codable
-    
+
+    init() {
+        self.provider = MutableInMemoryProvider(
+            name: "registered-variables",
+            initialValues: [:]
+        )
+    }
+
     func register<T: Codable>(_ variable: ConfigVariable<T>) {
-        registeredKeys.insert(variable.key)
-        metadata[variable.key] = variable.metadata
-        // Store in appropriate typed storage
+        // Track registration
+        registeredKeys.insert(variable.key.description)
+        metadata[variable.key.description] = variable.metadata
+
+        // Store value in composed provider
+        // (Implementation delegates to MutableInMemoryProvider's storage)
     }
-    
-    func isRegistered(_ key: String) -> Bool {
-        registeredKeys.contains(key)
+
+    func isRegistered(_ key: ConfigKey) -> Bool {
+        registeredKeys.contains(key.description)
     }
-    
-    func metadata(for key: String) -> VariableMetadata? {
-        metadata[key]
+
+    func metadata(for key: ConfigKey) -> VariableMetadata? {
+        metadata[key.description]
     }
+
+    // ConfigProvider conformance delegates to composed provider
+    // (snapshot, value lookup, etc.)
 }
 ```
 
-Storage by config type:
-- `Bool` → `boolValues`
-- `Int` → `intValues`
-- `Double` → `doubleValues`
-- `String` → `stringValues`
-- `T: Codable` → JSON-encoded into `stringValues`
+**Design Benefits:**
+- Composes `MutableInMemoryProvider` instead of reimplementing storage
+- Registration tracking (keys + metadata) stays separate from value storage
+- Leverages swift-configuration's existing provider implementation
 
 ### Precedence
 
 ```
 1. Provider A (e.g., remote)
 2. Provider B (e.g., JSON file)
-3. RegisteredFallbacksProvider  ← internal, lowest priority
+3. RegisteredVariablesProvider  ← internal, lowest priority
 4. ConfigVariable.fallback      ← inline, used only if all providers fail
 ```
 
@@ -341,9 +414,9 @@ Caching avoids costly re-decoding and prevents over-emitting telemetry for varia
 struct CacheKey: Hashable, Sendable {
     let variableName: String
     let variableType: ObjectIdentifier
-    
+
     init<T>(_ variable: ConfigVariable<T>) {
-        self.variableName = variable.key
+        self.variableName = variable.key.description
         self.variableType = ObjectIdentifier(T.self)
     }
 }

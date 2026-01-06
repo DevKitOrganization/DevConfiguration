@@ -7,11 +7,11 @@ Created by Duncan Lewis, 2026-01-02
 ## Feature Inventory
 
 ### Sliced for Implementation
-- [ ] Slice 1: ConfigVariable + ConfigurationReading + Telemetry + Standard Init
+- [ ] Slice 1: ConfigVariable + StructuredConfigReader + ConfigurationDataSource + Telemetry
 - [ ] Slice 2: Rich types (Codable)
 - [ ] Slice 3: Remote provider support
 - [ ] Slice 4: Access caching
-- [ ] Slice 5: Registration + Metadata + RegisteredFallbacksProvider
+- [ ] Slice 5: Registration + Metadata + RegisteredVariablesProvider
 - [ ] Slice 6: Editor UI
 
 ### Future Features (Deferred)
@@ -22,18 +22,29 @@ Created by Duncan Lewis, 2026-01-02
 
 ## Implementation Slices
 
-### Slice 1: ConfigVariable + ConfigurationReading + Telemetry + Standard Init
+### Slice 1: ConfigVariable + StructuredConfigReader + ConfigurationDataSource + Telemetry
 **Value:** End-to-end variable access with observability + standard provider setup
 
+**Composed Reader Architecture:**
+- **StructuredConfigReader**: Core typed accessor with telemetry (low-level)
+- **ConfigurationDataSource**: High-level convenience with standard provider management
+
 **Scope:**
-- ConfigVariable<T> struct (Bool, String, Int, Double only)
-- ConfigurationReading protocol (4 method overloads)
-- StructuredConfigReader (low-level init with providers + eventBus)
-- Standard initializer (auto-populates: Editor UI provider, source code override provider, command line provider, registration provider)
-- value(for:) implementations (dispatch to ConfigReader, catch errors, return fallback)
-- DidAccessVariableBusEvent
-- VariableResolutionFailedBusEvent
-- Source code override provider (use swift-config's MutableInMemoryProvider)
+- ConfigVariable<T> struct with ConfigKey storage (primitives + arrays: Bool, String, Int, Double, [Bool], [String], [Int], [Double])
+- StructuredConfigurationReading protocol (8 method overloads: 4 primitives + 4 arrays)
+- StructuredConfigReader (core type):
+  - Low-level init with providers array + eventBus
+  - TelemetryAccessReporter integration (AccessReporter protocol)
+  - value(for:) implementations using required accessors (requiredBool(), requiredStringArray(), etc.)
+  - Error handling: catch errors, return fallback
+- ConfigurationDataSource (convenience type):
+  - Standard init (auto-configures: source overrides → CLI → environment)
+  - Low-level init (custom providers)
+  - Protocol delegation to StructuredConfigReader
+  - Explicit source override provider creation (not by array index)
+- Telemetry events using ConfigContent (from swift-configuration):
+  - DidAccessVariableBusEvent (via AccessReporter)
+  - VariableResolutionFailedBusEvent (on error)
 
 ---
 
@@ -43,7 +54,7 @@ Created by Duncan Lewis, 2026-01-02
 **Scope:**
 - JSONDecodableValue<T: Decodable> bridge type (ExpressibleByConfigString)
 - ConfigVariable<T: Codable> support
-- ConfigurationReading.value<T: Codable>(for:) overload
+- StructuredConfigurationReading.value<T: Codable>(for:) overload
 - VariableTypeMismatchBusEvent (decode failure telemetry)
 
 ---
@@ -79,10 +90,8 @@ Created by Duncan Lewis, 2026-01-02
 - VariableMetadata struct (subscript access)
 - ConfigVariable metadata storage + .metadata(_:_:) builder
 - ConfigVariable dynamic member lookup for metadata
-- RegistrableVariable protocol
-- ConfigVariable conditional conformances (Bool, String, Int, Double, Codable)
-- RegisteredFallbacksProvider (internal ConfigProvider)
-- StructuredConfigReader.register() methods
+- RegisteredVariablesProvider (internal ConfigProvider composing MutableInMemoryProvider)
+- StructuredConfigReader.register() method overloads (9 total: 8 concrete + 1 generic Codable)
 - DidAccessUnregisteredVariableBusEvent
 - DuplicateVariableRegistrationBusEvent
 
@@ -98,21 +107,38 @@ Created by Duncan Lewis, 2026-01-02
 
 ## Context
 
+### Composed Reader Architecture
+- **StructuredConfigReader**: Core typed accessor
+  - Low-level init with explicit provider array
+  - Integrates with swift-configuration's AccessReporter for telemetry
+  - Implements StructuredConfigurationReading protocol
+- **ConfigurationDataSource**: High-level convenience wrapper
+  - Composes StructuredConfigReader
+  - Standard init with auto-configured providers
+  - Delegates all value access to StructuredConfigReader
+
 ### Type System
 - Primitives: Bool, String, Int, Double (no Float)
+- Arrays: [Bool], [String], [Int], [Double]
 - Rich types: T: Codable (requires both Encodable + Decodable for registration)
 - Type dispatch: Method overloads for compile-time resolution
+- ConfigKey storage: ConfigVariable stores ConfigKey (not String) with two initializers
 
-### Provider Precedence
-1. User-supplied providers (in order passed to init)
-2. RegisteredFallbacksProvider (internal, lowest priority)
-3. ConfigVariable.fallback (inline, used if all providers fail)
+### Provider Precedence (Standard Stack)
+1. Source Code Overrides (MutableInMemoryProvider)
+2. Command Line Arguments (CommandLineArgumentsProvider)
+3. Environment Variables (EnvironmentVariablesProvider)
+4. RegisteredVariablesProvider (internal, lowest priority - Slice 5)
+5. ConfigVariable.fallback (inline, used if all providers fail)
 
 ### Telemetry Behavior
 - Emitted via EventBus (passed at init)
+- Success: Posted automatically via TelemetryAccessReporter (AccessReporter integration)
+- Failure: Posted directly from catch blocks
+- Uses ConfigContent from swift-configuration (not custom enum)
 - Errors don't propagate to callers
-- Access telemetry emitted once per cache lifecycle
-- Cached reads skip telemetry
+- Access telemetry emitted once per cache lifecycle (Slice 4)
+- Cached reads skip telemetry (Slice 4)
 
 ### Codable Bridge Strategy
 - Internal JSONDecodableValue<T> wrapper conforms to ExpressibleByConfigString
