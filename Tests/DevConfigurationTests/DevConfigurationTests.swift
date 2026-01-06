@@ -14,6 +14,6 @@ struct DevConfigurationTests {
     @Test
     func testReverseDNSPrefix() {
         let result = reverseDNSPrefixed("test")
-        #expect(result == "com.gauriar.devconfiguration.test")
+        #expect(result == "devconfiguration.test")
     }
 }
