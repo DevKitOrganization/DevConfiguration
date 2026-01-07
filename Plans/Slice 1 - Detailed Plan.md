@@ -1,7 +1,7 @@
 # Slice 1: Detailed Implementation Plan
 
 Created by Duncan Lewis, 2026-01-03
-**Last Updated:** 2026-01-03 (Decisions Finalized)
+**Last Updated:** 2026-01-06 (Added Variable Privacy)
 
 **Parent Document:** [Implementation Plan.md](./Implementation%20Plan.md)
 
@@ -9,9 +9,9 @@ Created by Duncan Lewis, 2026-01-03
 
 ## Overview
 
-**Slice 1 Scope:** ConfigVariable + StructuredConfigurationReading + Telemetry
+**Slice 1 Scope:** ConfigVariable + VariablePrivacy + StructuredConfigurationReading + Telemetry
 
-**Value Delivered:** End-to-end variable access with observability
+**Value Delivered:** End-to-end variable access with observability and privacy control
 
 **Supported Types:**
 - **Primitives:** `Bool`, `String`, `Int`, `Double`
@@ -58,35 +58,64 @@ See [Architecture Plan.md](./Architecture%20Plan.md) section 5 for architectural
 ✅ No need to track "last accessed provider" - AccessEvent has all info
 ✅ Errors captured and posted as `VariableResolutionFailedBusEvent`
 
-### 4. Provider Stack
-✅ Source overrides created **explicitly**, not by array index
-✅ CLI provider enabled via `CommandLineArgumentsSupport` trait
-✅ Precedence: Source Overrides → CLI → Environment → Registration (Slice 5)
+### 4. Variable Privacy
+✅ VariablePrivacy enum with three cases: `auto`, `private`, `public`
+✅ `auto` treats String values as secret, all others as public
+✅ Privacy setting determines `isSecret` parameter passed to swift-configuration
+✅ Default privacy is `auto`
 
-### 5. Deferred to Later Slices
-- `isSecret` parameter → Slice 5 (metadata)
+### 5. Provider Stack
+✅ Consumers pass their own provider array to StructuredConfigReader
+✅ Provider order determines precedence (first = highest priority)
+✅ RegisteredVariablesProvider automatically appended internally (Slice 3)
+
+### 6. Deferred to Later Slices
 - JSON file providers → Future (as "variable overlays")
 - Caching → Slice 4
+- Metadata system → Slice 3
 
 ---
 
 ## Component Breakdown
 
-### 1. ConfigVariable<T>
+### 1. VariablePrivacy
 
-**Purpose:** Type-safe variable definition with fallback value
+**Purpose:** Control whether variable values are treated as secrets in telemetry and logging
+
+**Public Interface:**
+```swift
+public enum VariablePrivacy {
+    case auto      // Secret if String type
+    case `private` // Always secret
+    case `public`  // Never secret
+}
+```
+
+**Behavior:**
+- **`auto`**: Treats String values as secret, all other types as public
+- **`private`**: Always treats value as secret (passes `isSecret: true`)
+- **`public`**: Never treats value as secret (passes `isSecret: false`)
+
+**Default:** `auto`
+
+---
+
+### 2. ConfigVariable<T>
+
+**Purpose:** Type-safe variable definition with fallback value and privacy control
 
 **Public Interface:**
 ```swift
 public struct ConfigVariable<Value> {
     public let key: ConfigKey
     public let fallback: Value
+    public let privacy: VariablePrivacy
 
-    // Convenience: string → ConfigKey
-    public init(key: String, fallback: Value)
+    // Convenience: string → ConfigKey, default privacy
+    public init(key: String, fallback: Value, privacy: VariablePrivacy = .auto)
 
-    // Direct: explicit ConfigKey
-    public init(key: ConfigKey, fallback: Value)
+    // Direct: explicit ConfigKey, default privacy
+    public init(key: ConfigKey, fallback: Value, privacy: VariablePrivacy = .auto)
 }
 ```
 
@@ -98,18 +127,18 @@ public struct ConfigVariable<Value> {
 ```swift
 enum AppConfig {
     static let darkMode = ConfigVariable(key: "feature.darkMode", fallback: false)
-    static let tags = ConfigVariable(key: "feature.tags", fallback: ["default"])
-    static let timeout = ConfigVariable(key: ConfigKey("network.timeout"), fallback: 30.0)
+    static let apiKey = ConfigVariable(key: "api.key", fallback: "", privacy: .private)
+    static let timeout = ConfigVariable(key: ConfigKey("network.timeout"), fallback: 30.0, privacy: .public)
 }
 
 // Access
-let darkMode = dataSource.value(for: AppConfig.darkMode)
-let tags = dataSource.value(for: AppConfig.tags)
+let darkMode = reader.value(for: AppConfig.darkMode)
+let apiKey = reader.value(for: AppConfig.apiKey)  // Always secret
 ```
 
 ---
 
-### 2. StructuredConfigurationReading Protocol
+### 3. StructuredConfigurationReading Protocol
 
 **Purpose:** Define contract for typed configuration access
 
@@ -211,11 +240,26 @@ public final class StructuredConfigReader: StructuredConfigurationReading {
         )
     }
 
+    // Helper: Determine if value should be treated as secret
+    private func isSecret<T>(for variable: ConfigVariable<T>) -> Bool {
+        switch variable.privacy {
+        case .auto:
+            return T.self == String.self
+        case .private:
+            return true
+        case .public:
+            return false
+        }
+    }
+
     // Primitive example
     public func value(for variable: ConfigVariable<Bool>) -> Bool {
         do {
             // Required accessor throws if not found or type mismatch
-            let resolved = try reader.requiredBool(forKey: variable.key)
+            let resolved = try reader.requiredBool(
+                forKey: variable.key,
+                isSecret: isSecret(for: variable)
+            )
             // AccessReporter already posted DidAccessVariableBusEvent
             return resolved
         } catch {
@@ -229,10 +273,31 @@ public final class StructuredConfigReader: StructuredConfigurationReading {
         }
     }
 
+    // String example (auto = secret)
+    public func value(for variable: ConfigVariable<String>) -> String {
+        do {
+            let resolved = try reader.requiredString(
+                forKey: variable.key,
+                isSecret: isSecret(for: variable)  // true when auto
+            )
+            return resolved
+        } catch {
+            eventBus.post(VariableResolutionFailedBusEvent(
+                key: variable.key.description,
+                error: error,
+                fallback: .string(variable.fallback)
+            ))
+            return variable.fallback
+        }
+    }
+
     // Array example
     public func value(for variable: ConfigVariable<[String]>) -> [String] {
         do {
-            let resolved = try reader.requiredStringArray(forKey: variable.key)
+            let resolved = try reader.requiredStringArray(
+                forKey: variable.key,
+                isSecret: isSecret(for: variable)
+            )
             // AccessReporter already posted event
             return resolved
         } catch {
@@ -245,12 +310,14 @@ public final class StructuredConfigReader: StructuredConfigurationReading {
         }
     }
 
-    // ... 6 more overloads
+    // ... 5 more overloads
 }
 ```
 
 **Key Design Decisions:**
 - Use `requiredBool()`, `requiredStringArray()`, etc. (throwing accessors)
+- Pass `isSecret` parameter based on variable privacy setting
+- Privacy logic: `auto` treats String as secret, `private` always secret, `public` never secret
 - AccessReporter posts success telemetry **automatically**
 - Only post failure telemetry in catch block
 - Fallback always returned on error
@@ -314,16 +381,18 @@ public struct VariableResolutionFailedBusEvent: BusEvent {
 ### Typed Accessors Used
 
 **Primitives (throwing):**
-- `requiredBool(forKey:) throws -> Bool`
-- `requiredString(forKey:) throws -> String`
-- `requiredInt(forKey:) throws -> Int`
-- `requiredDouble(forKey:) throws -> Double`
+- `requiredBool(forKey:isSecret:) throws -> Bool`
+- `requiredString(forKey:isSecret:) throws -> String`
+- `requiredInt(forKey:isSecret:) throws -> Int`
+- `requiredDouble(forKey:isSecret:) throws -> Double`
 
 **Arrays (throwing):**
-- `requiredBoolArray(forKey:) throws -> [Bool]`
-- `requiredStringArray(forKey:) throws -> [String]`
-- `requiredIntArray(forKey:) throws -> [Int]`
-- `requiredDoubleArray(forKey:) throws -> [Double]`
+- `requiredBoolArray(forKey:isSecret:) throws -> [Bool]`
+- `requiredStringArray(forKey:isSecret:) throws -> [String]`
+- `requiredIntArray(forKey:isSecret:) throws -> [Int]`
+- `requiredDoubleArray(forKey:isSecret:) throws -> [Double]`
+
+**Note:** The `isSecret` parameter controls whether values are redacted in telemetry and logging
 
 ### AccessReporter Protocol
 ```swift
@@ -401,24 +470,31 @@ let reader = StructuredConfigReader(providers: providers, eventBus: eventBus)
 ## Implementation Sequence
 
 **Recommended Order:**
-1. **ConfigVariable<T>** - struct with two initializers
+1. **ConfigVariable<T>** - struct with two initializers (initially without privacy parameter)
 2. **StructuredConfigurationReading** - protocol (8 overloads)
 3. **StructuredConfigReader** - implement with TODOs:
    - Constructor with AccessReporter integration (TODO: TelemetryAccessReporter)
-   - Implement `value(for:)` for Bool (TODO: event types)
+   - Implement `value(for:)` for Bool (TODO: event types, initially without isSecret)
    - Implement `value(for:)` for [Bool] (verify array pattern)
    - Complete remaining 6 overloads
 4. **Fill in data types for StructuredConfigReader:**
    - `TelemetryAccessReporter` - AccessReporter implementation
    - `DidAccessVariableBusEvent` - struct using ConfigContent
    - `VariableResolutionFailedBusEvent` - struct with `any Error`
-5. **End-to-end verification**
+5. **VariablePrivacy** - enum with three cases (auto, private, public)
+6. **Add privacy to existing types:**
+   - Add `privacy` parameter to ConfigVariable initializers
+   - Add `isSecret<T>(for: ConfigVariable<T>) -> Bool` helper to StructuredConfigReader
+   - Update all 8 `value(for:)` implementations to pass `isSecret` parameter
+7. **End-to-end verification**
 
 **Rationale:**
 - Implement main types first with TODOs to define interfaces
+- Get basic functionality working without privacy
+- Add privacy as enhancement after core functionality verified
 - Fill in supporting types as needed to resolve TODOs
 - This allows incremental progress and clearer interface design
-- Verify primitive and array patterns early (step 3)
+- Verify primitive and array patterns early (step 3), privacy later (step 6)
 
 ---
 
@@ -426,8 +502,13 @@ let reader = StructuredConfigReader(providers: providers, eventBus: eventBus)
 
 ### Unit Test Coverage
 
+**VariablePrivacy:**
+- Enum cases (auto, private, public)
+- Auto behavior for String vs non-String types
+
 **ConfigVariable:**
 - Two initializers (String and ConfigKey)
+- Privacy parameter with default value
 - Property access
 
 **TelemetryAccessReporter:**
@@ -437,6 +518,8 @@ let reader = StructuredConfigReader(providers: providers, eventBus: eventBus)
 
 **StructuredConfigReader:**
 - All 8 overloads (4 primitives + 4 arrays)
+- Privacy-based `isSecret` determination for each type
+- String type always secret when privacy is auto
 - Required accessor error handling
 - Fallback on missing values
 - Fallback on type mismatch
@@ -464,10 +547,13 @@ let reader = StructuredConfigReader(providers: providers, eventBus: eventBus)
 
 **Slice 1 is complete when:**
 - [ ] All types compile without errors
+- [ ] VariablePrivacy enum has three cases (auto, private, public)
 - [ ] ConfigVariable supports both initializers (String and ConfigKey)
+- [ ] ConfigVariable includes privacy parameter with default value
 - [ ] StructuredConfigurationReading has 8 overloads (4 + 4)
 - [ ] TelemetryAccessReporter posts events from AccessEvent
-- [ ] Value resolution uses required accessors (throwing)
+- [ ] Value resolution uses required accessors with `isSecret` parameter
+- [ ] Privacy logic correctly determines `isSecret` (auto = String only)
 - [ ] AccessReporter handles success telemetry automatically
 - [ ] Error telemetry includes full context
 - [ ] StructuredConfigReader accepts provider array
@@ -531,7 +617,7 @@ let reader = StructuredConfigReader(providers: providers, eventBus: eventBus)
 | Provider attribution | AccessReporter posts events directly |
 | CLI provider | Consumer adds to provider stack if needed |
 | Error Sendability | `any Error` is Sendable (verified) |
-| isSecret | Defer to Slice 5 metadata |
+| Variable privacy | VariablePrivacy enum in Slice 1 (auto/private/public) |
 | AccessReporter | Implement for telemetry |
 | JSON provider | Consumer adds to provider stack if needed |
 | Array support | Add 4 array overloads |

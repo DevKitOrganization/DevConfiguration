@@ -31,6 +31,7 @@ extension ConfigVariable where Value == Bool {
 public struct ConfigVariable<Value> {
     public let key: ConfigKey  // From swift-configuration
     public let fallback: Value
+    public let privacy: VariablePrivacy
     private var metadata: VariableMetadata
 
     // Convenience: string → ConfigKey
