@@ -8,6 +8,7 @@
 import DevTesting
 import Foundation
 import Testing
+
 @testable import DevConfiguration
 
 struct DevConfigurationTests {
