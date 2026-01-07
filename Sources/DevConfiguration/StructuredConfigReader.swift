@@ -23,11 +23,12 @@ import DevFoundation
 ///
 ///     let darkMode = reader.value(for: .darkMode)
 ///
+/// TODO: Revisit top-level documentation
 public final class StructuredConfigReader {
-    /// TODO: document.
+    /// The event bus that telemetry events are posted on.
     public let eventBus: EventBus
 
-    /// TODO: document.
+    /// The internal configuration reader that is used to resolve configuration values.
     private let reader: ConfigReader
 
 
@@ -35,7 +36,7 @@ public final class StructuredConfigReader {
     ///
     /// - Parameters:
     ///   - providers: The configuration providers, queried in order until a value is found.
-    ///   - eventBus: Event bus for telemetry emission.
+    ///   - eventBus: The event bus that telemetry events are posted on.
     public init(providers: [any ConfigProvider], eventBus: EventBus) {
         self.eventBus = eventBus
         // TODO: Add TelemetryAccessReporter integration
@@ -53,8 +54,10 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<Bool>) -> Bool {
         do {
-            // TODO: Pass isSecret parameter based on variable.privacy
-            let resolved = try reader.requiredBool(forKey: variable.key, isSecret: false)
+            let resolved = try reader.requiredBool(
+                forKey: variable.key,
+                isSecret: variable.privacy.isPrivate
+            )
             // TODO: TelemetryAccessReporter posts success telemetry automatically
             return resolved
         } catch {
@@ -70,8 +73,10 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<String>) -> String {
         do {
-            // TODO: Pass isSecret parameter based on variable.privacy
-            let resolved = try reader.requiredString(forKey: variable.key, isSecret: false)
+            let resolved = try reader.requiredString(
+                forKey: variable.key,
+                isSecret: variable.privacy.isPrivateForSensitiveTypes
+            )
             // TODO: TelemetryAccessReporter posts success telemetry automatically
             return resolved
         } catch {
@@ -87,8 +92,10 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<Int>) -> Int {
         do {
-            // TODO: Pass isSecret parameter based on variable.privacy
-            let resolved = try reader.requiredInt(forKey: variable.key, isSecret: false)
+            let resolved = try reader.requiredInt(
+                forKey: variable.key,
+                isSecret: variable.privacy.isPrivate
+            )
             // TODO: TelemetryAccessReporter posts success telemetry automatically
             return resolved
         } catch {
@@ -104,8 +111,10 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<Float64>) -> Float64 {
         do {
-            // TODO: Pass isSecret parameter based on variable.privacy
-            let resolved = try reader.requiredDouble(forKey: variable.key, isSecret: false)
+            let resolved = try reader.requiredDouble(
+                forKey: variable.key,
+                isSecret: variable.privacy.isPrivate
+            )
             // TODO: TelemetryAccessReporter posts success telemetry automatically
             return resolved
         } catch {
@@ -123,8 +132,10 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<[Bool]>) -> [Bool] {
         do {
-            // TODO: Pass isSecret parameter based on variable.privacy
-            let resolved = try reader.requiredBoolArray(forKey: variable.key, isSecret: false)
+            let resolved = try reader.requiredBoolArray(
+                forKey: variable.key,
+                isSecret: variable.privacy.isPrivate
+            )
             // TODO: TelemetryAccessReporter posts success telemetry automatically
             return resolved
         } catch {
@@ -140,8 +151,10 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<[String]>) -> [String] {
         do {
-            // TODO: Pass isSecret parameter based on variable.privacy
-            let resolved = try reader.requiredStringArray(forKey: variable.key, isSecret: false)
+            let resolved = try reader.requiredStringArray(
+                forKey: variable.key,
+                isSecret: variable.privacy.isPrivateForSensitiveTypes
+            )
             // TODO: TelemetryAccessReporter posts success telemetry automatically
             return resolved
         } catch {
@@ -157,8 +170,10 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<[Int]>) -> [Int] {
         do {
-            // TODO: Pass isSecret parameter based on variable.privacy
-            let resolved = try reader.requiredIntArray(forKey: variable.key, isSecret: false)
+            let resolved = try reader.requiredIntArray(
+                forKey: variable.key,
+                isSecret: variable.privacy.isPrivate
+            )
             // TODO: TelemetryAccessReporter posts success telemetry automatically
             return resolved
         } catch {
@@ -174,8 +189,10 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<[Float64]>) -> [Float64] {
         do {
-            // TODO: Pass isSecret parameter based on variable.privacy
-            let resolved = try reader.requiredDoubleArray(forKey: variable.key, isSecret: false)
+            let resolved = try reader.requiredDoubleArray(
+                forKey: variable.key,
+                isSecret: variable.privacy.isPrivate
+            )
             // TODO: TelemetryAccessReporter posts success telemetry automatically
             return resolved
         } catch {

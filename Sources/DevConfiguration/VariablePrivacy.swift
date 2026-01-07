@@ -29,3 +29,24 @@ public enum VariablePrivacy {
     /// telemetry, even if they are strings.
     case `public`
 }
+
+
+extension VariablePrivacy {
+    /// Returns `true` if this setting is explicitly `.private`.
+    var isPrivate: Bool {
+        self == .private
+    }
+
+
+    /// Returns `true` if sensitive types (like String) should be treated as private.
+    ///
+    /// This is equivalent to `.auto || .private`.
+    var isPrivateForSensitiveTypes: Bool {
+        switch self {
+        case .auto, .private:
+            return true
+        case .public:
+            return false
+        }
+    }
+}
