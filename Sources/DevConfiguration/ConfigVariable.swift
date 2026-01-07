@@ -37,6 +37,9 @@ public struct ConfigVariable<Value> {
     /// The fallback value returned when the variable cannot be resolved.
     public let fallback: Value
 
+    /// Whether this value should be treated as a secret.
+    public let privacy: VariablePrivacy
+
 
     /// Creates a configuration variable with the specified string key.
     ///
@@ -45,8 +48,9 @@ public struct ConfigVariable<Value> {
     /// - Parameters:
     ///   - key: The configuration key as a string (e.g., "feature.darkMode").
     ///   - fallback: The fallback value to use when variable resolution fails.
-    public init(key: String, fallback: Value) {
-        self.init(key: ConfigKey(key), fallback: fallback)
+    ///   - privacy: The privacy setting for this variable. Defaults to `.auto`.
+    public init(key: String, fallback: Value, privacy: VariablePrivacy = .auto) {
+        self.init(key: ConfigKey(key), fallback: fallback, privacy: privacy)
     }
 
 
@@ -57,8 +61,10 @@ public struct ConfigVariable<Value> {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - fallback: The fallback value to use when variable resolution fails.
-    public init(key: ConfigKey, fallback: Value) {
+    ///   - privacy: The privacy setting for this variable. Defaults to `.auto`.
+    public init(key: ConfigKey, fallback: Value, privacy: VariablePrivacy = .auto) {
         self.key = key
         self.fallback = fallback
+        self.privacy = privacy
     }
 }
