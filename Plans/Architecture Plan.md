@@ -166,6 +166,8 @@ Example events:
 ## Open Questions
 
 - Consumer-facing update signal: How does `StructuredConfigReader` notify consumers when values may have changed? (`@Observable`, `AsyncStream`, callback, or just re-access?)
+  - Answer: Use `watchSnapshot` to expose an update stream function on `StructuredConfigReader`, consider 
+    adding variable-wise watch functions in the future.
 - Does `ExpressibleByConfigString` support fallthrough on init failure? (assumed yes, needs verification)
 
 ---
