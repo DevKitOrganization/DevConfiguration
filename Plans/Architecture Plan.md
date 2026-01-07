@@ -109,13 +109,13 @@ public protocol StructuredConfigurationReading {
     func value(for variable: ConfigVariable<Bool>) -> Bool
     func value(for variable: ConfigVariable<String>) -> String
     func value(for variable: ConfigVariable<Int>) -> Int
-    func value(for variable: ConfigVariable<Double>) -> Double
+    func value(for variable: ConfigVariable<Float64>) -> Float64
 
     // Arrays
     func value(for variable: ConfigVariable<[Bool]>) -> [Bool]
     func value(for variable: ConfigVariable<[String]>) -> [String]
     func value(for variable: ConfigVariable<[Int]>) -> [Int]
-    func value(for variable: ConfigVariable<[Double]>) -> [Double]
+    func value(for variable: ConfigVariable<[Float64]>) -> [Float64]
 
     // Rich types
     func value<T: Codable>(for variable: ConfigVariable<T>) -> T
@@ -131,14 +131,14 @@ Resolution dispatches to swift-configuration's typed accessors (`requiredBool()`
 | `Bool` | `requiredBool(forKey:)` |
 | `String` | `requiredString(forKey:)` |
 | `Int` | `requiredInt(forKey:)` |
-| `Double` | `requiredDouble(forKey:)` |
+| `Float64` | `requiredDouble(forKey:)` |
 | `[Bool]` | `requiredBoolArray(forKey:)` |
 | `[String]` | `requiredStringArray(forKey:)` |
 | `[Int]` | `requiredIntArray(forKey:)` |
-| `[Double]` | `requiredDoubleArray(forKey:)` |
+| `[Float64]` | `requiredDoubleArray(forKey:)` |
 | `T: Codable` | String → JSON decode |
 
-No `Float` support — use `Double`. Rich types require `Codable` (not just `Decodable`) to support registration.
+- Note: Use `Float64` instead of `Double` in the interface to match DevFoundation.
 
 ---
 
