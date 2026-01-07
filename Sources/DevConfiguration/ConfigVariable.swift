@@ -25,7 +25,7 @@ import Configuration
 /// }
 /// ```
 ///
-/// Access values through a `StructuredConfigurationReading` instance:
+/// Access values through a `StructuredConfigReading` instance:
 ///
 /// ```swift
 /// let darkMode = reader.value(for: .darkMode)
