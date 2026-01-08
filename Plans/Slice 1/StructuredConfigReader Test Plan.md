@@ -4,10 +4,14 @@ Created by Duncan Lewis, 2026-01-07
 
 ## StructuredConfigReader
 
-### Initialization
-- init stores providers array
-- init stores eventBus reference
-- init creates ConfigReader with providers
+### Initialization (with eventBus)
+- init(providers:eventBus:) stores accessReporter reference
+- init(providers:eventBus:) creates TelemetryAccessReporter with eventBus
+- init(providers:eventBus:) creates ConfigReader with providers and accessReporter
+
+### Initialization (with accessReporter)
+- init(providers:accessReporter:) stores accessReporter reference
+- init(providers:accessReporter:) creates ConfigReader with providers and accessReporter
 
 ### Bool Overload
 - value(for:) returns provider value when available

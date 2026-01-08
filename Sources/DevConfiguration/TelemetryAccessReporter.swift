@@ -13,9 +13,9 @@ import DevFoundation
 /// This reporter converts configuration access events into bus events:
 ///   - Successful accesses post `DidAccessVariableBusEvent`
 ///   - Failed accesses post `DidFailToAccessVariableBusEvent`
-final class TelemetryAccessReporter: AccessReporter, Sendable {
+public final class TelemetryAccessReporter: AccessReporter, Sendable {
     /// The event bus that telemetry events are posted on.
-    let eventBus: EventBus
+    public let eventBus: EventBus
 
 
     /// Creates a new `TelemetryAccessReporter` with the specified event bus.
@@ -26,7 +26,7 @@ final class TelemetryAccessReporter: AccessReporter, Sendable {
     }
 
 
-    func report(_ event: AccessEvent) {
+    public func report(_ event: AccessEvent) {
         // Handle the result of the configuration access
         switch event.result {
         case .success(let configValue?):

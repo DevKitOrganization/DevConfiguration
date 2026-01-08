@@ -25,22 +25,38 @@ import DevFoundation
 ///
 /// TODO: Revisit top-level documentation
 public final class StructuredConfigReader {
-    /// The event bus that telemetry events are posted on.
-    public let eventBus: EventBus
+    /// The access reporter that is used to report configuration access events.
+    public let accessReporter: any AccessReporter
 
     /// The internal configuration reader that is used to resolve configuration values.
-    private let reader: ConfigReader
+    let reader: ConfigReader
 
 
-    /// Creates a new `StructuredConfigReader` with the specified parameters.
+    /// Creates a new `StructuredConfigReader` with the specified providers and the default telemetry access reporter.
+    ///
+    /// Use this initializer when you want to use the standard `TelemetryAccessReporter`.
     ///
     /// - Parameters:
     ///   - providers: The configuration providers, queried in order until a value is found.
     ///   - eventBus: The event bus that telemetry events are posted on.
-    public init(providers: [any ConfigProvider], eventBus: EventBus) {
-        self.eventBus = eventBus
-        // TODO: Add TelemetryAccessReporter integration
-        self.reader = ConfigReader(providers: providers)
+    public convenience init(providers: [any ConfigProvider], eventBus: EventBus) {
+        self.init(
+            providers: providers,
+            accessReporter: TelemetryAccessReporter(eventBus: eventBus)
+        )
+    }
+
+
+    /// Creates a new `StructuredConfigReader` with the specified providers and access reporter.
+    ///
+    /// Use this initializer when you want to directly control the access reporter used by the config reader.
+    ///
+    /// - Parameters:
+    ///   - providers: The configuration providers, queried in order until a value is found.
+    ///   - accessReporter: The access reporter that is used to report configuration access events.
+    public init(providers: [any ConfigProvider], accessReporter: any AccessReporter) {
+        self.accessReporter = accessReporter
+        self.reader = ConfigReader(providers: providers, accessReporter: accessReporter)
     }
 }
 
