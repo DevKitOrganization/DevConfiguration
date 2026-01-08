@@ -83,6 +83,6 @@ Created by Duncan Lewis, 2026-01-07
 - value(for:) with .private privacy passes isSecret: true
 - value(for:) with .public privacy passes isSecret: false
 
-### Telemetry (TODO)
-- Success telemetry via AccessReporter
-- Failure telemetry via VariableResolutionFailedBusEvent
+### Telemetry
+- Telemetry is handled by TelemetryAccessReporter (tested separately)
+- StructuredConfigReader only needs to verify it creates ConfigReader with TelemetryAccessReporter

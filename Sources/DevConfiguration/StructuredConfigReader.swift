@@ -54,14 +54,11 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<Bool>) -> Bool {
         do {
-            let resolved = try reader.requiredBool(
+            return try reader.requiredBool(
                 forKey: variable.key,
                 isSecret: variable.privacy.isPrivate
             )
-            // TODO: TelemetryAccessReporter posts success telemetry automatically
-            return resolved
         } catch {
-            // TODO: Post VariableResolutionFailedBusEvent
             return variable.fallback
         }
     }
@@ -73,14 +70,11 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<String>) -> String {
         do {
-            let resolved = try reader.requiredString(
+            return try reader.requiredString(
                 forKey: variable.key,
                 isSecret: variable.privacy.isPrivateForSensitiveTypes
             )
-            // TODO: TelemetryAccessReporter posts success telemetry automatically
-            return resolved
         } catch {
-            // TODO: Post VariableResolutionFailedBusEvent
             return variable.fallback
         }
     }
@@ -92,14 +86,11 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<Int>) -> Int {
         do {
-            let resolved = try reader.requiredInt(
+            return try reader.requiredInt(
                 forKey: variable.key,
                 isSecret: variable.privacy.isPrivate
             )
-            // TODO: TelemetryAccessReporter posts success telemetry automatically
-            return resolved
         } catch {
-            // TODO: Post VariableResolutionFailedBusEvent
             return variable.fallback
         }
     }
@@ -111,14 +102,11 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<Float64>) -> Float64 {
         do {
-            let resolved = try reader.requiredDouble(
+            return try reader.requiredDouble(
                 forKey: variable.key,
                 isSecret: variable.privacy.isPrivate
             )
-            // TODO: TelemetryAccessReporter posts success telemetry automatically
-            return resolved
         } catch {
-            // TODO: Post VariableResolutionFailedBusEvent
             return variable.fallback
         }
     }
@@ -132,14 +120,11 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<[Bool]>) -> [Bool] {
         do {
-            let resolved = try reader.requiredBoolArray(
+            return try reader.requiredBoolArray(
                 forKey: variable.key,
                 isSecret: variable.privacy.isPrivate
             )
-            // TODO: TelemetryAccessReporter posts success telemetry automatically
-            return resolved
         } catch {
-            // TODO: Post VariableResolutionFailedBusEvent
             return variable.fallback
         }
     }
@@ -151,14 +136,11 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<[String]>) -> [String] {
         do {
-            let resolved = try reader.requiredStringArray(
+            return try reader.requiredStringArray(
                 forKey: variable.key,
                 isSecret: variable.privacy.isPrivateForSensitiveTypes
             )
-            // TODO: TelemetryAccessReporter posts success telemetry automatically
-            return resolved
         } catch {
-            // TODO: Post VariableResolutionFailedBusEvent
             return variable.fallback
         }
     }
@@ -170,14 +152,11 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<[Int]>) -> [Int] {
         do {
-            let resolved = try reader.requiredIntArray(
+            return try reader.requiredIntArray(
                 forKey: variable.key,
                 isSecret: variable.privacy.isPrivate
             )
-            // TODO: TelemetryAccessReporter posts success telemetry automatically
-            return resolved
         } catch {
-            // TODO: Post VariableResolutionFailedBusEvent
             return variable.fallback
         }
     }
@@ -189,14 +168,11 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     public func value(for variable: ConfigVariable<[Float64]>) -> [Float64] {
         do {
-            let resolved = try reader.requiredDoubleArray(
+            return try reader.requiredDoubleArray(
                 forKey: variable.key,
                 isSecret: variable.privacy.isPrivate
             )
-            // TODO: TelemetryAccessReporter posts success telemetry automatically
-            return resolved
         } catch {
-            // TODO: Post VariableResolutionFailedBusEvent
             return variable.fallback
         }
     }
