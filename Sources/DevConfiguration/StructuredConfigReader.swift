@@ -10,20 +10,34 @@ import DevFoundation
 
 /// Provides structured access to configuration values queried by a `ConfigVariable`.
 ///
-/// ## Usage
+/// A structured config reader is a type-safe wrapper around swift-configuration's `ConfigReader`. It uses
+/// `ConfigVariable` instances to provide compile-time type safety and structured access to configuration values.
+/// The reader integrates with an access reporter to provide telemetry and observability for all configuration access.
 ///
-///     let providers: [any ConfigProvider] = [
-///         EnvironmentVariablesProvider()
-///     ]
+/// To use a structured config reader, first define your configuration variables using `ConfigVariable`. Each variable
+/// specifies its key, type, fallback value, and privacy level:
+///
+///     extension ConfigVariable where Value == Bool {
+///         static let darkMode = ConfigVariable(
+///             key: "dark_mode",
+///             fallback: false,
+///             privacy: .auto
+///         )
+///     }
+///
+/// Then create a reader with your providers and query the variable:
 ///
 ///     let reader = StructuredConfigReader(
-///         providers: providers,
+///         providers: [
+///             InMemoryProvider(values: ["dark_mode": "true"])
+///         ],
 ///         eventBus: eventBus
 ///     )
 ///
-///     let darkMode = reader.value(for: .darkMode)
+///     let darkMode = reader.value(for: .darkMode)  // true
 ///
-/// TODO: Revisit top-level documentation
+/// The reader never throws. If resolution fails, it returns the variable's fallback value and posts a
+/// `DidFailToAccessVariableBusEvent` to the event bus.
 public final class StructuredConfigReader {
     /// The access reporter that is used to report configuration access events.
     public let accessReporter: any AccessReporter
