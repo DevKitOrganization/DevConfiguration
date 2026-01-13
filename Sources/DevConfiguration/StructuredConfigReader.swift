@@ -15,12 +15,12 @@ import DevFoundation
 /// The reader integrates with an access reporter to provide telemetry and observability for all configuration access.
 ///
 /// To use a structured config reader, first define your configuration variables using `ConfigVariable`. Each variable
-/// specifies its key, type, fallback value, and privacy level:
+/// specifies its key, type, default value, and privacy level:
 ///
 ///     extension ConfigVariable where Value == Bool {
 ///         static let darkMode = ConfigVariable(
 ///             key: "dark_mode",
-///             fallback: false,
+///             defaultValue: false,
 ///             privacy: .auto
 ///         )
 ///     }
@@ -36,8 +36,8 @@ import DevFoundation
 ///
 ///     let darkMode = reader[.darkMode]  // true
 ///
-/// The reader never throws. If resolution fails, it returns the variable's fallback value and posts a
-/// `DidFailToAccessVariableBusEvent` to the event bus.
+/// The reader never throws. If resolution fails, it returns the variable's default value and posts a
+/// `DidFailToAccessConfigVariableEvent` to the event bus.
 public final class StructuredConfigReader {
     /// The access reporter that is used to report configuration access events.
     public let accessReporter: any AccessReporter
@@ -81,7 +81,7 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// Gets the value for the specified `ConfigVariable<Bool>`.
     ///
     /// - Parameter variable: The variable to get a boolean value for.
-    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
     public func value(for variable: ConfigVariable<Bool>) -> Bool {
         do {
             return try reader.requiredBool(
@@ -89,7 +89,7 @@ extension StructuredConfigReader: StructuredConfigReading {
                 isSecret: variable.privacy.isPrivate
             )
         } catch {
-            return variable.fallback
+            return variable.defaultValue
         }
     }
 
@@ -97,7 +97,7 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// Gets the value for the specified `ConfigVariable<String>`.
     ///
     /// - Parameter variable: The variable to get a string value for.
-    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
     public func value(for variable: ConfigVariable<String>) -> String {
         do {
             return try reader.requiredString(
@@ -105,7 +105,7 @@ extension StructuredConfigReader: StructuredConfigReading {
                 isSecret: variable.privacy.isPrivateForSensitiveTypes
             )
         } catch {
-            return variable.fallback
+            return variable.defaultValue
         }
     }
 
@@ -113,7 +113,7 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// Gets the value for the specified `ConfigVariable<Int>`.
     ///
     /// - Parameter variable: The variable to get an integer value for.
-    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
     public func value(for variable: ConfigVariable<Int>) -> Int {
         do {
             return try reader.requiredInt(
@@ -121,7 +121,7 @@ extension StructuredConfigReader: StructuredConfigReading {
                 isSecret: variable.privacy.isPrivate
             )
         } catch {
-            return variable.fallback
+            return variable.defaultValue
         }
     }
 
@@ -129,7 +129,7 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// Gets the value for the specified `ConfigVariable<Float64>`.
     ///
     /// - Parameter variable: The variable to get a float64 value for.
-    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
     public func value(for variable: ConfigVariable<Float64>) -> Float64 {
         do {
             return try reader.requiredDouble(
@@ -137,7 +137,7 @@ extension StructuredConfigReader: StructuredConfigReading {
                 isSecret: variable.privacy.isPrivate
             )
         } catch {
-            return variable.fallback
+            return variable.defaultValue
         }
     }
 
@@ -147,7 +147,7 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// Gets the value for the specified `ConfigVariable<[Bool]>`.
     ///
     /// - Parameter variable: The variable to get a boolean array value for.
-    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
     public func value(for variable: ConfigVariable<[Bool]>) -> [Bool] {
         do {
             return try reader.requiredBoolArray(
@@ -155,7 +155,7 @@ extension StructuredConfigReader: StructuredConfigReading {
                 isSecret: variable.privacy.isPrivate
             )
         } catch {
-            return variable.fallback
+            return variable.defaultValue
         }
     }
 
@@ -163,7 +163,7 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// Gets the value for the specified `ConfigVariable<[String]>`.
     ///
     /// - Parameter variable: The variable to get a string array value for.
-    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
     public func value(for variable: ConfigVariable<[String]>) -> [String] {
         do {
             return try reader.requiredStringArray(
@@ -171,7 +171,7 @@ extension StructuredConfigReader: StructuredConfigReading {
                 isSecret: variable.privacy.isPrivateForSensitiveTypes
             )
         } catch {
-            return variable.fallback
+            return variable.defaultValue
         }
     }
 
@@ -179,7 +179,7 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// Gets the value for the specified `ConfigVariable<[Int]>`.
     ///
     /// - Parameter variable: The variable to get an integer array value for.
-    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
     public func value(for variable: ConfigVariable<[Int]>) -> [Int] {
         do {
             return try reader.requiredIntArray(
@@ -187,7 +187,7 @@ extension StructuredConfigReader: StructuredConfigReading {
                 isSecret: variable.privacy.isPrivate
             )
         } catch {
-            return variable.fallback
+            return variable.defaultValue
         }
     }
 
@@ -195,7 +195,7 @@ extension StructuredConfigReader: StructuredConfigReading {
     /// Gets the value for the specified `ConfigVariable<[Float64]>`.
     ///
     /// - Parameter variable: The variable to get a float64 array value for.
-    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
     public func value(for variable: ConfigVariable<[Float64]>) -> [Float64] {
         do {
             return try reader.requiredDoubleArray(
@@ -203,7 +203,7 @@ extension StructuredConfigReader: StructuredConfigReading {
                 isSecret: variable.privacy.isPrivate
             )
         } catch {
-            return variable.fallback
+            return variable.defaultValue
         }
     }
 }

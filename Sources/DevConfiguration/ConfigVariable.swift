@@ -7,9 +7,9 @@
 
 import Configuration
 
-/// A type-safe variable definition with a fallback value.
+/// A type-safe variable definition with a default value.
 ///
-/// `ConfigVariable` encapsulates a configuration key and its fallback value,
+/// `ConfigVariable` encapsulates a configuration key and its default value,
 /// providing compile-time type safety for configuration access.
 ///
 /// ## Usage
@@ -20,7 +20,7 @@ import Configuration
 /// extension ConfigVariable where Value == Bool {
 ///     static let darkMode = ConfigVariable(
 ///         key: "feature.darkMode",
-///         fallback: false
+///         defaultValue: false
 ///     )
 /// }
 /// ```
@@ -28,14 +28,14 @@ import Configuration
 /// Access values through a `StructuredConfigReading` instance:
 ///
 /// ```swift
-/// let darkMode = reader.value(for: .darkMode)
+/// let darkMode = reader[.darkMode]
 /// ```
 public struct ConfigVariable<Value> {
     /// The configuration key used to look up this variable's value.
     public let key: ConfigKey
 
-    /// The fallback value returned when the variable cannot be resolved.
-    public let fallback: Value
+    /// The default value returned when the variable cannot be resolved.
+    public let defaultValue: Value
 
     /// Whether this value should be treated as a secret.
     public let privacy: VariablePrivacy
@@ -47,10 +47,10 @@ public struct ConfigVariable<Value> {
     ///
     /// - Parameters:
     ///   - key: The configuration key as a string (e.g., "feature.darkMode").
-    ///   - fallback: The fallback value to use when variable resolution fails.
+    ///   - defaultValue: The default value to use when variable resolution fails.
     ///   - privacy: The privacy setting for this variable. Defaults to `.auto`.
-    public init(key: String, fallback: Value, privacy: VariablePrivacy = .auto) {
-        self.init(key: ConfigKey(key), fallback: fallback, privacy: privacy)
+    public init(key: String, defaultValue: Value, privacy: VariablePrivacy = .auto) {
+        self.init(key: ConfigKey(key), defaultValue: defaultValue, privacy: privacy)
     }
 
 
@@ -60,11 +60,11 @@ public struct ConfigVariable<Value> {
     ///
     /// - Parameters:
     ///   - key: The configuration key.
-    ///   - fallback: The fallback value to use when variable resolution fails.
+    ///   - defaultValue: The default value to use when variable resolution fails.
     ///   - privacy: The privacy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, fallback: Value, privacy: VariablePrivacy = .auto) {
+    public init(key: ConfigKey, defaultValue: Value, privacy: VariablePrivacy = .auto) {
         self.key = key
-        self.fallback = fallback
+        self.defaultValue = defaultValue
         self.privacy = privacy
     }
 }
