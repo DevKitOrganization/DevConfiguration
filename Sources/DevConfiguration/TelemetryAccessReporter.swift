@@ -31,25 +31,25 @@ public final class TelemetryAccessReporter: AccessReporter, Sendable {
         switch event.result {
         case .success(let configValue?):
             eventBus.post(
-                DidAccessVariableBusEvent(
-                    key: event.metadata.key.description,
-                    value: configValue.content,
+                DidAccessConfigVariableEvent(
+                    key: event.metadata.key,
+                    value: configValue,
                     source: event.providerResults.first?.providerName ?? "unknown"
                 )
             )
 
         case .success(nil):
             eventBus.post(
-                DidFailToAccessVariableBusEvent(
-                    key: event.metadata.key.description,
+                DidFailToAccessConfigVariableEvent(
+                    key: event.metadata.key,
                     error: MissingValueError()
                 )
             )
 
         case .failure(let error):
             eventBus.post(
-                DidFailToAccessVariableBusEvent(
-                    key: event.metadata.key.description,
+                DidFailToAccessConfigVariableEvent(
+                    key: event.metadata.key,
                     error: error
                 )
             )
