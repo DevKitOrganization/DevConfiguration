@@ -66,4 +66,124 @@ public protocol StructuredConfigReading {
     /// - Parameter variable: The variable to get a float64 array value for.
     /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
     func value(for variable: ConfigVariable<[Float64]>) -> [Float64]
+
+
+    // MARK: - Subscript Access
+
+    /// Gets the value for the specified `ConfigVariable<Bool>`.
+    ///
+    /// - Parameter variable: The variable to get a boolean value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    subscript(variable: ConfigVariable<Bool>) -> Bool { get }
+
+    /// Gets the value for the specified `ConfigVariable<String>`.
+    ///
+    /// - Parameter variable: The variable to get a string value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    subscript(variable: ConfigVariable<String>) -> String { get }
+
+    /// Gets the value for the specified `ConfigVariable<Int>`.
+    ///
+    /// - Parameter variable: The variable to get an integer value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    subscript(variable: ConfigVariable<Int>) -> Int { get }
+
+    /// Gets the value for the specified `ConfigVariable<Float64>`.
+    ///
+    /// - Parameter variable: The variable to get a float64 value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    subscript(variable: ConfigVariable<Float64>) -> Float64 { get }
+
+    /// Gets the value for the specified `ConfigVariable<[Bool]>`.
+    ///
+    /// - Parameter variable: The variable to get a boolean array value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    subscript(variable: ConfigVariable<[Bool]>) -> [Bool] { get }
+
+    /// Gets the value for the specified `ConfigVariable<[String]>`.
+    ///
+    /// - Parameter variable: The variable to get a string array value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    subscript(variable: ConfigVariable<[String]>) -> [String] { get }
+
+    /// Gets the value for the specified `ConfigVariable<[Int]>`.
+    ///
+    /// - Parameter variable: The variable to get an integer array value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    subscript(variable: ConfigVariable<[Int]>) -> [Int] { get }
+
+    /// Gets the value for the specified `ConfigVariable<[Float64]>`.
+    ///
+    /// - Parameter variable: The variable to get a float64 array value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    subscript(variable: ConfigVariable<[Float64]>) -> [Float64] { get }
+}
+
+
+extension StructuredConfigReading {
+    // MARK: - Default Subscript Implementations
+
+    /// Gets the value for the specified `ConfigVariable<Bool>`.
+    ///
+    /// - Parameter variable: The variable to get a boolean value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    public subscript(variable: ConfigVariable<Bool>) -> Bool {
+        value(for: variable)
+    }
+
+    /// Gets the value for the specified `ConfigVariable<String>`.
+    ///
+    /// - Parameter variable: The variable to get a string value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    public subscript(variable: ConfigVariable<String>) -> String {
+        value(for: variable)
+    }
+
+    /// Gets the value for the specified `ConfigVariable<Int>`.
+    ///
+    /// - Parameter variable: The variable to get an integer value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    public subscript(variable: ConfigVariable<Int>) -> Int {
+        value(for: variable)
+    }
+
+    /// Gets the value for the specified `ConfigVariable<Float64>`.
+    ///
+    /// - Parameter variable: The variable to get a float64 value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    public subscript(variable: ConfigVariable<Float64>) -> Float64 {
+        value(for: variable)
+    }
+
+    /// Gets the value for the specified `ConfigVariable<[Bool]>`.
+    ///
+    /// - Parameter variable: The variable to get a boolean array value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    public subscript(variable: ConfigVariable<[Bool]>) -> [Bool] {
+        value(for: variable)
+    }
+
+    /// Gets the value for the specified `ConfigVariable<[String]>`.
+    ///
+    /// - Parameter variable: The variable to get a string array value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    public subscript(variable: ConfigVariable<[String]>) -> [String] {
+        value(for: variable)
+    }
+
+    /// Gets the value for the specified `ConfigVariable<[Int]>`.
+    ///
+    /// - Parameter variable: The variable to get an integer array value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    public subscript(variable: ConfigVariable<[Int]>) -> [Int] {
+        value(for: variable)
+    }
+
+    /// Gets the value for the specified `ConfigVariable<[Float64]>`.
+    ///
+    /// - Parameter variable: The variable to get a float64 array value for.
+    /// - Returns: The configuration value of the variable, or the fallback if resolution fails.
+    public subscript(variable: ConfigVariable<[Float64]>) -> [Float64] {
+        value(for: variable)
+    }
 }

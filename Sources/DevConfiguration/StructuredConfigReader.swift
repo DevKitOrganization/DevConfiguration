@@ -34,7 +34,7 @@ import DevFoundation
 ///         eventBus: eventBus
 ///     )
 ///
-///     let darkMode = reader.value(for: .darkMode)  // true
+///     let darkMode = reader[.darkMode]  // true
 ///
 /// The reader never throws. If resolution fails, it returns the variable's fallback value and posts a
 /// `DidFailToAccessVariableBusEvent` to the event bus.
