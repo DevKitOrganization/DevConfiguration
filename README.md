@@ -4,8 +4,8 @@ DevConfiguration is a type-safe configuration wrapper built on Apple's swift-con
 It provides structured configuration management with telemetry, extensible metadata, and a variable
 management interface.
 
-DevConfiguration is fully documented and tested and supports iOS 26+, macOS 26+, tvOS 26+, visionOS 26+,
-and watchOS 26+.
+DevConfiguration is fully documented and tested and supports iOS 26+, macOS 26+, tvOS 26+, visionOS
+26+, and watchOS 26+.
 
 View our [changelog](CHANGELOG.md) to see what’s new.
 
