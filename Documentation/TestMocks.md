@@ -1,16 +1,17 @@
 # Test Mock Documentation
 
-This document outlines the patterns and conventions for writing test mocks in Swift.
+This document outlines the patterns and conventions for writing test mocks in the DevConfiguration
+codebase.
 
-Its helpful to read the [Dependency Injection guide](DependencyInjection.md) before reading this
-guide, as it introduces core principles for how we think about dependency injection.
+Its helpful to read the [Dependency Injection guide](Documentation/DependencyInjection.md) before
+reading this guide, as it introduces core principles for how we think about dependency injection.
 
 
 ## Overview
 
-We use a consistent approach to mocking based on the DevTesting package’s `Stub` and `ThrowingStub`
-types. All mocks follow standardized patterns that make them predictable, testable, and
-maintainable.
+The codebase uses a consistent approach to mocking based on the DevTesting package’s `Stub` and
+`ThrowingStub` types. All mocks follow standardized patterns that make them predictable, testable,
+and maintainable.
 
 
 ## When to Mock vs. Use Types Directly
@@ -156,7 +157,7 @@ For testing error scenarios, use simple enum-based errors:
     ├── [PackageName]Tests/                     # Package-specific tests
     │   ├── Unit Tests/
     │   │   └── [ModuleName]                    # Feature-specific tests
-    │   │       └── [ProtocolName]Tests.swift   
+    │   │       └── [ProtocolName]Tests.swift
     │   └── Testing Support/                    # Mock objects and test utilities
     │       ├── Mock[ProtocolName].swift        # Mock implementations
     │       ├── MockError.swift                 # Test-specific error types
@@ -164,12 +165,12 @@ For testing error scenarios, use simple enum-based errors:
 
 #### File Placement Guidelines:
 
-- **Unit Test files**: Place in `Tests/[PackageName]/Unit Tests/`, matching the path of the source file in 
+- **Unit Test files**: Place in `Tests/[PackageName]/Unit Tests/`, matching the path of the source file in
   the directory structure under `Sources/`
 - **Mock objects**: Always place in `Tests/[PackageName]/Testing Support/` directories
 - **One mock per file**: Each protocol should have its own dedicated mock file
-- **Sharing mocks**: Do not share mocks between Packages. If the same Mock is needed across 
-  multiple packages, duplicate it. 
+- **Sharing mocks**: Do not share mocks between Packages. If the same Mock is needed across
+  multiple packages, duplicate it.
 
 ### Naming Conventions
 
@@ -206,15 +207,194 @@ When mocking types with custom initializers, use static stubs:
 For functions that might not be called in every test, provide default stub values:
 
     final class MockSubapp: Subapp {
-        // Initialize to non-nil to avoid crashes in tests that don’t configure this stub
+        // Initialize to non-nil to avoid crashes in tests that don't configure this stub
         nonisolated(unsafe) var installTelemetryBusEventHandlersStub: Stub<
             TelemetryBusEventObserver,
             Void
         > = .init()
     }
 
+**CRITICAL - Stubs Accessed by Internal Async Tasks:**
 
-### 3. Protocol Imports with @testable
+When testing types that spawn internal `Task`s during initialization, ALL stubs accessed by those
+tasks must be initialized in test setup, even if not directly tested. Failure to initialize stubs
+will cause crashes when the internal task tries to access them.
+
+This applies to ANY mock (Observable or not) whose stubs are accessed by background tasks.
+
+#### Why This is Required:
+
+When a type spawns internal `Task`s during initialization, those tasks may access properties or
+methods on injected dependencies. If those dependencies are mocks with force-unwrapped stubs, and
+the stubs haven't been initialized, the app will crash when the internal task tries to access them.
+
+**Example crash scenario:**
+
+    // Any mock type (Observable or not)
+    @MainActor
+    final class MockUser: User {
+        nonisolated(unsafe) var allSavesMembershipStub: Stub<String, Membership>!
+        var allSavesMembership: Membership {
+            allSavesMembershipStub(id)  // ❌ Crashes if stub is nil
+        }
+    }
+
+    // Type spawns internal task during init
+    init(user: any User) {
+        self.user = user
+        Task {
+            // This accesses user.allSavesMembership, triggering the stub
+            let membership = user.allSavesMembership
+        }
+    }
+
+    // Test doesn't initialize the stub
+    @Test
+    func myTest() {
+        let mockUser = MockUser()  // ❌ allSavesMembershipStub is nil
+        let viewModel = MyViewModel(user: mockUser)  // ❌ Crashes in internal task
+    }
+
+#### Solution Pattern: Initialize in Test Setup
+
+Initialize all stubs that internal tasks will access:
+
+    @MainActor
+    struct MyViewModelTests: RandomValueGenerating {
+        var mockUser = MockUser()
+
+        init() {
+            // CRITICAL: Initialize ALL stubs that the type's internal tasks will access
+            // Even if this particular test doesn't verify these stubs, they must be non-nil
+            mockUser.fetchAllSavesIfNeededStub = ThrowingStub(defaultError: nil)
+            mockUser.allSavesMembershipStub = Stub(defaultReturnValue: .unknown)
+        }
+
+        @Test
+        mutating func myTest() async throws {
+            // Create type that spawns internal tasks using mockUser
+            let viewModel = MyViewModel(user: mockUser, ...)
+            // ... test logic ...
+        }
+    }
+
+#### How to Identify Required Stubs:
+
+1. Look for `Task { }` blocks in the type's initializer
+2. Trace what properties/methods those tasks access on dependencies
+3. Initialize stubs for all accessed properties/methods in test `init()`
+4. Run tests - crashes will identify any missed stubs
+
+### 3. Prologue and Epilogue Closures for Execution Control
+
+For mock functions that need precise control over execution timing, use optional prologue and
+epilogue closures that execute before and after the stub.
+
+#### Prologue Pattern
+
+Prologues execute before the stub is called:
+
+    final class MockAnalyticsClient: AnalyticsClient {
+        nonisolated(unsafe) var sendEventsPrologue: (() async throws -> Void)?
+        nonisolated(unsafe) var sendEventsStub: ThrowingStub<
+            [Event],
+            Response,
+            any Error
+        >!
+
+
+        func sendEvents(_ events: [Event]) async throws -> Response {
+            try await sendEventsPrologue?()
+            return try sendEventsStub(events)
+        }
+    }
+
+#### Epilogue Pattern
+
+Epilogues execute after the stub is called. Run the epilogue in a `Task` within a `defer` block:
+
+    final class MockTelemetryEventLogger: TelemetryEventLogging {
+        nonisolated(unsafe) var logEventStub: Stub<Any, Void>!
+        nonisolated(unsafe) var logEventEpilogue: (() async throws -> Void)?
+
+
+        func logEvent(_ event: some TelemetryEvent) {
+            defer {
+                if let epilogue = logEventEpilogue {
+                    Task { try? await epilogue() }
+                }
+            }
+            logEventStub(event)
+        }
+    }
+
+#### Use Cases
+
+**Prologues** (execute before stub):
+
+  - **Block before processing**: Delay the mock from executing its core behavior
+  - **Test pre-call state**: Verify conditions before the mock operation begins
+  - **Insert delays**: Add artificial timing before processing
+  - **Coordinate setup**: Ensure test conditions are ready before mock executes
+
+**Epilogues** (execute after stub):
+
+  - **Signal completion**: Notify tests when the mock operation has finished
+  - **Test post-call state**: Verify conditions after the stub executes but before returning
+  - **Coordinate with background work**: Wait for fire-and-forget operations to complete
+
+#### Example: Blocking with AsyncStream
+
+    let (signalStream, signaler) = AsyncStream<Void>.makeStream()
+    mockClient.sendEventsPrologue = {
+        await signalStream.first(where: { _ in true })
+    }
+    mockClient.sendEventsStub = ThrowingStub(defaultResult: .success(.init()))
+
+    // Start operation that calls the mock
+    instance.performAction()
+
+    // Verify intermediate state while mock is blocked
+    await #expect(instance.isProcessing == true)
+
+    // Signal completion to unblock
+    signaler.yield()
+
+#### Example: Signaling Completion with Epilogue
+
+    let telemetryLogger = MockTelemetryEventLogger()
+    telemetryLogger.logEventStub = Stub()
+
+    let (signalStream, signaler) = AsyncStream<Void>.makeStream()
+    telemetryLogger.logEventEpilogue = {
+        signaler.yield()
+    }
+
+    // Call function that triggers the mock (e.g., via event bus handler)
+    eventBus.post(SomeEvent())
+
+    // Wait for mock to complete
+    await signalStream.first { _ in true }
+
+    // Verify the mock was called
+    #expect(telemetryLogger.logEventStub.calls.count == 1)
+
+#### Example: Adding Delays
+
+    mockClient.sendEventsPrologue = {
+        try await Task.sleep(for: .milliseconds(100))
+    }
+
+#### Benefits
+
+  - Separates timing control (prologue/epilogue) from return values/errors (stub)
+  - Enables testing at different execution phases (before/after stub)
+  - More precise than arbitrary `Task.sleep()` delays in tests
+  - Eliminates race conditions from timing-based coordination
+  - Optional - tests can ignore if timing control isn't needed
+
+
+### 4. Protocol Imports with @testable
 
 Import protocols under test with `@testable` when accessing internal details:
 

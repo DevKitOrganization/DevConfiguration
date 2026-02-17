@@ -30,6 +30,10 @@ let package = Package(
     targets: [
         .target(
             name: "DevConfiguration",
+            dependencies: [
+                .product(name: "Configuration", package: "swift-configuration"),
+                .product(name: "DevFoundation", package: "DevFoundation"),
+            ],
             swiftSettings: swiftSettings
         ),
         .testTarget(
