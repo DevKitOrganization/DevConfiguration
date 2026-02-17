@@ -1,5 +1,5 @@
 //
-//  DidAccessConfigVariableEvent.swift
+//  ConfigVariableAccessSucceededEvent.swift
 //  DevConfiguration
 //
 //  Created by Duncan Lewis on 1/7/2026.
@@ -8,8 +8,8 @@
 import Configuration
 import DevFoundation
 
-/// Posted when a configuration variable is successfully accessed.
-public struct DidAccessConfigVariableEvent: BusEvent {
+/// A bus event posted when a configuration variable is successfully accessed.
+public struct ConfigVariableAccessSucceededEvent: BusEvent {
     /// The configuration key that was accessed.
     public let key: AbsoluteConfigKey
 
@@ -17,18 +17,18 @@ public struct DidAccessConfigVariableEvent: BusEvent {
     public let value: ConfigValue
 
     /// The name of the provider that supplied the value.
-    public let source: String
+    public let providerName: String?
 
 
-    /// Creates a new `DidAccessConfigVariableEvent` with the specified parameters.
+    /// Creates a new `ConfigVariableAccessSucceededEvent` with the specified parameters.
     ///
     /// - Parameters:
     ///   - key: The configuration key that was accessed.
     ///   - value: The resolved configuration value.
-    ///   - source: The name of the provider that supplied the value.
-    public init(key: AbsoluteConfigKey, value: ConfigValue, source: String) {
+    ///   - providerName: The name of the provider that supplied the value.
+    public init(key: AbsoluteConfigKey, value: ConfigValue, providerName: String?) {
         self.key = key
         self.value = value
-        self.source = source
+        self.providerName = providerName
     }
 }

@@ -1,5 +1,5 @@
 //
-//  TelemetryAccessReporter.swift
+//  EventBusAccessReporter.swift
 //  DevConfiguration
 //
 //  Created by Duncan Lewis on 1/7/2026.
@@ -11,14 +11,15 @@ import DevFoundation
 /// An access reporter that posts access events to an event bus.
 ///
 /// This reporter converts configuration access events into bus events:
-///   - Successful accesses post `DidAccessVariableBusEvent`
-///   - Failed accesses post `DidFailToAccessVariableBusEvent`
-public final class TelemetryAccessReporter: AccessReporter, Sendable {
+///
+///   - Successful accesses post ``ConfigVariableAccessSucceededEvent``
+///   - Failed accesses post ``ConfigVariableAccessFailedEvent``
+public struct EventBusAccessReporter: AccessReporter {
     /// The event bus that telemetry events are posted on.
     public let eventBus: EventBus
 
 
-    /// Creates a new `TelemetryAccessReporter` with the specified event bus.
+    /// Creates a new `EventBusAccessReporter` with the specified event bus.
     ///
     /// - Parameter eventBus: The event bus that telemetry events are posted on.
     public init(eventBus: EventBus) {
@@ -31,16 +32,16 @@ public final class TelemetryAccessReporter: AccessReporter, Sendable {
         switch event.result {
         case .success(let configValue?):
             eventBus.post(
-                DidAccessConfigVariableEvent(
+                ConfigVariableAccessSucceededEvent(
                     key: event.metadata.key,
                     value: configValue,
-                    source: event.providerResults.first?.providerName ?? "unknown"
+                    providerName: event.providerResults.first?.providerName
                 )
             )
 
         case .success(nil):
             eventBus.post(
-                DidFailToAccessConfigVariableEvent(
+                ConfigVariableAccessFailedEvent(
                     key: event.metadata.key,
                     error: MissingValueError()
                 )
@@ -48,7 +49,7 @@ public final class TelemetryAccessReporter: AccessReporter, Sendable {
 
         case .failure(let error):
             eventBus.post(
-                DidFailToAccessConfigVariableEvent(
+                ConfigVariableAccessFailedEvent(
                     key: event.metadata.key,
                     error: error
                 )

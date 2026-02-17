@@ -1,5 +1,5 @@
 //
-//  DidFailToAccessConfigVariableEvent.swift
+//  ConfigVariableAccessFailedEvent.swift
 //  DevConfiguration
 //
 //  Created by Duncan Lewis on 1/7/2026.
@@ -8,8 +8,8 @@
 import Configuration
 import DevFoundation
 
-/// Posted when a configuration variable fails to resolve from any provider.
-public struct DidFailToAccessConfigVariableEvent: BusEvent {
+/// A bus event posted when a configuration variable fails to resolve from any provider.
+public struct ConfigVariableAccessFailedEvent: BusEvent {
     /// The configuration key that failed to resolve.
     public let key: AbsoluteConfigKey
 
@@ -17,7 +17,7 @@ public struct DidFailToAccessConfigVariableEvent: BusEvent {
     public let error: any Error
 
 
-    /// Creates a new `DidFailToAccessConfigVariableEvent` with the specified parameters.
+    /// Creates a new `ConfigVariableAccessFailedEvent` with the specified parameters.
     ///
     /// - Parameters:
     ///   - key: The configuration key that failed to resolve.

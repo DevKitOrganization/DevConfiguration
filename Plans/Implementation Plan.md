@@ -7,7 +7,7 @@ Created by Duncan Lewis, 2026-01-02
 ## Feature Inventory
 
 ### Sliced for Implementation
-- [ ] Slice 1: ConfigVariable + StructuredConfigReader + Telemetry
+- [X] Slice 1: ConfigVariable + StructuredConfigReader + Telemetry
 - [ ] Slice 2: Remote provider support + update signals
 - [ ] Slice 3: Registration + Metadata + RegisteredVariablesProvider
 - [ ] Slice 4: Editor UI
@@ -34,7 +34,7 @@ Created by Duncan Lewis, 2026-01-02
 - StructuredConfigurationReading protocol (8 method overloads: 4 primitives + 4 arrays)
 - StructuredConfigReader (single public type):
   - Init with providers array + eventBus (consumers pass their own providers)
-  - TelemetryAccessReporter integration (AccessReporter protocol)
+  - EventBusAccessReporter integration (AccessReporter protocol)
   - Protocol extension implementations using required accessors (requiredBool(), requiredStringArray(), etc.)
   - Error handling: catch errors, return fallback
   - Composes ConfigReader internally
@@ -109,7 +109,7 @@ Consumers pass their own provider array. Typical precedence pattern:
 
 ### Telemetry Behavior
 - Emitted via EventBus (passed at init)
-- Success: Posted automatically via TelemetryAccessReporter (AccessReporter integration)
+- Success: Posted automatically via EventBusAccessReporter (AccessReporter integration)
 - Failure: Posted directly from catch blocks
 - Uses ConfigContent from swift-configuration (not custom enum)
 - Errors don't propagate to callers

@@ -31,7 +31,7 @@ extension ConfigVariable where Value == Bool {
 public struct ConfigVariable<Value> {
     public let key: ConfigKey  // From swift-configuration
     public let fallback: Value
-    public let privacy: VariablePrivacy
+    public let secrecy: ConfigVariableSecrecy
     private var metadata: VariableMetadata
 
     // Convenience: string → ConfigKey
@@ -184,7 +184,7 @@ Typed accessor that bridges `ConfigVariable<T>` to swift-configuration's `Config
 public final class StructuredConfigReader: StructuredConfigurationReading {
     private let reader: ConfigReader
     private let eventBus: EventBus
-    private let accessReporter: TelemetryAccessReporter
+    private let accessReporter: EventBusAccessReporter
 
     /// Initialize with custom provider array
     /// Internally appends RegisteredVariablesProvider to end of array (lowest precedence)
