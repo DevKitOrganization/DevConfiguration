@@ -242,6 +242,8 @@ extension ConfigVariableReader {
     ///
     /// - Parameters:
     ///   - variable: The variable to watch for updates.
+    ///   - fileID: The source file identifier for access reporting.
+    ///   - line: The source line number for access reporting.
     ///   - updatesHandler: A closure that handles an async sequence of updates to the value.
     /// - Returns: The result produced by the handler.
     public func watchValue<Value, Return>(
@@ -267,6 +269,8 @@ extension ConfigVariableReader {
     ///
     /// - Parameters:
     ///   - variable: The variable to watch for updates.
+    ///   - fileID: The source file identifier for access reporting.
+    ///   - line: The source line number for access reporting.
     ///   - updatesHandler: A closure that handles an async sequence of updates to the value.
     /// - Returns: The result produced by the handler.
     public func watchValue<Element, Return>(
