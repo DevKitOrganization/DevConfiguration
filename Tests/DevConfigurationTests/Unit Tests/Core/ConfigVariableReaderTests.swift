@@ -8,7 +8,6 @@
 import Configuration
 import DevFoundation
 import DevTesting
-import Foundation
 import Testing
 
 @testable import DevConfiguration
@@ -43,14 +42,14 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
 
     @Test
-    mutating func fetchValueForBoolReturnsProviderValue() async {
-        await testFetchValueReturnsProviderValue(using: BoolTestHelper())
+    mutating func fetchValueForBoolReturnsProviderValue() async throws {
+        try await testFetchValueReturnsProviderValue(using: BoolTestHelper())
     }
 
 
     @Test
-    mutating func fetchValueForBoolReturnsDefaultWhenKeyNotFound() async {
-        await testFetchValueReturnsDefaultWhenKeyNotFound(using: BoolTestHelper())
+    mutating func fetchValueForBoolReturnsDefaultWhenKeyNotFound() async throws {
+        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: BoolTestHelper())
     }
 
 
@@ -66,41 +65,41 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
     }
 
 
-    // MARK: - Data tests
+    // MARK: - [Bool] tests
 
     @Test
-    mutating func valueForDataReturnsProviderValue() {
-        testValueReturnsProviderValue(using: DataTestHelper())
+    mutating func valueForBoolArrayReturnsProviderValue() {
+        testValueReturnsProviderValue(using: BoolArrayTestHelper())
     }
 
 
     @Test
-    mutating func valueForDataReturnsDefaultWhenKeyNotFound() {
-        testValueReturnsDefaultWhenKeyNotFound(using: DataTestHelper())
+    mutating func valueForBoolArrayReturnsDefaultWhenKeyNotFound() {
+        testValueReturnsDefaultWhenKeyNotFound(using: BoolArrayTestHelper())
     }
 
 
     @Test
-    mutating func fetchValueForDataReturnsProviderValue() async {
-        await testFetchValueReturnsProviderValue(using: DataTestHelper())
+    mutating func fetchValueForBoolArrayReturnsProviderValue() async throws {
+        try await testFetchValueReturnsProviderValue(using: BoolArrayTestHelper())
     }
 
 
     @Test
-    mutating func fetchValueForDataReturnsDefaultWhenKeyNotFound() async {
-        await testFetchValueReturnsDefaultWhenKeyNotFound(using: DataTestHelper())
+    mutating func fetchValueForBoolArrayReturnsDefaultWhenKeyNotFound() async throws {
+        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: BoolArrayTestHelper())
     }
 
 
     @Test
-    mutating func watchValueForDataReceivesUpdates() async throws {
-        try await testWatchValueReceivesUpdates(using: DataTestHelper())
+    mutating func watchValueForBoolArrayReceivesUpdates() async throws {
+        try await testWatchValueReceivesUpdates(using: BoolArrayTestHelper())
     }
 
 
     @Test
-    mutating func subscriptDataReturnsProviderValue() {
-        testSubscriptReturnsProviderValue(using: DataTestHelper())
+    mutating func subscriptBoolArrayReturnsProviderValue() {
+        testSubscriptReturnsProviderValue(using: BoolArrayTestHelper())
     }
 
 
@@ -119,14 +118,14 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
 
     @Test
-    mutating func fetchValueForFloat64ReturnsProviderValue() async {
-        await testFetchValueReturnsProviderValue(using: Float64TestHelper())
+    mutating func fetchValueForFloat64ReturnsProviderValue() async throws {
+        try await testFetchValueReturnsProviderValue(using: Float64TestHelper())
     }
 
 
     @Test
-    mutating func fetchValueForFloat64ReturnsDefaultWhenKeyNotFound() async {
-        await testFetchValueReturnsDefaultWhenKeyNotFound(using: Float64TestHelper())
+    mutating func fetchValueForFloat64ReturnsDefaultWhenKeyNotFound() async throws {
+        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: Float64TestHelper())
     }
 
 
@@ -139,6 +138,44 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
     @Test
     mutating func subscriptFloat64ReturnsProviderValue() {
         testSubscriptReturnsProviderValue(using: Float64TestHelper())
+    }
+
+
+    // MARK: - [Float64] tests
+
+    @Test
+    mutating func valueForFloat64ArrayReturnsProviderValue() {
+        testValueReturnsProviderValue(using: Float64ArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func valueForFloat64ArrayReturnsDefaultWhenKeyNotFound() {
+        testValueReturnsDefaultWhenKeyNotFound(using: Float64ArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func fetchValueForFloat64ArrayReturnsProviderValue() async throws {
+        try await testFetchValueReturnsProviderValue(using: Float64ArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func fetchValueForFloat64ArrayReturnsDefaultWhenKeyNotFound() async throws {
+        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: Float64ArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func watchValueForFloat64ArrayReceivesUpdates() async throws {
+        try await testWatchValueReceivesUpdates(using: Float64ArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func subscriptFloat64ArrayReturnsProviderValue() {
+        testSubscriptReturnsProviderValue(using: Float64ArrayTestHelper())
     }
 
 
@@ -157,14 +194,14 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
 
     @Test
-    mutating func fetchValueForIntReturnsProviderValue() async {
-        await testFetchValueReturnsProviderValue(using: IntTestHelper())
+    mutating func fetchValueForIntReturnsProviderValue() async throws {
+        try await testFetchValueReturnsProviderValue(using: IntTestHelper())
     }
 
 
     @Test
-    mutating func fetchValueForIntReturnsDefaultWhenKeyNotFound() async {
-        await testFetchValueReturnsDefaultWhenKeyNotFound(using: IntTestHelper())
+    mutating func fetchValueForIntReturnsDefaultWhenKeyNotFound() async throws {
+        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: IntTestHelper())
     }
 
 
@@ -177,6 +214,44 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
     @Test
     mutating func subscriptIntReturnsProviderValue() {
         testSubscriptReturnsProviderValue(using: IntTestHelper())
+    }
+
+
+    // MARK: - [Int] tests
+
+    @Test
+    mutating func valueForIntArrayReturnsProviderValue() {
+        testValueReturnsProviderValue(using: IntArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func valueForIntArrayReturnsDefaultWhenKeyNotFound() {
+        testValueReturnsDefaultWhenKeyNotFound(using: IntArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func fetchValueForIntArrayReturnsProviderValue() async throws {
+        try await testFetchValueReturnsProviderValue(using: IntArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func fetchValueForIntArrayReturnsDefaultWhenKeyNotFound() async throws {
+        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: IntArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func watchValueForIntArrayReceivesUpdates() async throws {
+        try await testWatchValueReceivesUpdates(using: IntArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func subscriptIntArrayReturnsProviderValue() {
+        testSubscriptReturnsProviderValue(using: IntArrayTestHelper())
     }
 
 
@@ -195,14 +270,14 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
 
     @Test
-    mutating func fetchValueForStringReturnsProviderValue() async {
-        await testFetchValueReturnsProviderValue(using: StringTestHelper())
+    mutating func fetchValueForStringReturnsProviderValue() async throws {
+        try await testFetchValueReturnsProviderValue(using: StringTestHelper())
     }
 
 
     @Test
-    mutating func fetchValueForStringReturnsDefaultWhenKeyNotFound() async {
-        await testFetchValueReturnsDefaultWhenKeyNotFound(using: StringTestHelper())
+    mutating func fetchValueForStringReturnsDefaultWhenKeyNotFound() async throws {
+        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: StringTestHelper())
     }
 
 
@@ -218,200 +293,124 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
     }
 
 
-    // MARK: - [Bool] tests
-
-    @Test
-    mutating func valueForBoolArrayReturnsProviderValue() {
-        testArrayValueReturnsProviderValue(using: BoolArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func valueForBoolArrayReturnsDefaultWhenKeyNotFound() {
-        testArrayValueReturnsDefaultWhenKeyNotFound(using: BoolArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func fetchValueForBoolArrayReturnsProviderValue() async {
-        await testArrayFetchValueReturnsProviderValue(using: BoolArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func fetchValueForBoolArrayReturnsDefaultWhenKeyNotFound() async {
-        await testArrayFetchValueReturnsDefaultWhenKeyNotFound(using: BoolArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func watchValueForBoolArrayReceivesUpdates() async throws {
-        try await testArrayWatchValueReceivesUpdates(using: BoolArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func subscriptBoolArrayReturnsProviderValue() {
-        testArraySubscriptReturnsProviderValue(using: BoolArrayTestHelper())
-    }
-
-
-    // MARK: - [Data] tests
-
-    @Test
-    mutating func valueForDataArrayReturnsProviderValue() {
-        testArrayValueReturnsProviderValue(using: DataArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func valueForDataArrayReturnsDefaultWhenKeyNotFound() {
-        testArrayValueReturnsDefaultWhenKeyNotFound(using: DataArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func fetchValueForDataArrayReturnsProviderValue() async {
-        await testArrayFetchValueReturnsProviderValue(using: DataArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func fetchValueForDataArrayReturnsDefaultWhenKeyNotFound() async {
-        await testArrayFetchValueReturnsDefaultWhenKeyNotFound(using: DataArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func watchValueForDataArrayReceivesUpdates() async throws {
-        try await testArrayWatchValueReceivesUpdates(using: DataArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func subscriptDataArrayReturnsProviderValue() {
-        testArraySubscriptReturnsProviderValue(using: DataArrayTestHelper())
-    }
-
-
-    // MARK: - [Float64] tests
-
-    @Test
-    mutating func valueForFloat64ArrayReturnsProviderValue() {
-        testArrayValueReturnsProviderValue(using: Float64ArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func valueForFloat64ArrayReturnsDefaultWhenKeyNotFound() {
-        testArrayValueReturnsDefaultWhenKeyNotFound(using: Float64ArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func fetchValueForFloat64ArrayReturnsProviderValue() async {
-        await testArrayFetchValueReturnsProviderValue(using: Float64ArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func fetchValueForFloat64ArrayReturnsDefaultWhenKeyNotFound() async {
-        await testArrayFetchValueReturnsDefaultWhenKeyNotFound(using: Float64ArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func watchValueForFloat64ArrayReceivesUpdates() async throws {
-        try await testArrayWatchValueReceivesUpdates(using: Float64ArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func subscriptFloat64ArrayReturnsProviderValue() {
-        testArraySubscriptReturnsProviderValue(using: Float64ArrayTestHelper())
-    }
-
-
-    // MARK: - [Int] tests
-
-    @Test
-    mutating func valueForIntArrayReturnsProviderValue() {
-        testArrayValueReturnsProviderValue(using: IntArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func valueForIntArrayReturnsDefaultWhenKeyNotFound() {
-        testArrayValueReturnsDefaultWhenKeyNotFound(using: IntArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func fetchValueForIntArrayReturnsProviderValue() async {
-        await testArrayFetchValueReturnsProviderValue(using: IntArrayTestHelper())
-    }
-
-    @Test
-    mutating func fetchValueForIntArrayReturnsDefaultWhenKeyNotFound() async {
-        await testArrayFetchValueReturnsDefaultWhenKeyNotFound(using: IntArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func watchValueForIntArrayReceivesUpdates() async throws {
-        try await testArrayWatchValueReceivesUpdates(using: IntArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func subscriptIntArrayReturnsProviderValue() {
-        testArraySubscriptReturnsProviderValue(using: IntArrayTestHelper())
-    }
-
-
     // MARK: - [String] tests
 
     @Test
     mutating func valueForStringArrayReturnsProviderValue() {
-        testArrayValueReturnsProviderValue(using: StringArrayTestHelper())
+        testValueReturnsProviderValue(using: StringArrayTestHelper())
     }
 
 
     @Test
     mutating func valueForStringArrayReturnsDefaultWhenKeyNotFound() {
-        testArrayValueReturnsDefaultWhenKeyNotFound(using: StringArrayTestHelper())
+        testValueReturnsDefaultWhenKeyNotFound(using: StringArrayTestHelper())
     }
 
 
     @Test
-    mutating func fetchValueForStringArrayReturnsProviderValue() async {
-        await testArrayFetchValueReturnsProviderValue(using: StringArrayTestHelper())
+    mutating func fetchValueForStringArrayReturnsProviderValue() async throws {
+        try await testFetchValueReturnsProviderValue(using: StringArrayTestHelper())
     }
 
+
     @Test
-    mutating func fetchValueForStringArrayReturnsDefaultWhenKeyNotFound() async {
-        await testArrayFetchValueReturnsDefaultWhenKeyNotFound(using: StringArrayTestHelper())
+    mutating func fetchValueForStringArrayReturnsDefaultWhenKeyNotFound() async throws {
+        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: StringArrayTestHelper())
     }
 
 
     @Test
     mutating func watchValueForStringArrayReceivesUpdates() async throws {
-        try await testArrayWatchValueReceivesUpdates(using: StringArrayTestHelper())
+        try await testWatchValueReceivesUpdates(using: StringArrayTestHelper())
     }
 
 
     @Test
     mutating func subscriptStringArrayReturnsProviderValue() {
-        testArraySubscriptReturnsProviderValue(using: StringArrayTestHelper())
+        testSubscriptReturnsProviderValue(using: StringArrayTestHelper())
+    }
+
+
+    // MARK: - [UInt8] tests
+
+    @Test
+    mutating func valueForBytesReturnsProviderValue() {
+        testValueReturnsProviderValue(using: BytesTestHelper())
+    }
+
+
+    @Test
+    mutating func valueForBytesReturnsDefaultWhenKeyNotFound() {
+        testValueReturnsDefaultWhenKeyNotFound(using: BytesTestHelper())
+    }
+
+
+    @Test
+    mutating func fetchValueForBytesReturnsProviderValue() async throws {
+        try await testFetchValueReturnsProviderValue(using: BytesTestHelper())
+    }
+
+
+    @Test
+    mutating func fetchValueForBytesReturnsDefaultWhenKeyNotFound() async throws {
+        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: BytesTestHelper())
+    }
+
+
+    @Test
+    mutating func watchValueForBytesReceivesUpdates() async throws {
+        try await testWatchValueReceivesUpdates(using: BytesTestHelper())
+    }
+
+
+    @Test
+    mutating func subscriptBytesReturnsProviderValue() {
+        testSubscriptReturnsProviderValue(using: BytesTestHelper())
+    }
+
+
+    // MARK: - [[UInt8]] tests
+
+    @Test
+    mutating func valueForByteChunkArrayReturnsProviderValue() {
+        testValueReturnsProviderValue(using: ByteChunkArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func valueForByteChunkArrayReturnsDefaultWhenKeyNotFound() {
+        testValueReturnsDefaultWhenKeyNotFound(using: ByteChunkArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func fetchValueForByteChunkArrayReturnsProviderValue() async throws {
+        try await testFetchValueReturnsProviderValue(using: ByteChunkArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func fetchValueForByteChunkArrayReturnsDefaultWhenKeyNotFound() async throws {
+        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: ByteChunkArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func watchValueForByteChunkArrayReceivesUpdates() async throws {
+        try await testWatchValueReceivesUpdates(using: ByteChunkArrayTestHelper())
+    }
+
+
+    @Test
+    mutating func subscriptByteChunkArrayReturnsProviderValue() {
+        testSubscriptReturnsProviderValue(using: ByteChunkArrayTestHelper())
     }
 
 
     // MARK: - Generic Test Helpers
 
     /// Tests that `value(for:)` returns the provider value when the key exists.
-    mutating func testValueReturnsProviderValue<Helper: ConfigValueTestHelper>(
-        using helper: Helper
-    ) where Helper: ConfigValueTestHelper {
+    mutating func testValueReturnsProviderValue<Helper: ReaderTestHelper>(using helper: Helper) {
         // set up
         let key = randomConfigKey()
         let expectedValue = helper.randomValue(using: &randomNumberGenerator)
@@ -426,7 +425,7 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
         )
 
         // exercise
-        let result = reader.value(for: variable)
+        let result = helper.getValue(from: reader, for: variable)
 
         // expect
         #expect(result == expectedValue)
@@ -434,16 +433,14 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
 
     /// Tests that `value(for:)` returns the default value when the key is not found.
-    mutating func testValueReturnsDefaultWhenKeyNotFound<Helper: ConfigValueTestHelper>(
-        using helper: Helper
-    ) where Helper: ConfigValueTestHelper {
+    mutating func testValueReturnsDefaultWhenKeyNotFound<Helper: ReaderTestHelper>(using helper: Helper) {
         // set up
         let key = randomConfigKey()
         let defaultValue = helper.randomValue(using: &randomNumberGenerator)
         let variable = ConfigVariable<Helper.Value>(key: key, defaultValue: defaultValue)
 
         // exercise
-        let result = reader.value(for: variable)
+        let result = helper.getValue(from: reader, for: variable)
 
         // expect
         #expect(result == defaultValue)
@@ -451,9 +448,9 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
 
     /// Tests that `fetchValue(for:)` returns the provider value when the key exists.
-    mutating func testFetchValueReturnsProviderValue<Helper: ConfigValueTestHelper>(
+    mutating func testFetchValueReturnsProviderValue<Helper: ReaderTestHelper>(
         using helper: Helper
-    ) async where Helper: ConfigValueTestHelper {
+    ) async throws {
         // set up
         let key = randomConfigKey()
         let expectedValue = helper.randomValue(using: &randomNumberGenerator)
@@ -468,7 +465,7 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
         )
 
         // exercise
-        let result = await reader.fetchValue(for: variable)
+        let result = try await helper.fetchValue(from: reader, for: variable)
 
         // expect
         #expect(result == expectedValue)
@@ -476,26 +473,26 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
 
     /// Tests that `fetchValue(for:)` returns the default value when the key is not found.
-    mutating func testFetchValueReturnsDefaultWhenKeyNotFound<Helper: ConfigValueTestHelper>(
+    mutating func testFetchValueReturnsDefaultWhenKeyNotFound<Helper: ReaderTestHelper>(
         using helper: Helper
-    ) async where Helper: ConfigValueTestHelper {
+    ) async throws {
         // set up
         let key = randomConfigKey()
         let defaultValue = helper.randomValue(using: &randomNumberGenerator)
         let variable = ConfigVariable<Helper.Value>(key: key, defaultValue: defaultValue)
 
         // exercise
-        let result = await reader.fetchValue(for: variable)
+        let result = try await helper.fetchValue(from: reader, for: variable)
 
         // expect
         #expect(result == defaultValue)
     }
 
 
-    /// Tests that `watchValue(for:)` receives updates when the provider value changes.
-    mutating func testWatchValueReceivesUpdates<Helper: ConfigValueTestHelper>(
+    /// Tests that `watchValue(for:updatesHandler:)` receives updates when the provider value changes.
+    mutating func testWatchValueReceivesUpdates<Helper: ReaderTestHelper>(
         using helper: Helper
-    ) async throws where Helper: ConfigValueTestHelper {
+    ) async throws {
         // set up
         let key = randomConfigKey()
         let initialValue = helper.randomValue(using: &randomNumberGenerator)
@@ -511,7 +508,7 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
         )
 
         // exercise and expect
-        try await reader.watchValue(for: variable) { (updates) in
+        try await helper.watchValue(from: reader, for: variable) { (updates) in
             var iterator = updates.makeAsyncIterator()
 
             // first value should be initial
@@ -535,9 +532,7 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
 
     /// Tests that subscript returns the provider value when the key exists.
-    mutating func testSubscriptReturnsProviderValue<Helper: ConfigValueTestHelper>(
-        using helper: Helper
-    ) where Helper: ConfigValueTestHelper {
+    mutating func testSubscriptReturnsProviderValue<Helper: ReaderTestHelper>(using helper: Helper) {
         // set up
         let key = randomConfigKey()
         let expectedValue = helper.randomValue(using: &randomNumberGenerator)
@@ -552,160 +547,7 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
         )
 
         // exercise
-        let result = reader[variable]
-
-        // expect
-        #expect(result == expectedValue)
-    }
-
-
-    // MARK: - Generic Array Test Helpers
-
-    /// Tests that `value(for:)` returns the provider value when the key exists for array types.
-    mutating func testArrayValueReturnsProviderValue<Helper>(
-        using helper: Helper
-    ) where Helper: ConfigArrayValueTestHelper {
-        // set up
-        let key = randomConfigKey()
-        let expectedValue = helper.randomValue(using: &randomNumberGenerator)
-        let defaultValue = helper.differentValue(from: expectedValue, using: &randomNumberGenerator)
-        let variable = ConfigVariable<[Helper.Element]>(key: key, defaultValue: defaultValue)
-        provider.setValue(
-            .init(
-                helper.configContent(for: expectedValue),
-                isSecret: randomBool()
-            ),
-            forKey: .init(key)
-        )
-
-        // exercise
-        let result = reader.value(for: variable)
-
-        // expect
-        #expect(result == expectedValue)
-    }
-
-
-    /// Tests that `value(for:)` returns the default value when the key is not found for array types.
-    mutating func testArrayValueReturnsDefaultWhenKeyNotFound<Helper>(
-        using helper: Helper
-    ) where Helper: ConfigArrayValueTestHelper {
-        // set up
-        let key = randomConfigKey()
-        let defaultValue = helper.randomValue(using: &randomNumberGenerator)
-        let variable = ConfigVariable<[Helper.Element]>(key: key, defaultValue: defaultValue)
-
-        // exercise
-        let result = reader.value(for: variable)
-
-        // expect
-        #expect(result == defaultValue)
-    }
-
-
-    /// Tests that `fetchValue(for:)` returns the provider value when the key exists for array types.
-    mutating func testArrayFetchValueReturnsProviderValue<Helper>(
-        using helper: Helper
-    ) async where Helper: ConfigArrayValueTestHelper {
-        // set up
-        let key = randomConfigKey()
-        let expectedValue = helper.randomValue(using: &randomNumberGenerator)
-        let defaultValue = helper.differentValue(from: expectedValue, using: &randomNumberGenerator)
-        let variable = ConfigVariable<[Helper.Element]>(key: key, defaultValue: defaultValue)
-        provider.setValue(
-            .init(
-                helper.configContent(for: expectedValue),
-                isSecret: randomBool()
-            ),
-            forKey: .init(key)
-        )
-
-        // exercise
-        let result = await reader.fetchValue(for: variable)
-
-        // expect
-        #expect(result == expectedValue)
-    }
-
-
-    /// Tests that `fetchValue(for:)` returns the default value when the key is not found for array types.
-    mutating func testArrayFetchValueReturnsDefaultWhenKeyNotFound<Helper>(
-        using helper: Helper
-    ) async where Helper: ConfigArrayValueTestHelper {
-        // set up
-        let key = randomConfigKey()
-        let defaultValue = helper.randomValue(using: &randomNumberGenerator)
-        let variable = ConfigVariable<[Helper.Element]>(key: key, defaultValue: defaultValue)
-
-        // exercise
-        let result = await reader.fetchValue(for: variable)
-
-        // expect
-        #expect(result == defaultValue)
-    }
-
-
-    /// Tests that `watchValue(for:)` receives updates when the provider value changes for array types.
-    mutating func testArrayWatchValueReceivesUpdates<Helper>(
-        using helper: Helper
-    ) async throws where Helper: ConfigArrayValueTestHelper {
-        // set up
-        let key = randomConfigKey()
-        let initialValue = helper.randomValue(using: &randomNumberGenerator)
-        let updatedValue = helper.differentValue(from: initialValue, using: &randomNumberGenerator)
-        let defaultValue = helper.differentValue(from: initialValue, using: &randomNumberGenerator)
-        let variable = ConfigVariable<[Helper.Element]>(key: key, defaultValue: defaultValue)
-        provider.setValue(
-            .init(
-                helper.configContent(for: initialValue),
-                isSecret: randomBool()
-            ),
-            forKey: .init(key)
-        )
-
-        // exercise and expect
-        try await reader.watchValue(for: variable) { (updates) in
-            var iterator = updates.makeAsyncIterator()
-
-            // first value should be initial
-            let value1 = try await iterator.next()
-            #expect(value1 == initialValue)
-
-            // update the provider
-            provider.setValue(
-                .init(
-                    helper.configContent(for: updatedValue),
-                    isSecret: randomBool()
-                ),
-                forKey: .init(key)
-            )
-
-            // next value should be updated
-            let value2 = try await iterator.next()
-            #expect(value2 == updatedValue)
-        }
-    }
-
-
-    /// Tests that subscript returns the provider value when the key exists for array types.
-    mutating func testArraySubscriptReturnsProviderValue<Helper>(
-        using helper: Helper
-    ) where Helper: ConfigArrayValueTestHelper {
-        // set up
-        let key = randomConfigKey()
-        let expectedValue = helper.randomValue(using: &randomNumberGenerator)
-        let defaultValue = helper.differentValue(from: expectedValue, using: &randomNumberGenerator)
-        let variable = ConfigVariable<[Helper.Element]>(key: key, defaultValue: defaultValue)
-        provider.setValue(
-            .init(
-                helper.configContent(for: expectedValue),
-                isSecret: randomBool()
-            ),
-            forKey: .init(key)
-        )
-
-        // exercise
-        let result = reader[variable]
+        let result = helper.subscriptValue(from: reader, for: variable)
 
         // expect
         #expect(result == expectedValue)
@@ -744,43 +586,19 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
         #expect(postedEvent.key == AbsoluteConfigKey(variable.key))
         #expect(postedEvent.value.content == .bool(expectedValue))
     }
-
-
-    @Test
-    mutating func valuePostsAccessFailedEventWhenNotFound() async throws {
-        // set up
-        let observer = ContextualBusEventObserver(context: ())
-        eventBus.addObserver(observer)
-
-        let key = randomConfigKey()
-        let defaultValue = randomBool()
-        let variable = ConfigVariable<Bool>(key: key, defaultValue: defaultValue)
-
-        let (eventStream, continuation) = AsyncStream<ConfigVariableAccessFailedEvent>.makeStream()
-        observer.addHandler(for: ConfigVariableAccessFailedEvent.self) { (event, _) in
-            continuation.yield(event)
-        }
-
-        // exercise
-        _ = reader.value(for: variable)
-
-        // expect
-        let postedEvent = try #require(await eventStream.first { _ in true })
-        #expect(postedEvent.key == AbsoluteConfigKey(variable.key))
-    }
 }
 
 
-// MARK: - ConfigValueTestHelper Protocol
+// MARK: - ReaderTestHelper Protocol
 
 /// A protocol that abstracts the type-specific details needed to test `ConfigVariableReader` with different value
 /// types.
 ///
-/// Conforming types provide the logic for generating random values, creating config content, and producing different
-/// values for testing default value fallback behavior.
-protocol ConfigValueTestHelper<Value> {
+/// Each conforming type encapsulates random value generation, config content conversion, and reader interaction for a
+/// specific value type.
+protocol ReaderTestHelper<Value> {
     /// The configuration value type being tested.
-    associatedtype Value: ConfigValueReadable & Equatable
+    associatedtype Value: Equatable & Sendable
 
     /// Generates a random value of the associated type.
     func randomValue(using generator: inout some RandomNumberGenerator) -> Value
@@ -790,33 +608,28 @@ protocol ConfigValueTestHelper<Value> {
 
     /// Converts the value to its corresponding `ConfigContent` representation.
     func configContent(for value: Value) -> ConfigContent
-}
 
+    /// Gets the value from the reader using `value(for:)`.
+    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Value>) -> Value
 
-// MARK: - ConfigArrayValueTestHelper Protocol
+    /// Fetches the value from the reader using `fetchValue(for:)`.
+    func fetchValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Value>) async throws -> Value
 
-/// A protocol that abstracts the type-specific details needed to test `ConfigVariableReader` with array value types.
-///
-/// This is separate from `ConfigValueTestHelper` because array types have their element type conform to
-/// `ConfigValueReadable`, not the array type itself.
-protocol ConfigArrayValueTestHelper<Element> {
-    /// The element type of the array being tested.
-    associatedtype Element: ConfigValueReadable & Equatable
+    /// Watches the value from the reader using `watchValue(for:updatesHandler:)`.
+    func watchValue<Return>(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<Value>,
+        updatesHandler: (ConfigUpdatesAsyncSequence<Value, Never>) async throws -> Return
+    ) async throws -> Return
 
-    /// Generates a random array value.
-    func randomValue(using generator: inout some RandomNumberGenerator) -> [Element]
-
-    /// Returns an array that is different from the provided array.
-    func differentValue(from value: [Element], using generator: inout some RandomNumberGenerator) -> [Element]
-
-    /// Converts the array to its corresponding `ConfigContent` representation.
-    func configContent(for value: [Element]) -> ConfigContent
+    /// Gets the value from the reader using the subscript.
+    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Value>) -> Value
 }
 
 
 // MARK: - BoolTestHelper
 
-private struct BoolTestHelper: ConfigValueTestHelper {
+private struct BoolTestHelper: ReaderTestHelper {
     func randomValue(using generator: inout some RandomNumberGenerator) -> Bool {
         Bool.random(using: &generator)
     }
@@ -830,32 +643,36 @@ private struct BoolTestHelper: ConfigValueTestHelper {
     func configContent(for value: Bool) -> ConfigContent {
         .bool(value)
     }
-}
 
 
-// MARK: - DataTestHelper
-
-private struct DataTestHelper: ConfigValueTestHelper {
-    func randomValue(using generator: inout some RandomNumberGenerator) -> Data {
-        let count = Int.random(in: 1 ... 32, using: &generator)
-        return Data.random(count: count, using: &generator)
+    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Bool>) -> Bool {
+        reader.value(for: variable)
     }
 
 
-    func differentValue(from value: Data, using generator: inout some RandomNumberGenerator) -> Data {
-        value + randomValue(using: &generator)
+    func fetchValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Bool>) async throws -> Bool {
+        try await reader.fetchValue(for: variable)
     }
 
 
-    func configContent(for value: Data) -> ConfigContent {
-        .bytes(Array(value))
+    func watchValue<Return>(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<Bool>,
+        updatesHandler: (ConfigUpdatesAsyncSequence<Bool, Never>) async throws -> Return
+    ) async throws -> Return {
+        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
+    }
+
+
+    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Bool>) -> Bool {
+        reader[variable]
     }
 }
 
 
 // MARK: - Float64TestHelper
 
-private struct Float64TestHelper: ConfigValueTestHelper {
+private struct Float64TestHelper: ReaderTestHelper {
     func randomValue(using generator: inout some RandomNumberGenerator) -> Float64 {
         Float64.random(in: 1 ... 100_000, using: &generator)
     }
@@ -869,12 +686,39 @@ private struct Float64TestHelper: ConfigValueTestHelper {
     func configContent(for value: Float64) -> ConfigContent {
         .double(value)
     }
+
+
+    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Float64>) -> Float64 {
+        reader.value(for: variable)
+    }
+
+
+    func fetchValue(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<Float64>
+    ) async throws -> Float64 {
+        try await reader.fetchValue(for: variable)
+    }
+
+
+    func watchValue<Return>(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<Float64>,
+        updatesHandler: (ConfigUpdatesAsyncSequence<Float64, Never>) async throws -> Return
+    ) async throws -> Return {
+        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
+    }
+
+
+    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Float64>) -> Float64 {
+        reader[variable]
+    }
 }
 
 
 // MARK: - IntTestHelper
 
-private struct IntTestHelper: ConfigValueTestHelper {
+private struct IntTestHelper: ReaderTestHelper {
     func randomValue(using generator: inout some RandomNumberGenerator) -> Int {
         Int.random(in: 1 ... 100_000, using: &generator)
     }
@@ -888,12 +732,36 @@ private struct IntTestHelper: ConfigValueTestHelper {
     func configContent(for value: Int) -> ConfigContent {
         .int(value)
     }
+
+
+    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Int>) -> Int {
+        reader.value(for: variable)
+    }
+
+
+    func fetchValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Int>) async throws -> Int {
+        try await reader.fetchValue(for: variable)
+    }
+
+
+    func watchValue<Return>(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<Int>,
+        updatesHandler: (ConfigUpdatesAsyncSequence<Int, Never>) async throws -> Return
+    ) async throws -> Return {
+        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
+    }
+
+
+    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Int>) -> Int {
+        reader[variable]
+    }
 }
 
 
 // MARK: - StringTestHelper
 
-private struct StringTestHelper: ConfigValueTestHelper {
+private struct StringTestHelper: ReaderTestHelper {
     func randomValue(using generator: inout some RandomNumberGenerator) -> String {
         let count = Int.random(in: 5 ... 20, using: &generator)
         return String.randomAlphanumeric(count: count, using: &generator)
@@ -908,12 +776,83 @@ private struct StringTestHelper: ConfigValueTestHelper {
     func configContent(for value: String) -> ConfigContent {
         .string(value)
     }
+
+
+    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<String>) -> String {
+        reader.value(for: variable)
+    }
+
+
+    func fetchValue(from reader: ConfigVariableReader, for variable: ConfigVariable<String>) async throws -> String {
+        try await reader.fetchValue(for: variable)
+    }
+
+
+    func watchValue<Return>(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<String>,
+        updatesHandler: (ConfigUpdatesAsyncSequence<String, Never>) async throws -> Return
+    ) async throws -> Return {
+        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
+    }
+
+
+    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<String>) -> String {
+        reader[variable]
+    }
+}
+
+
+// MARK: - BytesTestHelper
+
+private struct BytesTestHelper: ReaderTestHelper {
+    func randomValue(using generator: inout some RandomNumberGenerator) -> [UInt8] {
+        let count = Int.random(in: 1 ... 32, using: &generator)
+        return Array(count: count) { UInt8.random(in: .min ... .max, using: &generator) }
+    }
+
+
+    func differentValue(from value: [UInt8], using generator: inout some RandomNumberGenerator) -> [UInt8] {
+        value + randomValue(using: &generator)
+    }
+
+
+    func configContent(for value: [UInt8]) -> ConfigContent {
+        .bytes(value)
+    }
+
+
+    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[UInt8]>) -> [UInt8] {
+        reader.value(for: variable)
+    }
+
+
+    func fetchValue(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<[UInt8]>
+    ) async throws -> [UInt8] {
+        try await reader.fetchValue(for: variable)
+    }
+
+
+    func watchValue<Return>(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<[UInt8]>,
+        updatesHandler: (ConfigUpdatesAsyncSequence<[UInt8], Never>) async throws -> Return
+    ) async throws -> Return {
+        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
+    }
+
+
+    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[UInt8]>) -> [UInt8] {
+        reader[variable]
+    }
 }
 
 
 // MARK: - BoolArrayTestHelper
 
-private struct BoolArrayTestHelper: ConfigArrayValueTestHelper {
+private struct BoolArrayTestHelper: ReaderTestHelper {
     func randomValue(using generator: inout some RandomNumberGenerator) -> [Bool] {
         let count = Int.random(in: 1 ... 5, using: &generator)
         return Array(count: count) { Bool.random(using: &generator) }
@@ -928,35 +867,39 @@ private struct BoolArrayTestHelper: ConfigArrayValueTestHelper {
     func configContent(for value: [Bool]) -> ConfigContent {
         .boolArray(value)
     }
-}
 
 
-// MARK: - DataArrayTestHelper
-
-private struct DataArrayTestHelper: ConfigArrayValueTestHelper {
-    func randomValue(using generator: inout some RandomNumberGenerator) -> [Data] {
-        let count = Int.random(in: 1 ... 5, using: &generator)
-        return Array(count: count) {
-            let byteCount = Int.random(in: 1 ... 32, using: &generator)
-            return Data.random(count: byteCount, using: &generator)
-        }
+    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[Bool]>) -> [Bool] {
+        reader.value(for: variable)
     }
 
 
-    func differentValue(from value: [Data], using generator: inout some RandomNumberGenerator) -> [Data] {
-        value + randomValue(using: &generator)
+    func fetchValue(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<[Bool]>
+    ) async throws -> [Bool] {
+        try await reader.fetchValue(for: variable)
     }
 
 
-    func configContent(for value: [Data]) -> ConfigContent {
-        .byteChunkArray(value.map { Array($0) })
+    func watchValue<Return>(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<[Bool]>,
+        updatesHandler: (ConfigUpdatesAsyncSequence<[Bool], Never>) async throws -> Return
+    ) async throws -> Return {
+        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
+    }
+
+
+    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[Bool]>) -> [Bool] {
+        reader[variable]
     }
 }
 
 
 // MARK: - Float64ArrayTestHelper
 
-private struct Float64ArrayTestHelper: ConfigArrayValueTestHelper {
+private struct Float64ArrayTestHelper: ReaderTestHelper {
     func randomValue(using generator: inout some RandomNumberGenerator) -> [Float64] {
         let count = Int.random(in: 1 ... 5, using: &generator)
         return Array(count: count) { Float64.random(in: 1 ... 100_000, using: &generator) }
@@ -971,12 +914,39 @@ private struct Float64ArrayTestHelper: ConfigArrayValueTestHelper {
     func configContent(for value: [Float64]) -> ConfigContent {
         .doubleArray(value)
     }
+
+
+    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[Float64]>) -> [Float64] {
+        reader.value(for: variable)
+    }
+
+
+    func fetchValue(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<[Float64]>
+    ) async throws -> [Float64] {
+        try await reader.fetchValue(for: variable)
+    }
+
+
+    func watchValue<Return>(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<[Float64]>,
+        updatesHandler: (ConfigUpdatesAsyncSequence<[Float64], Never>) async throws -> Return
+    ) async throws -> Return {
+        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
+    }
+
+
+    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[Float64]>) -> [Float64] {
+        reader[variable]
+    }
 }
 
 
 // MARK: - IntArrayTestHelper
 
-private struct IntArrayTestHelper: ConfigArrayValueTestHelper {
+private struct IntArrayTestHelper: ReaderTestHelper {
     func randomValue(using generator: inout some RandomNumberGenerator) -> [Int] {
         let count = Int.random(in: 1 ... 5, using: &generator)
         return Array(count: count) { Int.random(in: 1 ... 100_000, using: &generator) }
@@ -991,12 +961,39 @@ private struct IntArrayTestHelper: ConfigArrayValueTestHelper {
     func configContent(for value: [Int]) -> ConfigContent {
         .intArray(value)
     }
+
+
+    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[Int]>) -> [Int] {
+        reader.value(for: variable)
+    }
+
+
+    func fetchValue(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<[Int]>
+    ) async throws -> [Int] {
+        try await reader.fetchValue(for: variable)
+    }
+
+
+    func watchValue<Return>(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<[Int]>,
+        updatesHandler: (ConfigUpdatesAsyncSequence<[Int], Never>) async throws -> Return
+    ) async throws -> Return {
+        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
+    }
+
+
+    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[Int]>) -> [Int] {
+        reader[variable]
+    }
 }
 
 
 // MARK: - StringArrayTestHelper
 
-private struct StringArrayTestHelper: ConfigArrayValueTestHelper {
+private struct StringArrayTestHelper: ReaderTestHelper {
     func randomValue(using generator: inout some RandomNumberGenerator) -> [String] {
         let count = Int.random(in: 1 ... 5, using: &generator)
         return Array(count: count) { String.randomAlphanumeric(count: count * 3, using: &generator) }
@@ -1004,11 +1001,88 @@ private struct StringArrayTestHelper: ConfigArrayValueTestHelper {
 
 
     func differentValue(from value: [String], using generator: inout some RandomNumberGenerator) -> [String] {
-        return value + randomValue(using: &generator)
+        value + randomValue(using: &generator)
     }
 
 
     func configContent(for value: [String]) -> ConfigContent {
         .stringArray(value)
+    }
+
+
+    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[String]>) -> [String] {
+        reader.value(for: variable)
+    }
+
+
+    func fetchValue(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<[String]>
+    ) async throws -> [String] {
+        try await reader.fetchValue(for: variable)
+    }
+
+
+    func watchValue<Return>(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<[String]>,
+        updatesHandler: (ConfigUpdatesAsyncSequence<[String], Never>) async throws -> Return
+    ) async throws -> Return {
+        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
+    }
+
+
+    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[String]>) -> [String] {
+        reader[variable]
+    }
+}
+
+
+// MARK: - ByteChunkArrayTestHelper
+
+private struct ByteChunkArrayTestHelper: ReaderTestHelper {
+    func randomValue(using generator: inout some RandomNumberGenerator) -> [[UInt8]] {
+        let count = Int.random(in: 1 ... 5, using: &generator)
+        return Array(count: count) {
+            let byteCount = Int.random(in: 1 ... 32, using: &generator)
+            return Array(count: byteCount) { UInt8.random(in: .min ... .max, using: &generator) }
+        }
+    }
+
+
+    func differentValue(from value: [[UInt8]], using generator: inout some RandomNumberGenerator) -> [[UInt8]] {
+        value + randomValue(using: &generator)
+    }
+
+
+    func configContent(for value: [[UInt8]]) -> ConfigContent {
+        .byteChunkArray(value)
+    }
+
+
+    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[[UInt8]]>) -> [[UInt8]] {
+        reader.value(for: variable)
+    }
+
+
+    func fetchValue(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<[[UInt8]]>
+    ) async throws -> [[UInt8]] {
+        try await reader.fetchValue(for: variable)
+    }
+
+
+    func watchValue<Return>(
+        from reader: ConfigVariableReader,
+        for variable: ConfigVariable<[[UInt8]]>,
+        updatesHandler: (ConfigUpdatesAsyncSequence<[[UInt8]], Never>) async throws -> Return
+    ) async throws -> Return {
+        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
+    }
+
+
+    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[[UInt8]]>) -> [[UInt8]] {
+        reader[variable]
     }
 }

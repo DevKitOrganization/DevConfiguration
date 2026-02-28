@@ -105,7 +105,7 @@ struct ConfigVariableMetadataTests: RandomValueGenerating {
     @Test
     mutating func displayTextForOptionalRawRepresentableReturnsRawValueWhenNotNil() {
         let value = randomCase(of: MetadataEnum.self)!
-        #expect(OptionalEnumMetadataKey.displayText(for: .valueB) == value.rawValue)
+        #expect(OptionalEnumMetadataKey.displayText(for: value) == value.rawValue)
     }
 
 
