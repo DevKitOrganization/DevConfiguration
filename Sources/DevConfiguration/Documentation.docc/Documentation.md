@@ -27,7 +27,3 @@ configuration management with extensible metadata, a variable management UI, and
 - ``EventBusAccessReporter``
 - ``ConfigVariableAccessSucceededEvent``
 - ``ConfigVariableAccessFailedEvent``
-
-### Supporting Types
-
-- ``ConfigValueReadable``

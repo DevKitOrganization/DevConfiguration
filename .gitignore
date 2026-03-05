@@ -6,4 +6,6 @@ DerivedData/
 .swiftpm/configuration/registries.json
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
+__pycache__/
 Open Sourcing/
+.claude/settings.local.json

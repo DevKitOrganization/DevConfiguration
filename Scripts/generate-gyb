@@ -1,0 +1,12 @@
+#!/bin/bash
+set -eu
+
+SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPTS_DIR/.." && pwd)"
+
+cd "$PROJECT_DIR"
+
+find . -name '*.gyb' | grep -v '.build/' | \
+    while read -r file; do \
+        "$SCRIPTS_DIR/gyb/gyb.py" --line-directive '' -o "${file%.gyb}" "$file"; \
+    done

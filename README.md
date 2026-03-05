@@ -22,10 +22,25 @@ public interfaces are fully documented and tested. We aim for overall test cover
 
 To set up the development environment:
 
-  1. Run `Scripts/install-git-hooks` to install pre-commit hooks that automatically check code
-    formatting.
+  1. Run `Scripts/install-git-hooks` to install pre-commit hooks that automatically check
+     code formatting.
   2. Use `Scripts/lint` to manually check code formatting at any time.
   3. Use `Scripts/format` to automatically format code.
+
+### Code Generation with GYB
+
+Some source files are generated using [GYB][GYB] (Generate Your Boilerplate) to reduce
+repetitive boilerplate. Generated `.swift` files are checked in so that contributors don't
+need to run GYB unless they modify a template. To regenerate after changing a `.gyb` template
+or `Scripts/gyb/gyb_utils.py`:
+
+    Scripts/generate-gyb
+
+Do not edit generated files directly — edit the `.gyb` template instead. See
+[Documentation/CodeGeneration.md](Documentation/CodeGeneration.md) for details on template
+syntax, type definitions, and workflows.
+
+[GYB]: https://github.com/apple/swift/blob/main/utils/gyb.py
 
 
 ## Bugs and Feature Requests

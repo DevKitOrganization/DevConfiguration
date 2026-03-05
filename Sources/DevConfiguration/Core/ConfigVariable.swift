@@ -26,6 +26,8 @@ import Configuration
 /// - `[Float64]` or `[Double]`
 /// - `[Int]`
 /// - `[String]`
+/// - Types conforming to `RawRepresentable<Int>` or `ExpressibleByConfigInt`
+/// - Types conforming to `RawRepresentable<String>` or `ExpressibleByConfigString`
 @dynamicMemberLookup
 public struct ConfigVariable<Value>: Sendable where Value: Sendable {
     /// The configuration key used to look up this variable's value.

@@ -23,7 +23,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-configuration", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-configuration", from: "1.1.0"),
         .package(url: "https://github.com/DevKitOrganization/DevFoundation.git", from: "1.7.0"),
         .package(url: "https://github.com/DevKitOrganization/DevTesting", from: "1.5.0"),
     ],
@@ -34,6 +34,9 @@ let package = Package(
                 .product(name: "Configuration", package: "swift-configuration"),
                 .product(name: "DevFoundation", package: "DevFoundation"),
             ],
+            exclude: [
+                "Core/ConfigVariableReader+Functions.swift.gyb",
+            ],
             swiftSettings: swiftSettings
         ),
         .testTarget(
@@ -41,6 +44,9 @@ let package = Package(
             dependencies: [
                 "DevConfiguration",
                 "DevTesting",
+            ],
+            exclude: [
+                "Unit Tests/Core/ConfigVariableReader+FunctionsTests.swift.gyb",
             ],
             swiftSettings: swiftSettings
         ),
