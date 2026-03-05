@@ -2,12 +2,13 @@
 //  ConfigVariableReaderTests.swift
 //  DevConfiguration
 //
-//  Created by Prachi Gauriar on 2/16/2026.
+//  Created by Prachi Gauriar on 2/16/26.
 //
 
 import Configuration
 import DevFoundation
 import DevTesting
+import Foundation
 import Testing
 
 @testable import DevConfiguration
@@ -26,156 +27,221 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
         ConfigVariableReader(providers: [provider], eventBus: eventBus)
     }()
 
+    /// Sets a value in the provider for the given key with a random `isSecret` flag.
+    private mutating func setProviderValue(_ content: ConfigContent, forKey key: ConfigKey) {
+        provider.setValue(
+            .init(content, isSecret: randomBool()),
+            forKey: .init(key)
+        )
+    }
+
+
+    // MARK: - isSecret
+
+    @Test(arguments: ConfigVariableSecrecy.allCases)
+    mutating func isSecret(secrecy: ConfigVariableSecrecy) {
+        let intVariable = ConfigVariable(
+            key: randomConfigKey(),
+            defaultValue: randomInt(in: .min ... .max),
+            secrecy: secrecy
+        )
+
+        let stringVariable = ConfigVariable(
+            key: randomConfigKey(),
+            defaultValue: randomAlphanumericString(),
+            secrecy: secrecy
+        )
+
+        let stringArrayVariable = ConfigVariable(
+            key: randomConfigKey(),
+            defaultValue: Array(count: randomInt(in: 0 ... 5)) { randomAlphanumericString() },
+            secrecy: secrecy
+        )
+
+        let rawRepresentableStringVariable = ConfigVariable(
+            key: randomConfigKey(),
+            defaultValue: MockStringEnum.allCases.randomElement(using: &randomNumberGenerator)!,
+            secrecy: secrecy
+        )
+
+        let rawRepresentableStringArrayVariable = ConfigVariable(
+            key: randomConfigKey(),
+            defaultValue: Array(count: randomInt(in: 0 ... 5)) {
+                MockStringEnum.allCases.randomElement(using: &randomNumberGenerator)!
+            },
+            secrecy: secrecy
+        )
+
+        let expressibleByConfigStringVariable = ConfigVariable(
+            key: randomConfigKey(),
+            defaultValue: MockConfigStringValue(configString: randomAlphanumericString())!,
+            secrecy: secrecy
+        )
+
+        let expressibleByConfigStringArrayVariable = ConfigVariable(
+            key: randomConfigKey(),
+            defaultValue: Array(count: randomInt(in: 0 ... 5)) {
+                MockConfigStringValue(configString: randomAlphanumericString())!
+            },
+            secrecy: secrecy
+        )
+
+        let rawRepresentableIntVariable = ConfigVariable(
+            key: randomConfigKey(),
+            defaultValue: MockIntEnum.allCases.randomElement(using: &randomNumberGenerator)!,
+            secrecy: secrecy
+        )
+
+        let rawRepresentableIntArrayVariable = ConfigVariable(
+            key: randomConfigKey(),
+            defaultValue: Array(count: randomInt(in: 0 ... 5)) {
+                MockIntEnum.allCases.randomElement(using: &randomNumberGenerator)!
+            },
+            secrecy: secrecy
+        )
+
+        let expressibleByConfigIntVariable = ConfigVariable(
+            key: randomConfigKey(),
+            defaultValue: MockConfigIntValue(configInt: randomInt(in: .min ... .max))!,
+            secrecy: secrecy
+        )
+
+        let expressibleByConfigIntArrayVariable = ConfigVariable(
+            key: randomConfigKey(),
+            defaultValue: Array(count: randomInt(in: 0 ... 5)) {
+                MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+            },
+            secrecy: secrecy
+        )
+
+        let isNotPublic = [.secret, .auto].contains(secrecy)
+        let isSecret = secrecy == .secret
+
+        let reader = ConfigVariableReader(providers: [InMemoryProvider(values: [:])], eventBus: EventBus())
+        #expect(reader.isSecret(intVariable) == isSecret)
+        #expect(reader.isSecret(stringVariable) == isNotPublic)
+        #expect(reader.isSecret(stringArrayVariable) == isNotPublic)
+        #expect(reader.isSecret(rawRepresentableStringVariable) == isNotPublic)
+        #expect(reader.isSecret(rawRepresentableStringArrayVariable) == isNotPublic)
+        #expect(reader.isSecret(expressibleByConfigStringVariable) == isNotPublic)
+        #expect(reader.isSecret(expressibleByConfigStringArrayVariable) == isNotPublic)
+        #expect(reader.isSecret(rawRepresentableIntVariable) == isSecret)
+        #expect(reader.isSecret(rawRepresentableIntArrayVariable) == isSecret)
+        #expect(reader.isSecret(expressibleByConfigIntVariable) == isSecret)
+        #expect(reader.isSecret(expressibleByConfigIntArrayVariable) == isSecret)
+    }
+
 
     // MARK: - Bool tests
 
     @Test
     mutating func valueForBoolReturnsProviderValue() {
-        testValueReturnsProviderValue(using: BoolTestHelper())
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomBool()
+        let defaultValue = !expectedValue
+        let variable = ConfigVariable<Bool>(key: key, defaultValue: defaultValue)
+        setProviderValue(.bool(expectedValue), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func valueForBoolReturnsDefaultWhenKeyNotFound() {
-        testValueReturnsDefaultWhenKeyNotFound(using: BoolTestHelper())
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = randomBool()
+        let variable = ConfigVariable<Bool>(key: key, defaultValue: defaultValue)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == defaultValue)
     }
 
 
     @Test
     mutating func fetchValueForBoolReturnsProviderValue() async throws {
-        try await testFetchValueReturnsProviderValue(using: BoolTestHelper())
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomBool()
+        let defaultValue = !expectedValue
+        let variable = ConfigVariable<Bool>(key: key, defaultValue: defaultValue)
+        setProviderValue(.bool(expectedValue), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func fetchValueForBoolReturnsDefaultWhenKeyNotFound() async throws {
-        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: BoolTestHelper())
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = randomBool()
+        let variable = ConfigVariable<Bool>(key: key, defaultValue: defaultValue)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == defaultValue)
     }
 
 
     @Test
     mutating func watchValueForBoolReceivesUpdates() async throws {
-        try await testWatchValueReceivesUpdates(using: BoolTestHelper())
+        // set up
+        let key = randomConfigKey()
+        let initialValue = randomBool()
+        let updatedValue = !initialValue
+        let defaultValue = randomBool()
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable<Bool>(key: key, defaultValue: defaultValue)
+        setProviderValue(.bool(initialValue), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.bool(updatedValue), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
     }
 
 
     @Test
     mutating func subscriptBoolReturnsProviderValue() {
-        testSubscriptReturnsProviderValue(using: BoolTestHelper())
-    }
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomBool()
+        let defaultValue = !expectedValue
+        let variable = ConfigVariable<Bool>(key: key, defaultValue: defaultValue)
+        setProviderValue(.bool(expectedValue), forKey: key)
 
+        // exercise
+        let result = reader[variable]
 
-    // MARK: - [Bool] tests
-
-    @Test
-    mutating func valueForBoolArrayReturnsProviderValue() {
-        testValueReturnsProviderValue(using: BoolArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func valueForBoolArrayReturnsDefaultWhenKeyNotFound() {
-        testValueReturnsDefaultWhenKeyNotFound(using: BoolArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func fetchValueForBoolArrayReturnsProviderValue() async throws {
-        try await testFetchValueReturnsProviderValue(using: BoolArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func fetchValueForBoolArrayReturnsDefaultWhenKeyNotFound() async throws {
-        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: BoolArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func watchValueForBoolArrayReceivesUpdates() async throws {
-        try await testWatchValueReceivesUpdates(using: BoolArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func subscriptBoolArrayReturnsProviderValue() {
-        testSubscriptReturnsProviderValue(using: BoolArrayTestHelper())
-    }
-
-
-    // MARK: - Float64 tests
-
-    @Test
-    mutating func valueForFloat64ReturnsProviderValue() {
-        testValueReturnsProviderValue(using: Float64TestHelper())
-    }
-
-
-    @Test
-    mutating func valueForFloat64ReturnsDefaultWhenKeyNotFound() {
-        testValueReturnsDefaultWhenKeyNotFound(using: Float64TestHelper())
-    }
-
-
-    @Test
-    mutating func fetchValueForFloat64ReturnsProviderValue() async throws {
-        try await testFetchValueReturnsProviderValue(using: Float64TestHelper())
-    }
-
-
-    @Test
-    mutating func fetchValueForFloat64ReturnsDefaultWhenKeyNotFound() async throws {
-        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: Float64TestHelper())
-    }
-
-
-    @Test
-    mutating func watchValueForFloat64ReceivesUpdates() async throws {
-        try await testWatchValueReceivesUpdates(using: Float64TestHelper())
-    }
-
-
-    @Test
-    mutating func subscriptFloat64ReturnsProviderValue() {
-        testSubscriptReturnsProviderValue(using: Float64TestHelper())
-    }
-
-
-    // MARK: - [Float64] tests
-
-    @Test
-    mutating func valueForFloat64ArrayReturnsProviderValue() {
-        testValueReturnsProviderValue(using: Float64ArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func valueForFloat64ArrayReturnsDefaultWhenKeyNotFound() {
-        testValueReturnsDefaultWhenKeyNotFound(using: Float64ArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func fetchValueForFloat64ArrayReturnsProviderValue() async throws {
-        try await testFetchValueReturnsProviderValue(using: Float64ArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func fetchValueForFloat64ArrayReturnsDefaultWhenKeyNotFound() async throws {
-        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: Float64ArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func watchValueForFloat64ArrayReceivesUpdates() async throws {
-        try await testWatchValueReceivesUpdates(using: Float64ArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func subscriptFloat64ArrayReturnsProviderValue() {
-        testSubscriptReturnsProviderValue(using: Float64ArrayTestHelper())
+        // expect
+        #expect(result == expectedValue)
     }
 
 
@@ -183,37 +249,197 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
     @Test
     mutating func valueForIntReturnsProviderValue() {
-        testValueReturnsProviderValue(using: IntTestHelper())
-    }
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomInt(in: .min ... .max)
+        let defaultValue = randomInt(in: .min ... .max)
+        let variable = ConfigVariable<Int>(key: key, defaultValue: defaultValue)
+        setProviderValue(.int(expectedValue), forKey: key)
 
+        // exercise
+        let result = reader.value(for: variable)
 
-    @Test
-    mutating func valueForIntReturnsDefaultWhenKeyNotFound() {
-        testValueReturnsDefaultWhenKeyNotFound(using: IntTestHelper())
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func fetchValueForIntReturnsProviderValue() async throws {
-        try await testFetchValueReturnsProviderValue(using: IntTestHelper())
-    }
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomInt(in: .min ... .max)
+        let defaultValue = randomInt(in: .min ... .max)
+        let variable = ConfigVariable<Int>(key: key, defaultValue: defaultValue)
+        setProviderValue(.int(expectedValue), forKey: key)
 
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
 
-    @Test
-    mutating func fetchValueForIntReturnsDefaultWhenKeyNotFound() async throws {
-        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: IntTestHelper())
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func watchValueForIntReceivesUpdates() async throws {
-        try await testWatchValueReceivesUpdates(using: IntTestHelper())
+        // set up
+        let key = randomConfigKey()
+        let initialValue = randomInt(in: .min ... .max)
+        let updatedValue = randomInt(in: .min ... .max)
+        let defaultValue = randomInt(in: .min ... .max)
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable<Int>(key: key, defaultValue: defaultValue)
+        setProviderValue(.int(initialValue), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.int(updatedValue), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
+    }
+
+
+    // MARK: - Float64 tests
+
+    @Test
+    mutating func valueForFloat64ReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomFloat64(in: -100_000 ... 100_000)
+        let defaultValue = randomFloat64(in: -100_000 ... 100_000)
+        let variable = ConfigVariable<Float64>(key: key, defaultValue: defaultValue)
+        setProviderValue(.double(expectedValue), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
-    mutating func subscriptIntReturnsProviderValue() {
-        testSubscriptReturnsProviderValue(using: IntTestHelper())
+    mutating func fetchValueForFloat64ReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomFloat64(in: -100_000 ... 100_000)
+        let defaultValue = randomFloat64(in: -100_000 ... 100_000)
+        let variable = ConfigVariable<Float64>(key: key, defaultValue: defaultValue)
+        setProviderValue(.double(expectedValue), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func watchValueForFloat64ReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = randomFloat64(in: -100_000 ... 100_000)
+        let updatedValue = randomFloat64(in: -100_000 ... 100_000)
+        let defaultValue = randomFloat64(in: -100_000 ... 100_000)
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable<Float64>(key: key, defaultValue: defaultValue)
+        setProviderValue(.double(initialValue), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.double(updatedValue), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
+    }
+
+
+    // MARK: - [Bool] tests
+
+    @Test
+    mutating func valueForBoolArrayReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomBoolArray()
+        let defaultValue = randomBoolArray()
+        let variable = ConfigVariable<[Bool]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.boolArray(expectedValue), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForBoolArrayReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomBoolArray()
+        let defaultValue = randomBoolArray()
+        let variable = ConfigVariable<[Bool]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.boolArray(expectedValue), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func watchValueForBoolArrayReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = randomBoolArray()
+        let updatedValue = randomBoolArray()
+        let defaultValue = randomBoolArray()
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable<[Bool]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.boolArray(initialValue), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.boolArray(updatedValue), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
     }
 
 
@@ -221,37 +447,131 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
     @Test
     mutating func valueForIntArrayReturnsProviderValue() {
-        testValueReturnsProviderValue(using: IntArrayTestHelper())
-    }
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomIntArray()
+        let defaultValue = randomIntArray()
+        let variable = ConfigVariable<[Int]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.intArray(expectedValue), forKey: key)
 
+        // exercise
+        let result = reader.value(for: variable)
 
-    @Test
-    mutating func valueForIntArrayReturnsDefaultWhenKeyNotFound() {
-        testValueReturnsDefaultWhenKeyNotFound(using: IntArrayTestHelper())
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func fetchValueForIntArrayReturnsProviderValue() async throws {
-        try await testFetchValueReturnsProviderValue(using: IntArrayTestHelper())
-    }
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomIntArray()
+        let defaultValue = randomIntArray()
+        let variable = ConfigVariable<[Int]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.intArray(expectedValue), forKey: key)
 
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
 
-    @Test
-    mutating func fetchValueForIntArrayReturnsDefaultWhenKeyNotFound() async throws {
-        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: IntArrayTestHelper())
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func watchValueForIntArrayReceivesUpdates() async throws {
-        try await testWatchValueReceivesUpdates(using: IntArrayTestHelper())
+        // set up
+        let key = randomConfigKey()
+        let initialValue = randomIntArray()
+        let updatedValue = randomIntArray()
+        let defaultValue = randomIntArray()
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable<[Int]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.intArray(initialValue), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.intArray(updatedValue), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
+    }
+
+
+    // MARK: - [Float64] tests
+
+    @Test
+    mutating func valueForFloat64ArrayReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomFloat64Array()
+        let defaultValue = randomFloat64Array()
+        let variable = ConfigVariable<[Float64]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.doubleArray(expectedValue), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
-    mutating func subscriptIntArrayReturnsProviderValue() {
-        testSubscriptReturnsProviderValue(using: IntArrayTestHelper())
+    mutating func fetchValueForFloat64ArrayReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomFloat64Array()
+        let defaultValue = randomFloat64Array()
+        let variable = ConfigVariable<[Float64]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.doubleArray(expectedValue), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func watchValueForFloat64ArrayReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = randomFloat64Array()
+        let updatedValue = randomFloat64Array()
+        let defaultValue = randomFloat64Array()
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable<[Float64]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.doubleArray(initialValue), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.doubleArray(updatedValue), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
     }
 
 
@@ -259,37 +579,112 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
     @Test
     mutating func valueForStringReturnsProviderValue() {
-        testValueReturnsProviderValue(using: StringTestHelper())
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomAlphanumericString()
+        let defaultValue = randomAlphanumericString()
+        let variable = ConfigVariable<String>(key: key, defaultValue: defaultValue)
+        setProviderValue(.string(expectedValue), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func valueForStringReturnsDefaultWhenKeyNotFound() {
-        testValueReturnsDefaultWhenKeyNotFound(using: StringTestHelper())
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = randomAlphanumericString()
+        let variable = ConfigVariable<String>(key: key, defaultValue: defaultValue)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == defaultValue)
     }
 
 
     @Test
     mutating func fetchValueForStringReturnsProviderValue() async throws {
-        try await testFetchValueReturnsProviderValue(using: StringTestHelper())
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomAlphanumericString()
+        let defaultValue = randomAlphanumericString()
+        let variable = ConfigVariable<String>(key: key, defaultValue: defaultValue)
+        setProviderValue(.string(expectedValue), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func fetchValueForStringReturnsDefaultWhenKeyNotFound() async throws {
-        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: StringTestHelper())
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = randomAlphanumericString()
+        let variable = ConfigVariable<String>(key: key, defaultValue: defaultValue)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == defaultValue)
     }
 
 
     @Test
     mutating func watchValueForStringReceivesUpdates() async throws {
-        try await testWatchValueReceivesUpdates(using: StringTestHelper())
+        // set up
+        let key = randomConfigKey()
+        let initialValue = randomAlphanumericString()
+        let updatedValue = randomAlphanumericString()
+        let defaultValue = randomAlphanumericString()
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable<String>(key: key, defaultValue: defaultValue)
+        setProviderValue(.string(initialValue), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.string(updatedValue), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
     }
 
 
     @Test
     mutating func subscriptStringReturnsProviderValue() {
-        testSubscriptReturnsProviderValue(using: StringTestHelper())
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomAlphanumericString()
+        let defaultValue = randomAlphanumericString()
+        let variable = ConfigVariable<String>(key: key, defaultValue: defaultValue)
+        setProviderValue(.string(expectedValue), forKey: key)
+
+        // exercise
+        let result = reader[variable]
+
+        // expect
+        #expect(result == expectedValue)
     }
 
 
@@ -297,37 +692,65 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
     @Test
     mutating func valueForStringArrayReturnsProviderValue() {
-        testValueReturnsProviderValue(using: StringArrayTestHelper())
-    }
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomStringArray()
+        let defaultValue = randomStringArray()
+        let variable = ConfigVariable<[String]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.stringArray(expectedValue), forKey: key)
 
+        // exercise
+        let result = reader.value(for: variable)
 
-    @Test
-    mutating func valueForStringArrayReturnsDefaultWhenKeyNotFound() {
-        testValueReturnsDefaultWhenKeyNotFound(using: StringArrayTestHelper())
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func fetchValueForStringArrayReturnsProviderValue() async throws {
-        try await testFetchValueReturnsProviderValue(using: StringArrayTestHelper())
-    }
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomStringArray()
+        let defaultValue = randomStringArray()
+        let variable = ConfigVariable<[String]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.stringArray(expectedValue), forKey: key)
 
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
 
-    @Test
-    mutating func fetchValueForStringArrayReturnsDefaultWhenKeyNotFound() async throws {
-        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: StringArrayTestHelper())
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func watchValueForStringArrayReceivesUpdates() async throws {
-        try await testWatchValueReceivesUpdates(using: StringArrayTestHelper())
-    }
+        // set up
+        let key = randomConfigKey()
+        let initialValue = randomStringArray()
+        let updatedValue = randomStringArray()
+        let defaultValue = randomStringArray()
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable<[String]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.stringArray(initialValue), forKey: key)
 
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
 
-    @Test
-    mutating func subscriptStringArrayReturnsProviderValue() {
-        testSubscriptReturnsProviderValue(using: StringArrayTestHelper())
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.stringArray(updatedValue), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
     }
 
 
@@ -335,37 +758,65 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
     @Test
     mutating func valueForBytesReturnsProviderValue() {
-        testValueReturnsProviderValue(using: BytesTestHelper())
-    }
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomBytes()
+        let defaultValue = randomBytes()
+        let variable = ConfigVariable<[UInt8]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.bytes(expectedValue), forKey: key)
 
+        // exercise
+        let result = reader.value(for: variable)
 
-    @Test
-    mutating func valueForBytesReturnsDefaultWhenKeyNotFound() {
-        testValueReturnsDefaultWhenKeyNotFound(using: BytesTestHelper())
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func fetchValueForBytesReturnsProviderValue() async throws {
-        try await testFetchValueReturnsProviderValue(using: BytesTestHelper())
-    }
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomBytes()
+        let defaultValue = randomBytes()
+        let variable = ConfigVariable<[UInt8]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.bytes(expectedValue), forKey: key)
 
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
 
-    @Test
-    mutating func fetchValueForBytesReturnsDefaultWhenKeyNotFound() async throws {
-        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: BytesTestHelper())
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func watchValueForBytesReceivesUpdates() async throws {
-        try await testWatchValueReceivesUpdates(using: BytesTestHelper())
-    }
+        // set up
+        let key = randomConfigKey()
+        let initialValue = randomBytes()
+        let updatedValue = randomBytes()
+        let defaultValue = randomBytes()
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable<[UInt8]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.bytes(initialValue), forKey: key)
 
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
 
-    @Test
-    mutating func subscriptBytesReturnsProviderValue() {
-        testSubscriptReturnsProviderValue(using: BytesTestHelper())
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.bytes(updatedValue), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
     }
 
 
@@ -373,184 +824,1218 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
     @Test
     mutating func valueForByteChunkArrayReturnsProviderValue() {
-        testValueReturnsProviderValue(using: ByteChunkArrayTestHelper())
-    }
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomByteChunkArray()
+        let defaultValue = randomByteChunkArray()
+        let variable = ConfigVariable<[[UInt8]]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.byteChunkArray(expectedValue), forKey: key)
 
+        // exercise
+        let result = reader.value(for: variable)
 
-    @Test
-    mutating func valueForByteChunkArrayReturnsDefaultWhenKeyNotFound() {
-        testValueReturnsDefaultWhenKeyNotFound(using: ByteChunkArrayTestHelper())
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func fetchValueForByteChunkArrayReturnsProviderValue() async throws {
-        try await testFetchValueReturnsProviderValue(using: ByteChunkArrayTestHelper())
-    }
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomByteChunkArray()
+        let defaultValue = randomByteChunkArray()
+        let variable = ConfigVariable<[[UInt8]]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.byteChunkArray(expectedValue), forKey: key)
 
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
 
-    @Test
-    mutating func fetchValueForByteChunkArrayReturnsDefaultWhenKeyNotFound() async throws {
-        try await testFetchValueReturnsDefaultWhenKeyNotFound(using: ByteChunkArrayTestHelper())
+        // expect
+        #expect(result == expectedValue)
     }
 
 
     @Test
     mutating func watchValueForByteChunkArrayReceivesUpdates() async throws {
-        try await testWatchValueReceivesUpdates(using: ByteChunkArrayTestHelper())
-    }
-
-
-    @Test
-    mutating func subscriptByteChunkArrayReturnsProviderValue() {
-        testSubscriptReturnsProviderValue(using: ByteChunkArrayTestHelper())
-    }
-
-
-    // MARK: - Generic Test Helpers
-
-    /// Tests that `value(for:)` returns the provider value when the key exists.
-    mutating func testValueReturnsProviderValue<Helper: ReaderTestHelper>(using helper: Helper) {
         // set up
         let key = randomConfigKey()
-        let expectedValue = helper.randomValue(using: &randomNumberGenerator)
-        let defaultValue = helper.differentValue(from: expectedValue, using: &randomNumberGenerator)
-        let variable = ConfigVariable<Helper.Value>(key: key, defaultValue: defaultValue)
-        provider.setValue(
-            .init(
-                helper.configContent(for: expectedValue),
-                isSecret: randomBool()
-            ),
-            forKey: .init(key)
-        )
-
-        // exercise
-        let result = helper.getValue(from: reader, for: variable)
-
-        // expect
-        #expect(result == expectedValue)
-    }
-
-
-    /// Tests that `value(for:)` returns the default value when the key is not found.
-    mutating func testValueReturnsDefaultWhenKeyNotFound<Helper: ReaderTestHelper>(using helper: Helper) {
-        // set up
-        let key = randomConfigKey()
-        let defaultValue = helper.randomValue(using: &randomNumberGenerator)
-        let variable = ConfigVariable<Helper.Value>(key: key, defaultValue: defaultValue)
-
-        // exercise
-        let result = helper.getValue(from: reader, for: variable)
-
-        // expect
-        #expect(result == defaultValue)
-    }
-
-
-    /// Tests that `fetchValue(for:)` returns the provider value when the key exists.
-    mutating func testFetchValueReturnsProviderValue<Helper: ReaderTestHelper>(
-        using helper: Helper
-    ) async throws {
-        // set up
-        let key = randomConfigKey()
-        let expectedValue = helper.randomValue(using: &randomNumberGenerator)
-        let defaultValue = helper.differentValue(from: expectedValue, using: &randomNumberGenerator)
-        let variable = ConfigVariable<Helper.Value>(key: key, defaultValue: defaultValue)
-        provider.setValue(
-            .init(
-                helper.configContent(for: expectedValue),
-                isSecret: randomBool()
-            ),
-            forKey: .init(key)
-        )
-
-        // exercise
-        let result = try await helper.fetchValue(from: reader, for: variable)
-
-        // expect
-        #expect(result == expectedValue)
-    }
-
-
-    /// Tests that `fetchValue(for:)` returns the default value when the key is not found.
-    mutating func testFetchValueReturnsDefaultWhenKeyNotFound<Helper: ReaderTestHelper>(
-        using helper: Helper
-    ) async throws {
-        // set up
-        let key = randomConfigKey()
-        let defaultValue = helper.randomValue(using: &randomNumberGenerator)
-        let variable = ConfigVariable<Helper.Value>(key: key, defaultValue: defaultValue)
-
-        // exercise
-        let result = try await helper.fetchValue(from: reader, for: variable)
-
-        // expect
-        #expect(result == defaultValue)
-    }
-
-
-    /// Tests that `watchValue(for:updatesHandler:)` receives updates when the provider value changes.
-    mutating func testWatchValueReceivesUpdates<Helper: ReaderTestHelper>(
-        using helper: Helper
-    ) async throws {
-        // set up
-        let key = randomConfigKey()
-        let initialValue = helper.randomValue(using: &randomNumberGenerator)
-        let updatedValue = helper.differentValue(from: initialValue, using: &randomNumberGenerator)
-        let defaultValue = helper.differentValue(from: initialValue, using: &randomNumberGenerator)
-        let variable = ConfigVariable<Helper.Value>(key: key, defaultValue: defaultValue)
-        provider.setValue(
-            .init(
-                helper.configContent(for: initialValue),
-                isSecret: randomBool()
-            ),
-            forKey: .init(key)
-        )
+        let initialValue = randomByteChunkArray()
+        let updatedValue = randomByteChunkArray()
+        let defaultValue = randomByteChunkArray()
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable<[[UInt8]]>(key: key, defaultValue: defaultValue)
+        setProviderValue(.byteChunkArray(initialValue), forKey: key)
 
         // exercise and expect
-        try await helper.watchValue(from: reader, for: variable) { (updates) in
+        try await reader.watchValue(for: variable) { updates in
             var iterator = updates.makeAsyncIterator()
 
-            // first value should be initial
-            let value1 = try await iterator.next()
+            let value1 = await iterator.next()
             #expect(value1 == initialValue)
 
-            // update the provider
             provider.setValue(
-                .init(
-                    helper.configContent(for: updatedValue),
-                    isSecret: randomBool()
-                ),
+                .init(.byteChunkArray(updatedValue), isSecret: isSecret),
                 forKey: .init(key)
             )
 
-            // next value should be updated
-            let value2 = try await iterator.next()
+            let value2 = await iterator.next()
             #expect(value2 == updatedValue)
         }
     }
 
 
-    /// Tests that subscript returns the provider value when the key exists.
-    mutating func testSubscriptReturnsProviderValue<Helper: ReaderTestHelper>(using helper: Helper) {
+    // MARK: - RawRepresentable<String> tests
+
+    @Test
+    mutating func valueForRawRepresentableStringReturnsProviderValue() {
         // set up
         let key = randomConfigKey()
-        let expectedValue = helper.randomValue(using: &randomNumberGenerator)
-        let defaultValue = helper.differentValue(from: expectedValue, using: &randomNumberGenerator)
-        let variable = ConfigVariable<Helper.Value>(key: key, defaultValue: defaultValue)
-        provider.setValue(
-            .init(
-                helper.configContent(for: expectedValue),
-                isSecret: randomBool()
-            ),
-            forKey: .init(key)
-        )
+        let expectedValue = randomCase(of: MockStringEnum.self)!
+        var defaultValue: MockStringEnum
+        repeat { defaultValue = randomCase(of: MockStringEnum.self)! } while defaultValue == expectedValue
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.string(expectedValue.rawValue), forKey: key)
 
         // exercise
-        let result = helper.subscriptValue(from: reader, for: variable)
+        let result = reader.value(for: variable)
 
         // expect
         #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func valueForRawRepresentableStringReturnsDefaultWhenKeyNotFound() {
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = randomCase(of: MockStringEnum.self)!
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == defaultValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForRawRepresentableStringReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomCase(of: MockStringEnum.self)!
+        var defaultValue: MockStringEnum
+        repeat { defaultValue = randomCase(of: MockStringEnum.self)! } while defaultValue == expectedValue
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.string(expectedValue.rawValue), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForRawRepresentableStringReturnsDefaultWhenKeyNotFound() async throws {
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = randomCase(of: MockStringEnum.self)!
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == defaultValue)
+    }
+
+
+    @Test
+    mutating func watchValueForRawRepresentableStringReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = randomCase(of: MockStringEnum.self)!
+        var differentValue: MockStringEnum
+        repeat { differentValue = randomCase(of: MockStringEnum.self)! } while differentValue == initialValue
+        let updatedValue = differentValue
+        let defaultValue = randomCase(of: MockStringEnum.self)!
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.string(initialValue.rawValue), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.string(updatedValue.rawValue), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
+    }
+
+
+    @Test
+    mutating func subscriptRawRepresentableStringReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomCase(of: MockStringEnum.self)!
+        var defaultValue: MockStringEnum
+        repeat { defaultValue = randomCase(of: MockStringEnum.self)! } while defaultValue == expectedValue
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.string(expectedValue.rawValue), forKey: key)
+
+        // exercise
+        let result = reader[variable]
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    // MARK: - [RawRepresentable<String>] tests
+
+    @Test
+    mutating func valueForRawRepresentableStringArrayReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockStringEnum.self)! }
+        let defaultValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockStringEnum.self)! }
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.stringArray(expectedValue.map(\.rawValue)), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForRawRepresentableStringArrayReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockStringEnum.self)! }
+        let defaultValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockStringEnum.self)! }
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.stringArray(expectedValue.map(\.rawValue)), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func watchValueForRawRepresentableStringArrayReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockStringEnum.self)! }
+        let updatedValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockStringEnum.self)! }
+        let defaultValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockStringEnum.self)! }
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.stringArray(initialValue.map(\.rawValue)), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.stringArray(updatedValue.map(\.rawValue)), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
+    }
+
+
+    // MARK: - ExpressibleByConfigString tests
+
+    @Test
+    mutating func valueForExpressibleByConfigStringReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = MockConfigStringValue(configString: randomAlphanumericString())!
+        let defaultValue = MockConfigStringValue(configString: randomAlphanumericString())!
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.string(expectedValue.description), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForExpressibleByConfigStringReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = MockConfigStringValue(configString: randomAlphanumericString())!
+        let defaultValue = MockConfigStringValue(configString: randomAlphanumericString())!
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.string(expectedValue.description), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func watchValueForExpressibleByConfigStringReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = MockConfigStringValue(configString: randomAlphanumericString())!
+        let updatedValue = MockConfigStringValue(configString: randomAlphanumericString())!
+        let defaultValue = MockConfigStringValue(configString: randomAlphanumericString())!
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.string(initialValue.description), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.string(updatedValue.description), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
+    }
+
+
+    // MARK: - [ExpressibleByConfigString] tests
+
+    @Test
+    mutating func valueForExpressibleByConfigStringArrayReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigStringValue(configString: randomAlphanumericString())!
+        }
+        let defaultValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigStringValue(configString: randomAlphanumericString())!
+        }
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.stringArray(expectedValue.map(\.description)), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForExpressibleByConfigStringArrayReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigStringValue(configString: randomAlphanumericString())!
+        }
+        let defaultValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigStringValue(configString: randomAlphanumericString())!
+        }
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.stringArray(expectedValue.map(\.description)), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func watchValueForExpressibleByConfigStringArrayReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigStringValue(configString: randomAlphanumericString())!
+        }
+        let updatedValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigStringValue(configString: randomAlphanumericString())!
+        }
+        let defaultValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigStringValue(configString: randomAlphanumericString())!
+        }
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.stringArray(initialValue.map(\.description)), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.stringArray(updatedValue.map(\.description)), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
+    }
+
+
+    // MARK: - RawRepresentable<Int> tests
+
+    @Test
+    mutating func valueForRawRepresentableIntReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomCase(of: MockIntEnum.self)!
+        var defaultValue: MockIntEnum
+        repeat { defaultValue = randomCase(of: MockIntEnum.self)! } while defaultValue == expectedValue
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.int(expectedValue.rawValue), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func valueForRawRepresentableIntReturnsDefaultWhenKeyNotFound() {
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = randomCase(of: MockIntEnum.self)!
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == defaultValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForRawRepresentableIntReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomCase(of: MockIntEnum.self)!
+        var defaultValue: MockIntEnum
+        repeat { defaultValue = randomCase(of: MockIntEnum.self)! } while defaultValue == expectedValue
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.int(expectedValue.rawValue), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForRawRepresentableIntReturnsDefaultWhenKeyNotFound() async throws {
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = randomCase(of: MockIntEnum.self)!
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == defaultValue)
+    }
+
+
+    @Test
+    mutating func watchValueForRawRepresentableIntReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = randomCase(of: MockIntEnum.self)!
+        var differentValue: MockIntEnum
+        repeat { differentValue = randomCase(of: MockIntEnum.self)! } while differentValue == initialValue
+        let updatedValue = differentValue
+        let defaultValue = randomCase(of: MockIntEnum.self)!
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.int(initialValue.rawValue), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.int(updatedValue.rawValue), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
+    }
+
+
+    @Test
+    mutating func subscriptRawRepresentableIntReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = randomCase(of: MockIntEnum.self)!
+        var defaultValue: MockIntEnum
+        repeat { defaultValue = randomCase(of: MockIntEnum.self)! } while defaultValue == expectedValue
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.int(expectedValue.rawValue), forKey: key)
+
+        // exercise
+        let result = reader[variable]
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    // MARK: - [RawRepresentable<Int>] tests
+
+    @Test
+    mutating func valueForRawRepresentableIntArrayReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockIntEnum.self)! }
+        let defaultValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockIntEnum.self)! }
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.intArray(expectedValue.map(\.rawValue)), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForRawRepresentableIntArrayReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockIntEnum.self)! }
+        let defaultValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockIntEnum.self)! }
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.intArray(expectedValue.map(\.rawValue)), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func watchValueForRawRepresentableIntArrayReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockIntEnum.self)! }
+        let updatedValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockIntEnum.self)! }
+        let defaultValue = Array(count: randomInt(in: 1 ... 5)) { randomCase(of: MockIntEnum.self)! }
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.intArray(initialValue.map(\.rawValue)), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.intArray(updatedValue.map(\.rawValue)), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
+    }
+
+
+    // MARK: - ExpressibleByConfigInt tests
+
+    @Test
+    mutating func valueForExpressibleByConfigIntReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        let defaultValue = MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.int(expectedValue.configInt), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForExpressibleByConfigIntReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        let defaultValue = MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.int(expectedValue.configInt), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func watchValueForExpressibleByConfigIntReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        let updatedValue = MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        let defaultValue = MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.int(initialValue.configInt), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.int(updatedValue.configInt), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
+    }
+
+
+    // MARK: - [ExpressibleByConfigInt] tests
+
+    @Test
+    mutating func valueForExpressibleByConfigIntArrayReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        }
+        let defaultValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        }
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.intArray(expectedValue.map(\.configInt)), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForExpressibleByConfigIntArrayReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        }
+        let defaultValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        }
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.intArray(expectedValue.map(\.configInt)), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func watchValueForExpressibleByConfigIntArrayReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        }
+        let updatedValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        }
+        let defaultValue = Array(count: randomInt(in: 1 ... 5)) {
+            MockConfigIntValue(configInt: randomInt(in: .min ... .max))!
+        }
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue)
+        setProviderValue(.intArray(initialValue.map(\.configInt)), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.intArray(updatedValue.map(\.configInt)), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
+    }
+
+
+    // MARK: - JSON Codable tests
+
+    @Test
+    mutating func valueForJSONReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = MockCodableConfig(variant: randomAlphanumericString(), count: randomInt(in: 1 ... 100))
+        let defaultValue = MockCodableConfig(variant: randomAlphanumericString(), count: randomInt(in: 1 ... 100))
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
+        let jsonData = try! JSONEncoder().encode(expectedValue)
+        let jsonString = String(data: jsonData, encoding: .utf8)!
+        setProviderValue(.string(jsonString), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func valueForJSONReturnsDefaultWhenKeyNotFound() {
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = MockCodableConfig(variant: randomAlphanumericString(), count: randomInt(in: 1 ... 100))
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == defaultValue)
+    }
+
+
+    @Test
+    mutating func valueForJSONReturnsDefaultWhenDecodingFails() {
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = MockCodableConfig(variant: randomAlphanumericString(), count: randomInt(in: 1 ... 100))
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
+        setProviderValue(.string("not valid json"), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == defaultValue)
+    }
+
+
+    @Test
+    mutating func valueForJSONPostsDecodingFailedEventWhenDecodingFails() async throws {
+        // set up
+        let observer = ContextualBusEventObserver(context: ())
+        eventBus.addObserver(observer)
+
+        let key = randomConfigKey()
+        let defaultValue = MockCodableConfig(variant: randomAlphanumericString(), count: randomInt(in: 1 ... 100))
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
+        setProviderValue(.string("not valid json"), forKey: key)
+
+        let (eventStream, continuation) = AsyncStream<ConfigVariableDecodingFailedEvent>.makeStream()
+        observer.addHandler(for: ConfigVariableDecodingFailedEvent.self) { (event, _) in
+            continuation.yield(event)
+        }
+
+        // exercise
+        _ = reader.value(for: variable)
+
+        // expect
+        let postedEvent = try #require(await eventStream.first { _ in true })
+        #expect(postedEvent.key == AbsoluteConfigKey(variable.key))
+        #expect(postedEvent.targetType is MockCodableConfig.Type)
+    }
+
+
+    @Test
+    mutating func fetchValueForJSONReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = MockCodableConfig(variant: randomAlphanumericString(), count: randomInt(in: 1 ... 100))
+        let defaultValue = MockCodableConfig(variant: randomAlphanumericString(), count: randomInt(in: 1 ... 100))
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
+        let jsonData = try! JSONEncoder().encode(expectedValue)
+        let jsonString = String(data: jsonData, encoding: .utf8)!
+        setProviderValue(.string(jsonString), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForJSONReturnsDefaultWhenKeyNotFound() async throws {
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = MockCodableConfig(variant: randomAlphanumericString(), count: randomInt(in: 1 ... 100))
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == defaultValue)
+    }
+
+
+    @Test
+    mutating func watchValueForJSONReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = MockCodableConfig(variant: randomAlphanumericString(), count: randomInt(in: 1 ... 100))
+        let updatedValue = MockCodableConfig(variant: randomAlphanumericString(), count: randomInt(in: 1 ... 100))
+        let defaultValue = MockCodableConfig(variant: randomAlphanumericString(), count: randomInt(in: 1 ... 100))
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
+        let encoder = JSONEncoder()
+        let initialJSON = String(data: try! encoder.encode(initialValue), encoding: .utf8)!
+        let updatedJSON = String(data: try! encoder.encode(updatedValue), encoding: .utf8)!
+        setProviderValue(.string(initialJSON), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.string(updatedJSON), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
+    }
+
+
+    @Test
+    mutating func subscriptJSONReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = MockCodableConfig(variant: randomAlphanumericString(), count: randomInt(in: 1 ... 100))
+        let defaultValue = MockCodableConfig(variant: randomAlphanumericString(), count: randomInt(in: 1 ... 100))
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
+        let jsonData = try! JSONEncoder().encode(expectedValue)
+        let jsonString = String(data: jsonData, encoding: .utf8)!
+        setProviderValue(.string(jsonString), forKey: key)
+
+        // exercise
+        let result = reader[variable]
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    // MARK: - JSON Codable Error Path Tests
+
+    @Test
+    mutating func fetchValueForJSONReturnsDefaultWhenDecodingFails() async throws {
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
+        setProviderValue(.string("not valid json"), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == defaultValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForJSONPostsDecodingFailedEventWhenDecodingFails() async throws {
+        // set up
+        let observer = ContextualBusEventObserver(context: ())
+        eventBus.addObserver(observer)
+
+        let key = randomConfigKey()
+        let defaultValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
+        setProviderValue(.string("not valid json"), forKey: key)
+
+        let (eventStream, continuation) = AsyncStream<ConfigVariableDecodingFailedEvent>.makeStream()
+        observer.addHandler(for: ConfigVariableDecodingFailedEvent.self) { (event, _) in
+            continuation.yield(event)
+        }
+
+        // exercise
+        _ = try await reader.fetchValue(for: variable)
+
+        // expect
+        let postedEvent = try #require(await eventStream.first { _ in true })
+        #expect(postedEvent.key == AbsoluteConfigKey(variable.key))
+        #expect(postedEvent.targetType is MockCodableConfig.Type)
+    }
+
+
+    @Test
+    mutating func watchValueForJSONYieldsDefaultWhenDecodingFails() async throws {
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let validValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
+        let validJSON = String(data: try! JSONEncoder().encode(validValue), encoding: .utf8)!
+        setProviderValue(.string("not valid json"), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == defaultValue)
+
+            provider.setValue(
+                .init(.string(validJSON), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == validValue)
+        }
+    }
+
+
+    @Test
+    mutating func watchValueForJSONYieldsDefaultWhenKeyNotFound() async throws {
+        // set up
+        let key = randomConfigKey()
+        let defaultValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let validValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
+        let validJSON = String(data: try! JSONEncoder().encode(validValue), encoding: .utf8)!
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == defaultValue)
+
+            provider.setValue(
+                .init(.string(validJSON), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == validValue)
+        }
+    }
+
+
+    // MARK: - Property List Codable Tests
+
+    @Test
+    mutating func valueForPropertyListReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let defaultValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let variable = ConfigVariable(
+            key: key,
+            defaultValue: defaultValue,
+            content: .propertyList(decoder: PropertyListDecoder())
+        )
+        let plistData = try! PropertyListEncoder().encode(expectedValue)
+        setProviderValue(.bytes(Array(plistData)), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForPropertyListReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let defaultValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let variable = ConfigVariable(
+            key: key,
+            defaultValue: defaultValue,
+            content: .propertyList(decoder: PropertyListDecoder())
+        )
+        let plistData = try! PropertyListEncoder().encode(expectedValue)
+        setProviderValue(.bytes(Array(plistData)), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func watchValueForPropertyListReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let updatedValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let defaultValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable(
+            key: key,
+            defaultValue: defaultValue,
+            content: .propertyList(decoder: PropertyListDecoder())
+        )
+        let encoder = PropertyListEncoder()
+        let initialPlist = try! encoder.encode(initialValue)
+        let updatedPlist = try! encoder.encode(updatedValue)
+        setProviderValue(.bytes(Array(initialPlist)), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.bytes(Array(updatedPlist)), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
+    }
+
+
+    // MARK: - JSON Data Representation Tests
+
+    @Test
+    mutating func valueForJSONWithDataRepresentationReturnsProviderValue() {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let defaultValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let variable = ConfigVariable(
+            key: key,
+            defaultValue: defaultValue,
+            content: .json(representation: .data)
+        )
+        let jsonData = try! JSONEncoder().encode(expectedValue)
+        setProviderValue(.bytes(Array(jsonData)), forKey: key)
+
+        // exercise
+        let result = reader.value(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func fetchValueForJSONWithDataRepresentationReturnsProviderValue() async throws {
+        // set up
+        let key = randomConfigKey()
+        let expectedValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let defaultValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let variable = ConfigVariable(
+            key: key,
+            defaultValue: defaultValue,
+            content: .json(representation: .data)
+        )
+        let jsonData = try! JSONEncoder().encode(expectedValue)
+        setProviderValue(.bytes(Array(jsonData)), forKey: key)
+
+        // exercise
+        let result = try await reader.fetchValue(for: variable)
+
+        // expect
+        #expect(result == expectedValue)
+    }
+
+
+    @Test
+    mutating func watchValueForJSONWithDataRepresentationReceivesUpdates() async throws {
+        // set up
+        let key = randomConfigKey()
+        let initialValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let updatedValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let defaultValue = MockCodableConfig(
+            variant: randomAlphanumericString(),
+            count: randomInt(in: 1 ... 100)
+        )
+        let isSecret = randomBool()
+        let provider = provider
+        let variable = ConfigVariable(
+            key: key,
+            defaultValue: defaultValue,
+            content: .json(representation: .data)
+        )
+        let encoder = JSONEncoder()
+        let initialJSON = try! encoder.encode(initialValue)
+        let updatedJSON = try! encoder.encode(updatedValue)
+        setProviderValue(.bytes(Array(initialJSON)), forKey: key)
+
+        // exercise and expect
+        try await reader.watchValue(for: variable) { updates in
+            var iterator = updates.makeAsyncIterator()
+
+            let value1 = await iterator.next()
+            #expect(value1 == initialValue)
+
+            provider.setValue(
+                .init(.bytes(Array(updatedJSON)), isSecret: isSecret),
+                forKey: .init(key)
+            )
+
+            let value2 = await iterator.next()
+            #expect(value2 == updatedValue)
+        }
     }
 
 
@@ -566,10 +2051,7 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
         let expectedValue = randomBool()
         let variable = ConfigVariable<Bool>(key: key, defaultValue: !expectedValue)
         provider.setValue(
-            .init(
-                .bool(expectedValue),
-                isSecret: randomBool()
-            ),
+            .init(.bool(expectedValue), isSecret: randomBool()),
             forKey: .init(variable.key)
         )
 
@@ -589,500 +2071,54 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 }
 
 
-// MARK: - ReaderTestHelper Protocol
+// MARK: - MockCodableConfig
 
-/// A protocol that abstracts the type-specific details needed to test `ConfigVariableReader` with different value
-/// types.
-///
-/// Each conforming type encapsulates random value generation, config content conversion, and reader interaction for a
-/// specific value type.
-protocol ReaderTestHelper<Value> {
-    /// The configuration value type being tested.
-    associatedtype Value: Equatable & Sendable
-
-    /// Generates a random value of the associated type.
-    func randomValue(using generator: inout some RandomNumberGenerator) -> Value
-
-    /// Returns a value that is different from the provided value.
-    func differentValue(from value: Value, using generator: inout some RandomNumberGenerator) -> Value
-
-    /// Converts the value to its corresponding `ConfigContent` representation.
-    func configContent(for value: Value) -> ConfigContent
-
-    /// Gets the value from the reader using `value(for:)`.
-    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Value>) -> Value
-
-    /// Fetches the value from the reader using `fetchValue(for:)`.
-    func fetchValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Value>) async throws -> Value
-
-    /// Watches the value from the reader using `watchValue(for:updatesHandler:)`.
-    func watchValue<Return>(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<Value>,
-        updatesHandler: (ConfigUpdatesAsyncSequence<Value, Never>) async throws -> Return
-    ) async throws -> Return
-
-    /// Gets the value from the reader using the subscript.
-    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Value>) -> Value
+private struct MockCodableConfig: Codable, Hashable, Sendable {
+    let variant: String
+    let count: Int
 }
 
 
-// MARK: - BoolTestHelper
+// MARK: - MockStringEnum
 
-private struct BoolTestHelper: ReaderTestHelper {
-    func randomValue(using generator: inout some RandomNumberGenerator) -> Bool {
-        Bool.random(using: &generator)
-    }
-
-
-    func differentValue(from value: Bool, using generator: inout some RandomNumberGenerator) -> Bool {
-        !value
-    }
+private enum MockStringEnum: String, CaseIterable, Sendable {
+    case alpha
+    case bravo
+    case charlie
+    case delta
+}
 
 
-    func configContent(for value: Bool) -> ConfigContent {
-        .bool(value)
-    }
+// MARK: - MockIntEnum
+
+private enum MockIntEnum: Int, CaseIterable, Sendable {
+    case one = 1
+    case two = 2
+    case three = 3
+    case four = 4
+}
 
 
-    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Bool>) -> Bool {
-        reader.value(for: variable)
-    }
+// MARK: - MockConfigStringValue
 
+private struct MockConfigStringValue: ExpressibleByConfigString, Hashable, Sendable {
+    let stringValue: String
+    var description: String { stringValue }
 
-    func fetchValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Bool>) async throws -> Bool {
-        try await reader.fetchValue(for: variable)
-    }
-
-
-    func watchValue<Return>(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<Bool>,
-        updatesHandler: (ConfigUpdatesAsyncSequence<Bool, Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
-    }
-
-
-    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Bool>) -> Bool {
-        reader[variable]
+    init?(configString: String) {
+        self.stringValue = configString
     }
 }
 
 
-// MARK: - Float64TestHelper
-
-private struct Float64TestHelper: ReaderTestHelper {
-    func randomValue(using generator: inout some RandomNumberGenerator) -> Float64 {
-        Float64.random(in: 1 ... 100_000, using: &generator)
-    }
-
-
-    func differentValue(from value: Float64, using generator: inout some RandomNumberGenerator) -> Float64 {
-        value + randomValue(using: &generator)
-    }
-
-
-    func configContent(for value: Float64) -> ConfigContent {
-        .double(value)
-    }
-
-
-    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Float64>) -> Float64 {
-        reader.value(for: variable)
-    }
-
-
-    func fetchValue(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<Float64>
-    ) async throws -> Float64 {
-        try await reader.fetchValue(for: variable)
-    }
-
-
-    func watchValue<Return>(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<Float64>,
-        updatesHandler: (ConfigUpdatesAsyncSequence<Float64, Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
-    }
-
-
-    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Float64>) -> Float64 {
-        reader[variable]
-    }
-}
-
-
-// MARK: - IntTestHelper
-
-private struct IntTestHelper: ReaderTestHelper {
-    func randomValue(using generator: inout some RandomNumberGenerator) -> Int {
-        Int.random(in: 1 ... 100_000, using: &generator)
-    }
-
-
-    func differentValue(from value: Int, using generator: inout some RandomNumberGenerator) -> Int {
-        value + randomValue(using: &generator)
-    }
-
-
-    func configContent(for value: Int) -> ConfigContent {
-        .int(value)
-    }
-
-
-    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Int>) -> Int {
-        reader.value(for: variable)
-    }
-
-
-    func fetchValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Int>) async throws -> Int {
-        try await reader.fetchValue(for: variable)
-    }
-
-
-    func watchValue<Return>(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<Int>,
-        updatesHandler: (ConfigUpdatesAsyncSequence<Int, Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
-    }
-
-
-    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<Int>) -> Int {
-        reader[variable]
-    }
-}
-
-
-// MARK: - StringTestHelper
-
-private struct StringTestHelper: ReaderTestHelper {
-    func randomValue(using generator: inout some RandomNumberGenerator) -> String {
-        let count = Int.random(in: 5 ... 20, using: &generator)
-        return String.randomAlphanumeric(count: count, using: &generator)
-    }
-
-
-    func differentValue(from value: String, using generator: inout some RandomNumberGenerator) -> String {
-        value + randomValue(using: &generator)
-    }
-
-
-    func configContent(for value: String) -> ConfigContent {
-        .string(value)
-    }
-
-
-    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<String>) -> String {
-        reader.value(for: variable)
-    }
-
-
-    func fetchValue(from reader: ConfigVariableReader, for variable: ConfigVariable<String>) async throws -> String {
-        try await reader.fetchValue(for: variable)
-    }
-
-
-    func watchValue<Return>(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<String>,
-        updatesHandler: (ConfigUpdatesAsyncSequence<String, Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
-    }
-
-
-    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<String>) -> String {
-        reader[variable]
-    }
-}
-
-
-// MARK: - BytesTestHelper
-
-private struct BytesTestHelper: ReaderTestHelper {
-    func randomValue(using generator: inout some RandomNumberGenerator) -> [UInt8] {
-        let count = Int.random(in: 1 ... 32, using: &generator)
-        return Array(count: count) { UInt8.random(in: .min ... .max, using: &generator) }
-    }
-
-
-    func differentValue(from value: [UInt8], using generator: inout some RandomNumberGenerator) -> [UInt8] {
-        value + randomValue(using: &generator)
-    }
-
-
-    func configContent(for value: [UInt8]) -> ConfigContent {
-        .bytes(value)
-    }
-
-
-    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[UInt8]>) -> [UInt8] {
-        reader.value(for: variable)
-    }
-
-
-    func fetchValue(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<[UInt8]>
-    ) async throws -> [UInt8] {
-        try await reader.fetchValue(for: variable)
-    }
-
-
-    func watchValue<Return>(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<[UInt8]>,
-        updatesHandler: (ConfigUpdatesAsyncSequence<[UInt8], Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
-    }
-
-
-    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[UInt8]>) -> [UInt8] {
-        reader[variable]
-    }
-}
-
-
-// MARK: - BoolArrayTestHelper
-
-private struct BoolArrayTestHelper: ReaderTestHelper {
-    func randomValue(using generator: inout some RandomNumberGenerator) -> [Bool] {
-        let count = Int.random(in: 1 ... 5, using: &generator)
-        return Array(count: count) { Bool.random(using: &generator) }
-    }
-
-
-    func differentValue(from value: [Bool], using generator: inout some RandomNumberGenerator) -> [Bool] {
-        value + randomValue(using: &generator)
-    }
-
-
-    func configContent(for value: [Bool]) -> ConfigContent {
-        .boolArray(value)
-    }
-
-
-    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[Bool]>) -> [Bool] {
-        reader.value(for: variable)
-    }
-
-
-    func fetchValue(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<[Bool]>
-    ) async throws -> [Bool] {
-        try await reader.fetchValue(for: variable)
-    }
-
-
-    func watchValue<Return>(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<[Bool]>,
-        updatesHandler: (ConfigUpdatesAsyncSequence<[Bool], Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
-    }
-
-
-    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[Bool]>) -> [Bool] {
-        reader[variable]
-    }
-}
-
-
-// MARK: - Float64ArrayTestHelper
-
-private struct Float64ArrayTestHelper: ReaderTestHelper {
-    func randomValue(using generator: inout some RandomNumberGenerator) -> [Float64] {
-        let count = Int.random(in: 1 ... 5, using: &generator)
-        return Array(count: count) { Float64.random(in: 1 ... 100_000, using: &generator) }
-    }
-
-
-    func differentValue(from value: [Float64], using generator: inout some RandomNumberGenerator) -> [Float64] {
-        value + randomValue(using: &generator)
-    }
-
-
-    func configContent(for value: [Float64]) -> ConfigContent {
-        .doubleArray(value)
-    }
-
-
-    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[Float64]>) -> [Float64] {
-        reader.value(for: variable)
-    }
-
-
-    func fetchValue(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<[Float64]>
-    ) async throws -> [Float64] {
-        try await reader.fetchValue(for: variable)
-    }
-
-
-    func watchValue<Return>(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<[Float64]>,
-        updatesHandler: (ConfigUpdatesAsyncSequence<[Float64], Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
-    }
-
-
-    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[Float64]>) -> [Float64] {
-        reader[variable]
-    }
-}
-
-
-// MARK: - IntArrayTestHelper
-
-private struct IntArrayTestHelper: ReaderTestHelper {
-    func randomValue(using generator: inout some RandomNumberGenerator) -> [Int] {
-        let count = Int.random(in: 1 ... 5, using: &generator)
-        return Array(count: count) { Int.random(in: 1 ... 100_000, using: &generator) }
-    }
-
-
-    func differentValue(from value: [Int], using generator: inout some RandomNumberGenerator) -> [Int] {
-        value + randomValue(using: &generator)
-    }
-
-
-    func configContent(for value: [Int]) -> ConfigContent {
-        .intArray(value)
-    }
-
-
-    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[Int]>) -> [Int] {
-        reader.value(for: variable)
-    }
-
-
-    func fetchValue(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<[Int]>
-    ) async throws -> [Int] {
-        try await reader.fetchValue(for: variable)
-    }
-
-
-    func watchValue<Return>(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<[Int]>,
-        updatesHandler: (ConfigUpdatesAsyncSequence<[Int], Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
-    }
-
-
-    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[Int]>) -> [Int] {
-        reader[variable]
-    }
-}
-
-
-// MARK: - StringArrayTestHelper
-
-private struct StringArrayTestHelper: ReaderTestHelper {
-    func randomValue(using generator: inout some RandomNumberGenerator) -> [String] {
-        let count = Int.random(in: 1 ... 5, using: &generator)
-        return Array(count: count) { String.randomAlphanumeric(count: count * 3, using: &generator) }
-    }
-
-
-    func differentValue(from value: [String], using generator: inout some RandomNumberGenerator) -> [String] {
-        value + randomValue(using: &generator)
-    }
-
-
-    func configContent(for value: [String]) -> ConfigContent {
-        .stringArray(value)
-    }
-
-
-    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[String]>) -> [String] {
-        reader.value(for: variable)
-    }
-
-
-    func fetchValue(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<[String]>
-    ) async throws -> [String] {
-        try await reader.fetchValue(for: variable)
-    }
-
-
-    func watchValue<Return>(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<[String]>,
-        updatesHandler: (ConfigUpdatesAsyncSequence<[String], Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
-    }
-
-
-    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[String]>) -> [String] {
-        reader[variable]
-    }
-}
-
-
-// MARK: - ByteChunkArrayTestHelper
-
-private struct ByteChunkArrayTestHelper: ReaderTestHelper {
-    func randomValue(using generator: inout some RandomNumberGenerator) -> [[UInt8]] {
-        let count = Int.random(in: 1 ... 5, using: &generator)
-        return Array(count: count) {
-            let byteCount = Int.random(in: 1 ... 32, using: &generator)
-            return Array(count: byteCount) { UInt8.random(in: .min ... .max, using: &generator) }
-        }
-    }
-
-
-    func differentValue(from value: [[UInt8]], using generator: inout some RandomNumberGenerator) -> [[UInt8]] {
-        value + randomValue(using: &generator)
-    }
-
-
-    func configContent(for value: [[UInt8]]) -> ConfigContent {
-        .byteChunkArray(value)
-    }
-
-
-    func getValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[[UInt8]]>) -> [[UInt8]] {
-        reader.value(for: variable)
-    }
-
-
-    func fetchValue(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<[[UInt8]]>
-    ) async throws -> [[UInt8]] {
-        try await reader.fetchValue(for: variable)
-    }
-
-
-    func watchValue<Return>(
-        from reader: ConfigVariableReader,
-        for variable: ConfigVariable<[[UInt8]]>,
-        updatesHandler: (ConfigUpdatesAsyncSequence<[[UInt8]], Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchValue(for: variable, updatesHandler: updatesHandler)
-    }
-
-
-    func subscriptValue(from reader: ConfigVariableReader, for variable: ConfigVariable<[[UInt8]]>) -> [[UInt8]] {
-        reader[variable]
+// MARK: - MockConfigIntValue
+
+private struct MockConfigIntValue: ExpressibleByConfigInt, Hashable, Sendable {
+    let intValue: Int
+    var configInt: Int { intValue }
+    var description: String { "\(intValue)" }
+
+    init?(configInt: Int) {
+        self.intValue = configInt
     }
 }

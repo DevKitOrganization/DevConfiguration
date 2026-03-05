@@ -43,7 +43,7 @@ import Foundation
 public struct ConfigVariableMetadata: Hashable, Sendable {
     /// A structure containing human-readable text representations of a metadata key-value pair.
     ///
-    /// `DisplayText` pairs a metadata key's display name with the formatted string representation of its value. These
+    /// `DisplayText` pairs a metadata key’s display name with the formatted string representation of its value. These
     /// representations are intended for use in user interfaces, logs, and debugging output.
     struct DisplayText: Hashable, Sendable {
         /// The human-readable display name for the metadata key (e.g., "Project", "Environment").
@@ -64,8 +64,8 @@ public struct ConfigVariableMetadata: Hashable, Sendable {
     /// metadata key type.
     ///
     /// This dictionary maintains human-readable representations of stored metadata values for use in user interfaces,
-    /// logs, and debugging output. Each entry maps a metadata key's `ObjectIdentifier` to a `DisplayText` structure
-    /// containing both the key's display name and the formatted value.
+    /// logs, and debugging output. Each entry maps a metadata key’s `ObjectIdentifier` to a `DisplayText` structure
+    /// containing both the key’s display name and the formatted value.
     private var displayText: [ObjectIdentifier: DisplayText] = [:]
 
 
@@ -77,10 +77,10 @@ public struct ConfigVariableMetadata: Hashable, Sendable {
 
     /// Accesses the metadata value associated with the given key type.
     ///
-    /// Returns the key's `defaultValue` if no value has been explicitly set.
+    /// Returns the key’s `defaultValue` if no value has been explicitly set.
     ///
     /// - Parameter key: The metadata key type that identifies which metadata value to access.
-    /// - Returns: The stored value for the given key, or the key's `defaultValue` if no value has been set.
+    /// - Returns: The stored value for the given key, or the key’s `defaultValue` if no value has been set.
     public subscript<Key>(key: Key.Type) -> Key.Value where Key: ConfigVariableMetadataKey {
         get {
             let defaultValue = key.defaultValue
@@ -97,7 +97,7 @@ public struct ConfigVariableMetadata: Hashable, Sendable {
     /// Returns an array of all display text representations for the metadata values currently stored in this container.
     ///
     /// This property provides access to human-readable key-value pairs representing all metadata that has been
-    /// explicitly set. Each `DisplayText` entry contains both the metadata key's display name and the formatted value.
+    /// explicitly set. Each `DisplayText` entry contains both the metadata key’s display name and the formatted value.
     ///
     /// The returned array is unordered and includes only metadata that has been assigned through the subscript setter.
     /// Metadata keys that still have their default values are not included in the results.
@@ -151,7 +151,7 @@ public protocol ConfigVariableMetadataKey {
 
     /// The default value returned when no value has been explicitly set for this metadata key.
     ///
-    /// This value is used by ``ConfigVariableMetadata``'s subscript when retrieving a value for a key that has not
+    /// This value is used by ``ConfigVariableMetadata``’s subscript when retrieving a value for a key that has not
     /// been assigned. For optional metadata, this is typically `nil`. For required metadata, provide a sensible
     /// default that represents the absence of explicit configuration.
     static var defaultValue: Value { get }

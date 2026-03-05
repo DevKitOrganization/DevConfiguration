@@ -8,9 +8,9 @@
 import Configuration
 import DevFoundation
 
-/// Provides structured access to configuration values queried by a `ConfigVariable`.
+/// Provides access to configuration values queried by a `ConfigVariable`.
 ///
-/// A config variable reader is a type-safe wrapper around swift-configuration's `ConfigReader`. It uses
+/// A config variable reader is a type-safe wrapper around swift-configuration’s `ConfigReader`. It uses
 /// `ConfigVariable` instances to provide compile-time type safety and structured access to configuration values.
 /// The reader integrates with an access reporter to provide telemetry and observability for all configuration access.
 ///
@@ -36,7 +36,7 @@ import DevFoundation
 ///
 ///     let darkMode = reader[.darkMode]  // true
 ///
-/// The reader never throws. If resolution fails, it returns the variable's default value and posts a
+/// The reader never throws. If resolution fails, it returns the variable’s default value and posts a
 /// ``ConfigVariableAccessFailedEvent`` to the event bus.
 public struct ConfigVariableReader {
     /// The access reporter that is used to report configuration access events.
@@ -45,10 +45,13 @@ public struct ConfigVariableReader {
     /// The configuration reader that is used to resolve configuration values.
     public let reader: ConfigReader
 
-    /// The configuration reader's providers.
+    /// The configuration reader’s providers.
     ///
     /// This is stored so that
     public let providers: [any ConfigProvider]
+
+    /// The event bus used to post diagnostic events like ``ConfigVariableDecodingFailedEvent``.
+    public let eventBus: EventBus
 
 
     /// Creates a new `ConfigVariableReader` with the specified providers and the default telemetry access reporter.
@@ -61,887 +64,169 @@ public struct ConfigVariableReader {
     public init(providers: [any ConfigProvider], eventBus: EventBus) {
         self.init(
             providers: providers,
-            accessReporter: EventBusAccessReporter(eventBus: eventBus)
+            accessReporter: EventBusAccessReporter(eventBus: eventBus),
+            eventBus: eventBus
         )
     }
 
 
-    /// Creates a new `ConfigVariableReader` with the specified providers and access reporter.
+    /// Creates a new `ConfigVariableReader` with the specified providers, access reporter, and event bus.
     ///
     /// Use this initializer when you want to directly control the access reporter used by the config reader.
     ///
     /// - Parameters:
     ///   - providers: The configuration providers, queried in order until a value is found.
     ///   - accessReporter: The access reporter that is used to report configuration access events.
-    public init(providers: [any ConfigProvider], accessReporter: any AccessReporter) {
+    ///   - eventBus: The event bus used to post diagnostic events.
+    public init(providers: [any ConfigProvider], accessReporter: any AccessReporter, eventBus: EventBus) {
         self.accessReporter = accessReporter
         self.reader = ConfigReader(providers: providers, accessReporter: accessReporter)
         self.providers = providers
+        self.eventBus = eventBus
     }
 }
 
 
-// MARK: - Get
+// MARK: - Value Access
 
 extension ConfigVariableReader {
-    /// Gets the value for the specified `Bool` config variable.
+    /// Gets the value for the specified config variable.
     ///
     /// - Parameters:
     ///   - variable: The variable to get a value for.
     ///   - fileID: The source file identifier for access reporting.
     ///   - line: The source line number for access reporting.
     /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func value(
-        for variable: ConfigVariable<Bool>,
+    public func value<Value>(
+        for variable: ConfigVariable<Value>,
         fileID: String = #fileID,
         line: UInt = #line
-    ) -> Bool {
-        return reader.bool(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
+    ) -> Value {
+        variable.content.read(reader, variable.key, isSecret(variable), variable.defaultValue, eventBus, fileID, line)
+    }
+
+
+    /// Gets the value for the specified config variable.
+    ///
+    /// - Parameters:
+    ///   - variable: The variable to get a value for.
+    ///   - fileID: The source file identifier for access reporting.
+    ///   - line: The source line number for access reporting.
+    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
+    public subscript<Value>(
+        variable: ConfigVariable<Value>,
+        fileID fileID: String = #fileID,
+        line line: UInt = #line
+    ) -> Value {
+        value(for: variable, fileID: fileID, line: line)
+    }
+
+
+    /// Fetches the value for the specified config variable asynchronously.
+    ///
+    /// - Parameters:
+    ///   - variable: The variable to fetch a value for.
+    ///   - fileID: The source file identifier for access reporting.
+    ///   - line: The source line number for access reporting.
+    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
+    public func fetchValue<Value>(
+        for variable: ConfigVariable<Value>,
+        fileID: String = #fileID,
+        line: UInt = #line
+    ) async throws -> Value {
+        try await variable.content.fetch(
+            reader,
+            variable.key,
+            isSecret(variable),
+            variable.defaultValue,
+            eventBus,
+            fileID,
+            line
         )
     }
 
 
-    /// Gets the value for the specified `[Bool]` config variable.
+    /// Watches a config variable for value changes.
+    ///
+    /// The `updatesHandler` receives an `AsyncStream` of the variable’s decoded values, which yields a new element each
+    /// time the underlying configuration value changes. The return value of the handler is returned by this method.
     ///
     /// - Parameters:
-    ///   - variable: The variable to get a value for.
+    ///   - variable: The variable to watch.
     ///   - fileID: The source file identifier for access reporting.
     ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func value(
-        for variable: ConfigVariable<[Bool]>,
+    ///   - updatesHandler: A closure that receives a stream of updated values.
+    /// - Returns: The value returned by the `updatesHandler`.
+    public func watchValue<Value, Return>(
+        for variable: ConfigVariable<Value>,
         fileID: String = #fileID,
-        line: UInt = #line
-    ) -> [Bool] {
-        return reader.boolArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
+        line: UInt = #line,
+        updatesHandler: @Sendable @escaping (AsyncStream<Value>) async throws -> Return
+    ) async throws -> Return where Return: Sendable {
+        // Capture these locally so that the @Sendable task closures below don’t need to capture `self`.
+        let configReader = reader
+        let eventBus = eventBus
+        let isSecret = isSecret(variable)
+        let (stream, continuation) = AsyncStream<Value>.makeStream()
 
+        // We use a task group with two concurrent tasks: one that watches the underlying provider for changes and
+        // yields decoded values into the stream, and one that passes the stream to the caller’s handler. The group’s
+        // element type is `Return?` so the watcher task can return `nil` while the handler task returns the caller’s
+        // result.
+        return try await withThrowingTaskGroup(of: Return?.self) { (group) in
+            // Task 1: Watch the provider for changes. Each time the raw value changes, the content’s startWatching
+            // closure decodes it and yields the result into the continuation. When watching ends (due to cancellation
+            // or the provider stopping), we finish the continuation so the handler’s stream terminates.
+            group.addTask {
+                defer { continuation.finish() }
+                try await variable.content.startWatching(
+                    configReader,
+                    variable.key,
+                    isSecret,
+                    variable.defaultValue,
+                    eventBus,
+                    fileID,
+                    line,
+                    continuation
+                )
+                return nil
+            }
 
-    /// Gets the value for the specified `Float64` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func value(
-        for variable: ConfigVariable<Float64>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> Float64 {
-        return reader.double(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
+            // Task 2: Run the caller’s handler with the decoded value stream.
+            group.addTask {
+                return try await updatesHandler(stream)
+            }
 
+            // Wait for the first non-nil result, which will be from the handler task. Once the handler returns,
+            // cancel the watcher task so the provider stops being observed.
+            for try await result in group {
+                if let result {
+                    group.cancelAll()
+                    return result
+                }
+            }
 
-    /// Gets the value for the specified `[Float64]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func value(
-        for variable: ConfigVariable<[Float64]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> [Float64] {
-        return reader.doubleArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Gets the value for the specified `Int` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func value(
-        for variable: ConfigVariable<Int>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> Int {
-        return reader.int(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Gets the value for the specified `[Int]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func value(
-        for variable: ConfigVariable<[Int]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> [Int] {
-        return reader.intArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Gets the value for the specified `String` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func value(
-        for variable: ConfigVariable<String>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> String {
-        return reader.string(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Gets the value for the specified `[String]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func value(
-        for variable: ConfigVariable<[String]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> [String] {
-        return reader.stringArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Gets the value for the specified `[UInt8]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func value(
-        for variable: ConfigVariable<[UInt8]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> [UInt8] {
-        return reader.bytes(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Gets the value for the specified `[[UInt8]]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func value(
-        for variable: ConfigVariable<[[UInt8]]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> [[UInt8]] {
-        return reader.byteChunkArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
+            // The handler task always returns a non-nil value, so we should never reach this point.
+            fatalError()
+        }
     }
 }
 
 
-// MARK: - Subscript Get
+// MARK: - Secrecy
 
 extension ConfigVariableReader {
-    /// Gets the value for the specified `Bool` config variable.
+    /// Whether the given variable is secret.
     ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public subscript(
-        variable: ConfigVariable<Bool>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> Bool {
-        value(for: variable, fileID: fileID, line: line)
-    }
-
-
-    /// Gets the value for the specified `[Bool]` config variable.
+    /// When secrecy is `.auto`, this defers to the variable’s content to determine the appropriate secrecy.
+    /// String- backed and codable content types default to secret, while numeric and boolean types default to public.
     ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public subscript(
-        variable: ConfigVariable<[Bool]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> [Bool] {
-        value(for: variable, fileID: fileID, line: line)
-    }
-
-
-    /// Gets the value for the specified `Float64` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public subscript(
-        variable: ConfigVariable<Float64>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> Float64 {
-        value(for: variable, fileID: fileID, line: line)
-    }
-
-
-    /// Gets the value for the specified `[Float64]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public subscript(
-        variable: ConfigVariable<[Float64]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> [Float64] {
-        value(for: variable, fileID: fileID, line: line)
-    }
-
-
-    /// Gets the value for the specified `Int` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public subscript(
-        variable: ConfigVariable<Int>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> Int {
-        value(for: variable, fileID: fileID, line: line)
-    }
-
-
-    /// Gets the value for the specified `[Int]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public subscript(
-        variable: ConfigVariable<[Int]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> [Int] {
-        value(for: variable, fileID: fileID, line: line)
-    }
-
-
-    /// Gets the value for the specified `String` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public subscript(
-        variable: ConfigVariable<String>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> String {
-        value(for: variable, fileID: fileID, line: line)
-    }
-
-
-    /// Gets the value for the specified `[String]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public subscript(
-        variable: ConfigVariable<[String]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> [String] {
-        value(for: variable, fileID: fileID, line: line)
-    }
-
-
-    /// Gets the value for the specified `[UInt8]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public subscript(
-        variable: ConfigVariable<[UInt8]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> [UInt8] {
-        value(for: variable, fileID: fileID, line: line)
-    }
-
-
-    /// Gets the value for the specified `[[UInt8]]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to get a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public subscript(
-        variable: ConfigVariable<[[UInt8]]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) -> [[UInt8]] {
-        value(for: variable, fileID: fileID, line: line)
-    }
-}
-
-
-// MARK: - Fetch
-
-extension ConfigVariableReader {
-    /// Asynchronously fetches the value for the specified `Bool` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to fetch a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func fetchValue(
-        for variable: ConfigVariable<Bool>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) async throws -> Bool {
-        return try await reader.fetchBool(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Asynchronously fetches the value for the specified `[Bool]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to fetch a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func fetchValue(
-        for variable: ConfigVariable<[Bool]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) async throws -> [Bool] {
-        return try await reader.fetchBoolArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Asynchronously fetches the value for the specified `Float64` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to fetch a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func fetchValue(
-        for variable: ConfigVariable<Float64>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) async throws -> Float64 {
-        return try await reader.fetchDouble(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Asynchronously fetches the value for the specified `[Float64]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to fetch a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func fetchValue(
-        for variable: ConfigVariable<[Float64]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) async throws -> [Float64] {
-        return try await reader.fetchDoubleArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Asynchronously fetches the value for the specified `Int` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to fetch a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func fetchValue(
-        for variable: ConfigVariable<Int>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) async throws -> Int {
-        return try await reader.fetchInt(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Asynchronously fetches the value for the specified `[Int]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to fetch a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func fetchValue(
-        for variable: ConfigVariable<[Int]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) async throws -> [Int] {
-        return try await reader.fetchIntArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Asynchronously fetches the value for the specified `String` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to fetch a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func fetchValue(
-        for variable: ConfigVariable<String>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) async throws -> String {
-        return try await reader.fetchString(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Asynchronously fetches the value for the specified `[String]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to fetch a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func fetchValue(
-        for variable: ConfigVariable<[String]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) async throws -> [String] {
-        return try await reader.fetchStringArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Asynchronously fetches the value for the specified `[UInt8]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to fetch a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func fetchValue(
-        for variable: ConfigVariable<[UInt8]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) async throws -> [UInt8] {
-        return try await reader.fetchBytes(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-
-
-    /// Asynchronously fetches the value for the specified `[[UInt8]]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to fetch a value for.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    /// - Returns: The configuration value of the variable, or the default value if resolution fails.
-    public func fetchValue(
-        for variable: ConfigVariable<[[UInt8]]>,
-        fileID: String = #fileID,
-        line: UInt = #line
-    ) async throws -> [[UInt8]] {
-        return try await reader.fetchByteChunkArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line
-        )
-    }
-}
-
-
-// MARK: - Watch
-
-extension ConfigVariableReader {
-    /// Watches for updates to the value for the specified `Bool` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to watch for updates.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    ///   - updatesHandler: A closure that handles an async sequence of updates to the value.
-    /// - Returns: The result produced by the handler.
-    public func watchValue<Return: ~Copyable>(
-        for variable: ConfigVariable<Bool>,
-        fileID: String = #fileID,
-        line: UInt = #line,
-        updatesHandler: (_ updates: ConfigUpdatesAsyncSequence<Bool, Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchBool(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line,
-            updatesHandler: updatesHandler
-        )
-    }
-
-
-    /// Watches for updates to the value for the specified `[Bool]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to watch for updates.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    ///   - updatesHandler: A closure that handles an async sequence of updates to the value.
-    /// - Returns: The result produced by the handler.
-    public func watchValue<Return: ~Copyable>(
-        for variable: ConfigVariable<[Bool]>,
-        fileID: String = #fileID,
-        line: UInt = #line,
-        updatesHandler: (_ updates: ConfigUpdatesAsyncSequence<[Bool], Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchBoolArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line,
-            updatesHandler: updatesHandler
-        )
-    }
-
-
-    /// Watches for updates to the value for the specified `Float64` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to watch for updates.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    ///   - updatesHandler: A closure that handles an async sequence of updates to the value.
-    /// - Returns: The result produced by the handler.
-    public func watchValue<Return: ~Copyable>(
-        for variable: ConfigVariable<Float64>,
-        fileID: String = #fileID,
-        line: UInt = #line,
-        updatesHandler: (_ updates: ConfigUpdatesAsyncSequence<Float64, Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchDouble(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line,
-            updatesHandler: updatesHandler
-        )
-    }
-
-
-    /// Watches for updates to the value for the specified `[Float64]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to watch for updates.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    ///   - updatesHandler: A closure that handles an async sequence of updates to the value.
-    /// - Returns: The result produced by the handler.
-    public func watchValue<Return: ~Copyable>(
-        for variable: ConfigVariable<[Float64]>,
-        fileID: String = #fileID,
-        line: UInt = #line,
-        updatesHandler: (_ updates: ConfigUpdatesAsyncSequence<[Float64], Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchDoubleArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line,
-            updatesHandler: updatesHandler
-        )
-    }
-
-
-    /// Watches for updates to the value for the specified `Int` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to watch for updates.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    ///   - updatesHandler: A closure that handles an async sequence of updates to the value.
-    /// - Returns: The result produced by the handler.
-    public func watchValue<Return: ~Copyable>(
-        for variable: ConfigVariable<Int>,
-        fileID: String = #fileID,
-        line: UInt = #line,
-        updatesHandler: (_ updates: ConfigUpdatesAsyncSequence<Int, Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchInt(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line,
-            updatesHandler: updatesHandler
-        )
-    }
-
-
-    /// Watches for updates to the value for the specified `[Int]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to watch for updates.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    ///   - updatesHandler: A closure that handles an async sequence of updates to the value.
-    /// - Returns: The result produced by the handler.
-    public func watchValue<Return: ~Copyable>(
-        for variable: ConfigVariable<[Int]>,
-        fileID: String = #fileID,
-        line: UInt = #line,
-        updatesHandler: (_ updates: ConfigUpdatesAsyncSequence<[Int], Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchIntArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line,
-            updatesHandler: updatesHandler
-        )
-    }
-
-
-    /// Watches for updates to the value for the specified `String` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to watch for updates.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    ///   - updatesHandler: A closure that handles an async sequence of updates to the value.
-    /// - Returns: The result produced by the handler.
-    public func watchValue<Return: ~Copyable>(
-        for variable: ConfigVariable<String>,
-        fileID: String = #fileID,
-        line: UInt = #line,
-        updatesHandler: (_ updates: ConfigUpdatesAsyncSequence<String, Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchString(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line,
-            updatesHandler: updatesHandler
-        )
-    }
-
-
-    /// Watches for updates to the value for the specified `[String]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to watch for updates.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    ///   - updatesHandler: A closure that handles an async sequence of updates to the value.
-    /// - Returns: The result produced by the handler.
-    public func watchValue<Return: ~Copyable>(
-        for variable: ConfigVariable<[String]>,
-        fileID: String = #fileID,
-        line: UInt = #line,
-        updatesHandler: (_ updates: ConfigUpdatesAsyncSequence<[String], Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchStringArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line,
-            updatesHandler: updatesHandler
-        )
-    }
-
-
-    /// Watches for updates to the value for the specified `[UInt8]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to watch for updates.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    ///   - updatesHandler: A closure that handles an async sequence of updates to the value.
-    /// - Returns: The result produced by the handler.
-    public func watchValue<Return: ~Copyable>(
-        for variable: ConfigVariable<[UInt8]>,
-        fileID: String = #fileID,
-        line: UInt = #line,
-        updatesHandler: (_ updates: ConfigUpdatesAsyncSequence<[UInt8], Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchBytes(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line,
-            updatesHandler: updatesHandler
-        )
-    }
-
-
-    /// Watches for updates to the value for the specified `[[UInt8]]` config variable.
-    ///
-    /// - Parameters:
-    ///   - variable: The variable to watch for updates.
-    ///   - fileID: The source file identifier for access reporting.
-    ///   - line: The source line number for access reporting.
-    ///   - updatesHandler: A closure that handles an async sequence of updates to the value.
-    /// - Returns: The result produced by the handler.
-    public func watchValue<Return: ~Copyable>(
-        for variable: ConfigVariable<[[UInt8]]>,
-        fileID: String = #fileID,
-        line: UInt = #line,
-        updatesHandler: (_ updates: ConfigUpdatesAsyncSequence<[[UInt8]], Never>) async throws -> Return
-    ) async throws -> Return {
-        try await reader.watchByteChunkArray(
-            forKey: variable.key,
-            isSecret: variable.isSecret,
-            default: variable.defaultValue,
-            fileID: fileID,
-            line: line,
-            updatesHandler: updatesHandler
-        )
+    /// - Parameter variable: The config variable whose secrecy is being determined.
+    func isSecret<Value>(_ variable: ConfigVariable<Value>) -> Bool {
+        let resolvedSecrecy =
+            variable.secrecy == .auto
+            ? (variable.content.isAutoSecret ? .secret : .public)
+            : variable.secrecy
+        return resolvedSecrecy == .secret
     }
 }

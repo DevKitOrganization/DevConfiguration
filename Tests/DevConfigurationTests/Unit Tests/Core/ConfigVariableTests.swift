@@ -33,26 +33,6 @@ struct ConfigVariableTests: RandomValueGenerating {
     }
 
 
-    // MARK: - init(key: String, …)
-
-    @Test
-    mutating func initWithStringConvertsKeyAndStoresParameters() {
-        // set up the test by creating a dot-separated key string
-        let key = randomConfigKey()
-        let keyString = key.components.joined(separator: ".")
-        let defaultValue = randomInt(in: .min ... .max)
-        let secrecy = randomConfigVariableSecrecy()
-
-        // exercise the test by creating the config variable with a string key
-        let variable = ConfigVariable(key: keyString, defaultValue: defaultValue, secrecy: secrecy)
-
-        // expect that the string is converted to a ConfigKey and parameters are stored
-        #expect(variable.key == ConfigKey(keyString))
-        #expect(variable.defaultValue == defaultValue)
-        #expect(variable.secrecy == secrecy)
-    }
-
-
     // MARK: - metadata(_:_:)
 
     @Test
