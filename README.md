@@ -1,6 +1,6 @@
 # DevConfiguration
 
-DevConfiguration is a type-safe configuration wrapper built on Apple's swift-configuration library.
+DevConfiguration is a type-safe configuration wrapper built on Apple’s swift-configuration library.
 It provides structured configuration management with telemetry, extensible metadata, and a variable
 management interface.
 
@@ -22,8 +22,8 @@ public interfaces are fully documented and tested. We aim for overall test cover
 
 To set up the development environment:
 
-  1. Run `Scripts/install-git-hooks` to install pre-commit hooks that automatically check code
-    formatting.
+  1. Run `Scripts/install-git-hooks` to install pre-commit hooks that automatically check
+     code formatting.
   2. Use `Scripts/lint` to manually check code formatting at any time.
   3. Use `Scripts/format` to automatically format code.
 

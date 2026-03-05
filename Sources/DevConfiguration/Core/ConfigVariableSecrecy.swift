@@ -5,12 +5,14 @@
 //  Created by Duncan Lewis on 1/7/2026.
 //
 
-/// Controls whether a configuration variable's value is treated as secret.
+import Configuration
+
+/// Controls whether a configuration variable’s value is treated as secret.
 ///
 /// Variable secrecy determines how values are handled in telemetry, logging, and other observability systems. Secret
 /// values are redacted or obfuscated to prevent sensitive information from being exposed.
 public enum ConfigVariableSecrecy: CaseIterable, Sendable {
-    /// Treats `String` and `[String]` values as secret and all other types as public.
+    /// Treats `String`, `[String]`, and `String`-backed values as secret and all other types as public.
     ///
     /// This is the default secrecy level and provides sensible protection for most use cases.
     case auto
@@ -22,31 +24,7 @@ public enum ConfigVariableSecrecy: CaseIterable, Sendable {
 
     /// Never treat the value as secret.
     ///
-    /// Use this when you explicitly want values to be visible in logs and telemetry, even if they are strings or
-    /// string arrays.
+    /// Use this when you explicitly want values to be visible in logs and telemetry, even if they are strings,
+    /// string arrays, or string-backed.
     case `public`
-}
-
-
-extension ConfigVariable {
-    /// Whether the variable is secret.
-    var isSecret: Bool {
-        return secrecy == .secret
-    }
-}
-
-
-extension ConfigVariable<String> {
-    /// Whether the variable is secret, that is, not `.public`.
-    var isSecret: Bool {
-        return secrecy != .public
-    }
-}
-
-
-extension ConfigVariable<[String]> {
-    /// Whether the variable is secret, that is, not `.public`.
-    var isSecret: Bool {
-        return secrecy != .public
-    }
 }
