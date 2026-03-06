@@ -82,30 +82,3 @@ struct ConfigVariableTests: RandomValueGenerating {
         #expect(variable.testProject == project)
     }
 }
-
-
-// MARK: - Test Metadata Keys
-
-private struct TestProjectMetadataKey: ConfigVariableMetadataKey {
-    static let defaultValue: String? = nil
-    static let keyDisplayText = "TestProject"
-}
-
-
-private struct TestTeamMetadataKey: ConfigVariableMetadataKey {
-    static let defaultValue: String? = nil
-    static let keyDisplayText = "TestTeam"
-}
-
-
-extension ConfigVariableMetadata {
-    fileprivate var testProject: String? {
-        get { self[TestProjectMetadataKey.self] }
-        set { self[TestProjectMetadataKey.self] = newValue }
-    }
-
-    fileprivate var testTeam: String? {
-        get { self[TestTeamMetadataKey.self] }
-        set { self[TestTeamMetadataKey.self] = newValue }
-    }
-}

@@ -7,6 +7,7 @@
 
 import Configuration
 import DevFoundation
+import OSLog
 
 /// Provides access to configuration values queried by a `ConfigVariable`.
 ///
@@ -53,6 +54,12 @@ public struct ConfigVariableReader {
     /// The event bus used to post diagnostic events like ``ConfigVariableDecodingFailedEvent``.
     public let eventBus: EventBus
 
+    /// The variables that have been registered with this reader, keyed by their configuration key.
+    private(set) var registeredVariables: [ConfigKey: RegisteredConfigVariable] = [:]
+
+    /// The logger used for registration diagnostics.
+    private static let logger = Logger(subsystem: "DevConfiguration", category: "ConfigVariableReader")
+
 
     /// Creates a new `ConfigVariableReader` with the specified providers and the default telemetry access reporter.
     ///
@@ -83,6 +90,44 @@ public struct ConfigVariableReader {
         self.reader = ConfigReader(providers: providers, accessReporter: accessReporter)
         self.providers = providers
         self.eventBus = eventBus
+    }
+}
+
+
+// MARK: - Registration
+
+extension ConfigVariableReader {
+    /// Registers a configuration variable with this reader.
+    ///
+    /// Registration records the variable's key, default value, secrecy, and metadata in a non-generic form so that the
+    /// reader can provide information about all registered variables without needing their generic type parameters.
+    ///
+    /// Registration is intended to be performed during setup, before the reader is shared with other components. If a
+    /// variable with the same key has already been registered, the new registration overwrites the previous one, a
+    /// warning is logged, and an assertion failure is triggered.
+    ///
+    /// - Parameter variable: The configuration variable to register.
+    public mutating func register<Value>(_ variable: ConfigVariable<Value>) {
+        let defaultContent: ConfigContent
+        do {
+            defaultContent = try variable.content.encode(variable.defaultValue)
+        } catch {
+            assertionFailure("Failed to encode default value for config variable '\(variable.key)': \(error)")
+            Self.logger.error("Failed to encode default value for config variable '\(variable.key)': \(error)")
+            return
+        }
+
+        if registeredVariables[variable.key] != nil {
+            assertionFailure("Config variable '\(variable.key)' is already registered")
+            Self.logger.error("Config variable '\(variable.key)' is already registered; overwriting")
+        }
+
+        registeredVariables[variable.key] = RegisteredConfigVariable(
+            key: variable.key,
+            defaultContent: defaultContent,
+            secrecy: variable.secrecy,
+            metadata: variable.metadata
+        )
     }
 }
 
