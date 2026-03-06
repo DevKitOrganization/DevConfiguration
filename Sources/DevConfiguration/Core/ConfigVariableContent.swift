@@ -65,6 +65,9 @@ public struct ConfigVariableContent<Value>: Sendable where Value: Sendable {
             _ line: UInt,
             _ continuation: AsyncStream<Value>.Continuation
         ) async throws -> Void
+
+    /// Encodes a value into a ``ConfigContent`` for registration.
+    let encode: @Sendable (_ value: Value) throws -> ConfigContent
 }
 
 
@@ -99,7 +102,8 @@ extension ConfigVariableContent where Value == Bool {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .bool($0) }
         )
     }
 }
@@ -134,7 +138,8 @@ extension ConfigVariableContent where Value == [Bool] {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .boolArray($0) }
         )
     }
 }
@@ -169,7 +174,8 @@ extension ConfigVariableContent where Value == Float64 {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .double($0) }
         )
     }
 }
@@ -204,7 +210,8 @@ extension ConfigVariableContent where Value == [Float64] {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .doubleArray($0) }
         )
     }
 }
@@ -239,7 +246,8 @@ extension ConfigVariableContent where Value == Int {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .int($0) }
         )
     }
 }
@@ -274,7 +282,8 @@ extension ConfigVariableContent where Value == [Int] {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .intArray($0) }
         )
     }
 }
@@ -309,7 +318,8 @@ extension ConfigVariableContent where Value == String {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .string($0) }
         )
     }
 }
@@ -344,7 +354,8 @@ extension ConfigVariableContent where Value == [String] {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .stringArray($0) }
         )
     }
 }
@@ -379,7 +390,8 @@ extension ConfigVariableContent where Value == [UInt8] {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .bytes($0) }
         )
     }
 }
@@ -420,7 +432,8 @@ extension ConfigVariableContent where Value == [[UInt8]] {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .byteChunkArray($0) }
         )
     }
 }
@@ -467,7 +480,8 @@ extension ConfigVariableContent {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .string($0.rawValue) }
         )
     }
 
@@ -510,7 +524,8 @@ extension ConfigVariableContent {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .stringArray($0.map(\.rawValue)) }
         )
     }
 
@@ -552,7 +567,8 @@ extension ConfigVariableContent {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .string($0.description) }
         )
     }
 
@@ -595,7 +611,8 @@ extension ConfigVariableContent {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .stringArray($0.map(\.description)) }
         )
     }
 }
@@ -642,7 +659,8 @@ extension ConfigVariableContent {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .int($0.rawValue) }
         )
     }
 
@@ -685,7 +703,8 @@ extension ConfigVariableContent {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .intArray($0.map(\.rawValue)) }
         )
     }
 
@@ -727,7 +746,8 @@ extension ConfigVariableContent {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .int($0.configInt) }
         )
     }
 
@@ -770,7 +790,8 @@ extension ConfigVariableContent {
                         continuation.yield(value)
                     }
                 }
-            }
+            },
+            encode: { .intArray($0.map(\.configInt)) }
         )
     }
 }
@@ -905,6 +926,11 @@ extension ConfigVariableContent {
                     }
                     continuation.yield(defaultValue)
                 }
+            },
+            encode: { (value) in
+                let resolvedEncoder = encoder ?? JSONEncoder()
+                let data = try resolvedEncoder.encode(value)
+                return try representation.encodeToContent(data)
             }
         )
     }

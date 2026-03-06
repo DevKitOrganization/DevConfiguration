@@ -118,6 +118,28 @@ public struct CodableValueRepresentation: Sendable {
     }
 
 
+    /// Converts encoded `Data` into the appropriate ``ConfigContent`` for this representation.
+    ///
+    /// For string-backed representations, this converts the data to a string using the representation's encoding and
+    /// returns it as ``ConfigContent/string(_:)``. For data-backed representations, this returns the data's bytes as
+    /// ``ConfigContent/bytes(_:)``.
+    ///
+    /// - Parameter data: The encoded data to convert.
+    /// - Returns: The ``ConfigContent`` representing the encoded data.
+    /// - Throws: ``StringEncodingError`` if the data cannot be converted to a string using the expected encoding.
+    func encodeToContent(_ data: Data) throws -> ConfigContent {
+        switch kind {
+        case .string(let encoding):
+            guard let string = String(data: data, encoding: encoding) else {
+                throw StringEncodingError(encoding: encoding)
+            }
+            return .string(string)
+        case .data:
+            return .bytes(Array(data))
+        }
+    }
+
+
     /// Watches for raw data changes from the reader based on this representation.
     ///
     /// Each time the underlying configuration value changes, `onUpdate` is called with the new raw data (or `nil` if the
@@ -153,4 +175,11 @@ public struct CodableValueRepresentation: Sendable {
             }
         }
     }
+}
+
+
+/// An error thrown when encoded data cannot be converted to a string using the expected encoding.
+struct StringEncodingError: Error {
+    /// The string encoding that failed.
+    let encoding: String.Encoding
 }
