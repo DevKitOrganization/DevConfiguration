@@ -20,7 +20,7 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
     @Test
     mutating func registerStoresVariableWithCorrectProperties() {
         // set up
-        var reader = ConfigVariableReader(providers: [InMemoryProvider(values: [:])], eventBus: EventBus())
+        let reader = ConfigVariableReader(providers: [InMemoryProvider(values: [:])], eventBus: EventBus())
 
         var metadata = ConfigVariableMetadata()
         metadata[TestTeamMetadataKey.self] = randomAlphanumericString()
@@ -47,7 +47,7 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
     @Test
     mutating func registerMultipleVariablesStoresAll() {
         // set up
-        var reader = ConfigVariableReader(providers: [InMemoryProvider(values: [:])], eventBus: EventBus())
+        let reader = ConfigVariableReader(providers: [InMemoryProvider(values: [:])], eventBus: EventBus())
         let key1 = randomConfigKey()
         let key2 = randomConfigKey()
         let variable1 = ConfigVariable(key: key1, defaultValue: randomBool())
@@ -68,7 +68,7 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
     @Test
     func registerDuplicateKeyHalts() async {
         await #expect(processExitsWith: .failure) {
-            var reader = ConfigVariableReader(
+            let reader = ConfigVariableReader(
                 providers: [InMemoryProvider(values: [:])],
                 eventBus: EventBus()
             )
@@ -84,7 +84,7 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
     @Test
     func registerWithEncodeFailureHalts() async {
         await #expect(processExitsWith: .failure) {
-            var reader = ConfigVariableReader(
+            let reader = ConfigVariableReader(
                 providers: [InMemoryProvider(values: [:])],
                 eventBus: EventBus()
             )
