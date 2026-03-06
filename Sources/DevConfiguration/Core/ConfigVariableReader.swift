@@ -8,6 +8,7 @@
 import Configuration
 import DevFoundation
 import OSLog
+import Synchronization
 
 /// Provides access to configuration values queried by a `ConfigVariable`.
 ///
@@ -39,7 +40,14 @@ import OSLog
 ///
 /// The reader never throws. If resolution fails, it returns the variable’s default value and posts a
 /// ``ConfigVariableAccessFailedEvent`` to the event bus.
-public struct ConfigVariableReader {
+public final class ConfigVariableReader: Sendable {
+    /// The mutable state of a ``ConfigVariableReader``, protected by a `Mutex`.
+    private struct MutableState: Sendable {
+        /// The variables that have been registered with the reader, keyed by their configuration key.
+        var registeredVariables: [ConfigKey: RegisteredConfigVariable] = [:]
+    }
+
+
     /// The access reporter that is used to report configuration access events.
     public let accessReporter: any AccessReporter
 
@@ -54,8 +62,8 @@ public struct ConfigVariableReader {
     /// The event bus used to post diagnostic events like ``ConfigVariableDecodingFailedEvent``.
     public let eventBus: EventBus
 
-    /// The variables that have been registered with this reader, keyed by their configuration key.
-    private(set) var registeredVariables: [ConfigKey: RegisteredConfigVariable] = [:]
+    /// The mutable state protected by a mutex.
+    private let mutableState = Mutex(MutableState())
 
     /// The logger used for registration diagnostics.
     private static let logger = Logger(subsystem: "DevConfiguration", category: "ConfigVariableReader")
@@ -68,7 +76,7 @@ public struct ConfigVariableReader {
     /// - Parameters:
     ///   - providers: The configuration providers, queried in order until a value is found.
     ///   - eventBus: The event bus that telemetry events are posted on.
-    public init(providers: [any ConfigProvider], eventBus: EventBus) {
+    public convenience init(providers: [any ConfigProvider], eventBus: EventBus) {
         self.init(
             providers: providers,
             accessReporter: EventBusAccessReporter(eventBus: eventBus),
@@ -91,6 +99,12 @@ public struct ConfigVariableReader {
         self.providers = providers
         self.eventBus = eventBus
     }
+
+
+    /// The variables that have been registered with this reader, keyed by their configuration key.
+    var registeredVariables: [ConfigKey: RegisteredConfigVariable] {
+        mutableState.withLock { $0.registeredVariables }
+    }
 }
 
 
@@ -107,7 +121,7 @@ extension ConfigVariableReader {
     /// warning is logged, and an assertion failure is triggered.
     ///
     /// - Parameter variable: The configuration variable to register.
-    public mutating func register<Value>(_ variable: ConfigVariable<Value>) {
+    public func register<Value>(_ variable: ConfigVariable<Value>) {
         let defaultContent: ConfigContent
         do {
             defaultContent = try variable.content.encode(variable.defaultValue)
@@ -117,17 +131,19 @@ extension ConfigVariableReader {
             return
         }
 
-        if registeredVariables[variable.key] != nil {
-            assertionFailure("Config variable '\(variable.key)' is already registered")
-            Self.logger.error("Config variable '\(variable.key)' is already registered; overwriting")
-        }
+        mutableState.withLock { state in
+            if state.registeredVariables[variable.key] != nil {
+                assertionFailure("Config variable '\(variable.key)' is already registered")
+                Self.logger.error("Config variable '\(variable.key)' is already registered; overwriting")
+            }
 
-        registeredVariables[variable.key] = RegisteredConfigVariable(
-            key: variable.key,
-            defaultContent: defaultContent,
-            secrecy: variable.secrecy,
-            metadata: variable.metadata
-        )
+            state.registeredVariables[variable.key] = RegisteredConfigVariable(
+                key: variable.key,
+                defaultContent: defaultContent,
+                secrecy: variable.secrecy,
+                metadata: variable.metadata
+            )
+        }
     }
 }
 
