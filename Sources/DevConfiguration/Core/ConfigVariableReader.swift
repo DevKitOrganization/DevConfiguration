@@ -62,6 +62,11 @@ public final class ConfigVariableReader: Sendable {
     /// The event bus used to post diagnostic events like ``ConfigVariableDecodingFailedEvent``.
     public let eventBus: EventBus
 
+    /// The editor override provider, if editor support is enabled.
+    ///
+    /// When non-nil, this provider is the first entry in ``providers`` and takes precedence over all other providers.
+    let editorOverrideProvider: EditorOverrideProvider?
+
     /// The mutable state protected by a mutex.
     private let mutableState = Mutex(MutableState())
 
@@ -76,11 +81,17 @@ public final class ConfigVariableReader: Sendable {
     /// - Parameters:
     ///   - providers: The configuration providers, queried in order until a value is found.
     ///   - eventBus: The event bus that telemetry events are posted on.
-    public convenience init(providers: [any ConfigProvider], eventBus: EventBus) {
+    ///   - isEditorEnabled: Whether editor override support is enabled. Defaults to `false`.
+    public convenience init(
+        providers: [any ConfigProvider],
+        eventBus: EventBus,
+        isEditorEnabled: Bool = false
+    ) {
         self.init(
             providers: providers,
             accessReporter: EventBusAccessReporter(eventBus: eventBus),
-            eventBus: eventBus
+            eventBus: eventBus,
+            isEditorEnabled: isEditorEnabled
         )
     }
 
@@ -93,10 +104,30 @@ public final class ConfigVariableReader: Sendable {
     ///   - providers: The configuration providers, queried in order until a value is found.
     ///   - accessReporter: The access reporter that is used to report configuration access events.
     ///   - eventBus: The event bus used to post diagnostic events.
-    public init(providers: [any ConfigProvider], accessReporter: any AccessReporter, eventBus: EventBus) {
+    ///   - isEditorEnabled: Whether editor override support is enabled. Defaults to `false`.
+    public init(
+        providers: [any ConfigProvider],
+        accessReporter: any AccessReporter,
+        eventBus: EventBus,
+        isEditorEnabled: Bool = false
+    ) {
+        let editorOverrideProvider: EditorOverrideProvider?
+        let effectiveProviders: [any ConfigProvider]
+
+        if isEditorEnabled {
+            let provider = EditorOverrideProvider()
+            provider.load(from: UserDefaults(suiteName: EditorOverrideProvider.suiteName)!)
+            editorOverrideProvider = provider
+            effectiveProviders = [provider] + providers
+        } else {
+            editorOverrideProvider = nil
+            effectiveProviders = providers
+        }
+
+        self.editorOverrideProvider = editorOverrideProvider
         self.accessReporter = accessReporter
-        self.reader = ConfigReader(providers: providers, accessReporter: accessReporter)
-        self.providers = providers
+        self.reader = ConfigReader(providers: effectiveProviders, accessReporter: accessReporter)
+        self.providers = effectiveProviders
         self.eventBus = eventBus
     }
 
