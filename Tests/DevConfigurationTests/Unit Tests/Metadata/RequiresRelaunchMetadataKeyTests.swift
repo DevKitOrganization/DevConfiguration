@@ -16,13 +16,13 @@ struct RequiresRelaunchMetadataKeyTests {
         var metadata = ConfigVariableMetadata()
 
         // expect that unset requiresRelaunch returns false
-        #expect(metadata.requiresRelaunch == false)
+        #expect(!metadata.requiresRelaunch)
 
         // exercise
         metadata.requiresRelaunch = true
 
         // expect that the value is stored and retrieved correctly
-        #expect(metadata.requiresRelaunch == true)
+        #expect(metadata.requiresRelaunch)
     }
 
 

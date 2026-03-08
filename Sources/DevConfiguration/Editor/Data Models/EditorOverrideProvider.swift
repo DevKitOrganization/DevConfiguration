@@ -7,8 +7,8 @@
 
 import Configuration
 import Foundation
-import OSLog
 import Synchronization
+import os
 
 /// A configuration provider that stores editor overrides in memory and persists them to UserDefaults.
 ///
@@ -45,6 +45,9 @@ final class EditorOverrideProvider: Sendable {
         }
     }
 
+
+    /// The name used to identify this provider.
+    static let editorProviderName = "Editor"
 
     /// The UserDefaults suite name used for persistence.
     static let suiteName = "devkit.DevConfiguration"
@@ -320,7 +323,7 @@ extension EditorOverrideProvider {
 
 extension EditorOverrideProvider: ConfigProvider {
     var providerName: String {
-        "Editor"
+        Self.editorProviderName
     }
 
 

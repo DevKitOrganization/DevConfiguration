@@ -20,6 +20,16 @@
           }
         }
       }
+    },
+    "variableListItem.unknownProviderName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

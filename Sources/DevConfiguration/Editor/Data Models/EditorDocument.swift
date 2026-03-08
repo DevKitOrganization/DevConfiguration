@@ -14,7 +14,7 @@ import Foundation
 /// `EditorDocument` maintains a working copy of configuration overrides separate from the committed state in
 /// ``EditorOverrideProvider``. Changes are staged in the working copy and only applied to the provider on
 /// ``save()``. The document supports undo/redo for all mutations via an `UndoManager`.
-@MainActor
+@MainActor @Observable
 final class EditorDocument {
     /// The editor override provider that this document commits to on save.
     private let provider: EditorOverrideProvider

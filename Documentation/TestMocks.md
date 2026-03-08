@@ -355,7 +355,7 @@ Epilogues execute after the stub is called. Run the epilogue in a `Task` within 
     instance.performAction()
 
     // Verify intermediate state while mock is blocked
-    await #expect(instance.isProcessing == true)
+    await #expect(instance.isProcessing)
 
     // Signal completion to unblock
     signaler.yield()

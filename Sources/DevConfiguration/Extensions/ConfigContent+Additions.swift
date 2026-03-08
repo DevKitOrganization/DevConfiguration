@@ -30,6 +30,41 @@ extension ConfigContent {
 }
 
 
+// MARK: - Display String
+
+extension ConfigContent {
+    /// A human-readable string representation of this content's value.
+    ///
+    /// Numeric values are formatted using locale-aware formatters. Array values are formatted as narrow-width lists.
+    /// Byte values use the memory byte count style.
+    var displayString: String {
+        switch self {
+        case .bool(let value):
+            String(value)
+        case .int(let value):
+            value.formatted()
+        case .double(let value):
+            value.formatted()
+        case .string(let value):
+            value
+        case .bytes(let value):
+            value.count.formatted(.byteCount(style: .memory))
+        case .boolArray(let value):
+            value.map(String.init).formatted(.list(type: .and, width: .narrow))
+        case .intArray(let value):
+            value.map { $0.formatted() }.formatted(.list(type: .and, width: .narrow))
+        case .doubleArray(let value):
+            value.map { $0.formatted() }.formatted(.list(type: .and, width: .narrow))
+        case .stringArray(let value):
+            value.formatted(.list(type: .and, width: .narrow))
+        case .byteChunkArray(let value):
+            value.map { $0.count.formatted(.byteCount(style: .memory)) }
+                .formatted(.list(type: .and, width: .narrow))
+        }
+    }
+}
+
+
 // MARK: - Codable
 
 extension ConfigContent: @retroactive Codable {
