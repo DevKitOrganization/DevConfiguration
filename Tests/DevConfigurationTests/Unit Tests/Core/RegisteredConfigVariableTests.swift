@@ -25,7 +25,7 @@ struct RegisteredConfigVariableTests: RandomValueGenerating {
         let variable = RegisteredConfigVariable(
             key: randomConfigKey(),
             defaultContent: randomConfigContent(),
-            secrecy: randomConfigVariableSecrecy(),
+            isSecret: randomBool(),
             metadata: metadata,
             editorControl: .none,
             parse: nil
@@ -42,7 +42,7 @@ struct RegisteredConfigVariableTests: RandomValueGenerating {
         let variable = RegisteredConfigVariable(
             key: randomConfigKey(),
             defaultContent: randomConfigContent(),
-            secrecy: randomConfigVariableSecrecy(),
+            isSecret: randomBool(),
             metadata: ConfigVariableMetadata(),
             editorControl: .none,
             parse: nil

@@ -412,7 +412,7 @@ extension ConfigVariableListViewModelTests {
         RegisteredConfigVariable(
             key: key ?? randomConfigKey(),
             defaultContent: defaultContent,
-            secrecy: randomConfigVariableSecrecy(),
+            isSecret: randomBool(),
             metadata: metadata,
             editorControl: editorControl,
             parse: nil

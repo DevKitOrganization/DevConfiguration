@@ -82,6 +82,16 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
     }
 
 
+    @Test(arguments: [false, true])
+    mutating func isSecretReturnsVariableIsSecret(isSecret: Bool) {
+        // set up
+        let viewModel = makeDetailViewModel(isSecret: isSecret)
+
+        // expect
+        #expect(viewModel.isSecret == isSecret)
+    }
+
+
     // MARK: - Provider Values
 
     @Test
@@ -337,6 +347,7 @@ extension ConfigVariableDetailViewModelTests {
     private mutating func makeDetailViewModel(
         key: ConfigKey? = nil,
         defaultContent: ConfigContent = .bool(false),
+        isSecret: Bool? = nil,
         metadata: ConfigVariableMetadata = ConfigVariableMetadata(),
         editorControl: EditorControl = .toggle,
         parse: (@Sendable (String) -> ConfigContent?)? = nil,
@@ -347,7 +358,7 @@ extension ConfigVariableDetailViewModelTests {
         let variable = RegisteredConfigVariable(
             key: effectiveKey,
             defaultContent: defaultContent,
-            secrecy: randomConfigVariableSecrecy(),
+            isSecret: isSecret ?? randomBool(),
             metadata: metadata,
             editorControl: editorControl,
             parse: parse

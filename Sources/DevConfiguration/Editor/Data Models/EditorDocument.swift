@@ -8,7 +8,6 @@
 import Configuration
 import Foundation
 
-
 /// A working copy model that tracks staged editor overrides with undo/redo support.
 ///
 /// `EditorDocument` maintains a working copy of configuration overrides separate from the committed state in

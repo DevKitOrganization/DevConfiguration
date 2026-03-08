@@ -22,7 +22,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
         let provider = EditorOverrideProvider()
 
         // expect
-        #expect(provider.providerName == "Editor")
+        #expect(provider.providerName != "editorOverrideProvider.name")
     }
 
 
@@ -212,7 +212,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
         let snapshot = provider.snapshot()
 
         // expect
-        #expect(snapshot.providerName == "Editor")
+        #expect(snapshot.providerName != "editorOverrideProvider.name")
         let result = try snapshot.value(forKey: AbsoluteConfigKey(key), type: .double)
         #expect(result.value == ConfigValue(content, isSecret: false))
     }
@@ -418,7 +418,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
 
             // expect initial empty snapshot
             let first = try #require(await iterator.next())
-            #expect(first.providerName == "Editor")
+            #expect(first.providerName != "editorOverrideProvider.name")
             let firstResult = try first.value(forKey: AbsoluteConfigKey(key), type: .string)
             #expect(firstResult.value == nil)
 

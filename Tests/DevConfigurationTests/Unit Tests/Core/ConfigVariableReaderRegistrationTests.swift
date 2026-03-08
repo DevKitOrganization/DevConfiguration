@@ -18,7 +18,7 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
 
 
     @Test
-    mutating func registerStoresVariableWithCorrectProperties() {
+    mutating func registerStoresVariableWithCorrectProperties() throws {
         // set up
         let reader = ConfigVariableReader(providers: [InMemoryProvider(values: [:])], eventBus: EventBus())
 
@@ -35,15 +35,14 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
         reader.register(variable)
 
         // expect
-        let registered = reader.registeredVariables[key]
-        #expect(registered != nil)
-        #expect(registered?.key == key)
-        #expect(registered?.defaultContent == .int(defaultValue))
-        #expect(registered?.secrecy == secrecy)
-        #expect(registered?.testTeam == metadata[TestTeamMetadataKey.self])
-        #expect(registered?.editorControl == .numberField)
-        #expect(registered?.parse?("42") == .int(42))
-        #expect(registered?.parse?("notAnInt") == nil)
+        let registered = try #require(reader.registeredVariables[key])
+        #expect(registered.key == key)
+        #expect(registered.defaultContent == .int(defaultValue))
+        #expect(registered.isSecret == reader.isSecret(variable))
+        #expect(registered.testTeam == metadata[TestTeamMetadataKey.self])
+        #expect(registered.editorControl == .numberField)
+        #expect(registered.parse?("42") == .int(42))
+        #expect(registered.parse?("notAnInt") == nil)
     }
 
 

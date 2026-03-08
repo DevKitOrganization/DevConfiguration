@@ -30,6 +30,11 @@ final class ConfigVariableDetailViewModel: ConfigVariableDetailViewModeling {
     var isSecretRevealed = false
 
 
+    var isSecret: Bool {
+        variable.isSecret
+    }
+
+
     /// Creates a new detail view model.
     ///
     /// - Parameters:
@@ -66,7 +71,7 @@ final class ConfigVariableDetailViewModel: ConfigVariableDetailViewModeling {
         let absoluteKey = AbsoluteConfigKey(variable.key)
         let expectedType = variable.defaultContent.configType
 
-        return providers.compactMap { provider in
+        return providers.enumerated().compactMap { index, provider in
             guard
                 let result = try? provider.value(forKey: absoluteKey, type: expectedType),
                 let configValue = result.value
@@ -76,6 +81,7 @@ final class ConfigVariableDetailViewModel: ConfigVariableDetailViewModeling {
 
             return ProviderValue(
                 providerName: provider.providerName,
+                providerIndex: index,
                 valueString: configValue.content.displayString
             )
         }

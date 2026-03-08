@@ -27,6 +27,9 @@ struct VariableListItem: Hashable, Sendable {
     /// The name of the provider that currently owns this variable's value.
     let providerName: String
 
+    /// The index of the provider in the reader's provider list, used for color assignment.
+    let providerIndex: Int
+
     /// Whether an editor override is active for this variable in the working copy.
     let hasOverride: Bool
 

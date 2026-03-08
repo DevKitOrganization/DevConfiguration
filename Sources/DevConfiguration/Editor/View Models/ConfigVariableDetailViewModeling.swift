@@ -45,6 +45,9 @@ protocol ConfigVariableDetailViewModeling: Observable {
     /// The editor control to use when editing this variable's value.
     var editorControl: EditorControl { get }
 
+    /// Whether this variable's value is secret.
+    var isSecret: Bool { get }
+
     /// Whether the variable's secret value is currently revealed.
     var isSecretRevealed: Bool { get set }
 }

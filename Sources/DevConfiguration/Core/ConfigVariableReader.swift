@@ -171,7 +171,7 @@ extension ConfigVariableReader {
             state.registeredVariables[variable.key] = RegisteredConfigVariable(
                 key: variable.key,
                 defaultContent: defaultContent,
-                secrecy: variable.secrecy,
+                isSecret: isSecret(variable),
                 metadata: variable.metadata,
                 editorControl: variable.content.editorControl,
                 parse: variable.content.parse

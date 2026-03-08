@@ -13,21 +13,23 @@ import Configuration
 /// can be stored in homogeneous collections. It captures the variable's key, its default value as a ``ConfigContent``,
 /// its secrecy setting, and any attached metadata.
 @dynamicMemberLookup
-struct RegisteredConfigVariable: Sendable {
+public struct RegisteredConfigVariable: Sendable {
     /// The configuration key used to look up this variable's value.
-    let key: ConfigKey
+    public let key: ConfigKey
 
     /// The variable's default value represented as a ``ConfigContent``.
-    let defaultContent: ConfigContent
+    public let defaultContent: ConfigContent
 
-    /// Whether this value should be treated as a secret.
-    let secrecy: ConfigVariableSecrecy
+    /// Whether this variable's value should be treated as secret.
+    ///
+    /// This is resolved at registration time from the variable's ``ConfigVariableSecrecy`` setting and content type.
+    public let isSecret: Bool
 
     /// The configuration variable's metadata.
-    let metadata: ConfigVariableMetadata
+    public let metadata: ConfigVariableMetadata
 
     /// The editor control to use when editing this variable's value in the editor UI.
-    let editorControl: EditorControl
+    public let editorControl: EditorControl
 
     /// Parses a raw string from the editor UI into a ``ConfigContent`` value.
     ///

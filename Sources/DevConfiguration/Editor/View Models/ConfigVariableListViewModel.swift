@@ -57,12 +57,13 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
 
     var variables: [VariableListItem] {
         let items = registeredVariables.values.map { variable in
-            let (content, providerName) = resolvedValue(for: variable)
+            let (content, providerName, providerIndex) = resolvedValue(for: variable)
             return VariableListItem(
                 key: variable.key,
                 displayName: variable.displayName ?? variable.key.description,
                 currentValue: content.displayString,
                 providerName: providerName,
+                providerIndex: providerIndex,
                 hasOverride: document.hasOverride(forKey: variable.key),
                 editorControl: variable.editorControl
             )
@@ -140,27 +141,29 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
 // MARK: - Value Resolution
 
 extension ConfigVariableListViewModel {
-    /// Resolves the current value and owning provider name for a registered variable.
+    /// Resolves the current value, owning provider name, and provider index for a registered variable.
     ///
     /// Checks the document's working copy first, then queries each provider in order. Falls back to the variable's
     /// default content if no provider has a value.
-    private func resolvedValue(for variable: RegisteredConfigVariable) -> (ConfigContent, String) {
+    private func resolvedValue(for variable: RegisteredConfigVariable) -> (ConfigContent, String, Int) {
         if let override = document.override(forKey: variable.key) {
-            return (override, EditorOverrideProvider.editorProviderName)
+            let editorIndex = providers.firstIndex { $0.providerName == EditorOverrideProvider.editorProviderName } ?? 0
+            return (override, EditorOverrideProvider.editorProviderName, editorIndex)
         }
 
         let absoluteKey = AbsoluteConfigKey(variable.key)
         let expectedType = variable.defaultContent.configType
 
-        for provider in providers {
+        for (index, provider) in providers.enumerated() {
             if let result = try? provider.value(forKey: absoluteKey, type: expectedType), let value = result.value {
-                return (value.content, provider.providerName)
+                return (value.content, provider.providerName, index)
             }
         }
 
         return (
             variable.defaultContent,
-            String(localized: "variableListItem.unknownProviderName", bundle: #bundle)
+            String(localized: "variableListItem.unknownProviderName", bundle: #bundle),
+            providers.count
         )
     }
 }

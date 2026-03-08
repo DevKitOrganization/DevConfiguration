@@ -47,7 +47,7 @@ final class EditorOverrideProvider: Sendable {
 
 
     /// The name used to identify this provider.
-    static let editorProviderName = "Editor"
+    static let editorProviderName = String(localized: "editorOverrideProvider.name", bundle: #bundle)
 
     /// The UserDefaults suite name used for persistence.
     static let suiteName = "devkit.DevConfiguration"

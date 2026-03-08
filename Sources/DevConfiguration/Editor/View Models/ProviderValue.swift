@@ -13,6 +13,9 @@ struct ProviderValue: Hashable, Sendable {
     /// The name of the provider.
     let providerName: String
 
+    /// The index of the provider in the reader's provider list, used for color assignment.
+    let providerIndex: Int
+
     /// The provider's value for the variable, formatted as a display string.
     let valueString: String
 }
