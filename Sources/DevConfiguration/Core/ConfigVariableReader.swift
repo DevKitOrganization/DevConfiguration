@@ -141,7 +141,9 @@ extension ConfigVariableReader {
                 key: variable.key,
                 defaultContent: defaultContent,
                 secrecy: variable.secrecy,
-                metadata: variable.metadata
+                metadata: variable.metadata,
+                editorControl: variable.content.editorControl,
+                parse: variable.content.parse
             )
         }
     }

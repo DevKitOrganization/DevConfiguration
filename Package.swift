@@ -34,6 +34,9 @@ let package = Package(
                 .product(name: "Configuration", package: "swift-configuration"),
                 .product(name: "DevFoundation", package: "DevFoundation"),
             ],
+            resources: [
+                .process("Resources"),
+            ],
             swiftSettings: swiftSettings
         ),
         .testTarget(

@@ -26,7 +26,9 @@ struct RegisteredConfigVariableTests: RandomValueGenerating {
             key: randomConfigKey(),
             defaultContent: randomConfigContent(),
             secrecy: randomConfigVariableSecrecy(),
-            metadata: metadata
+            metadata: metadata,
+            editorControl: .none,
+            parse: nil
         )
 
         // expect
@@ -41,7 +43,9 @@ struct RegisteredConfigVariableTests: RandomValueGenerating {
             key: randomConfigKey(),
             defaultContent: randomConfigContent(),
             secrecy: randomConfigVariableSecrecy(),
-            metadata: ConfigVariableMetadata()
+            metadata: ConfigVariableMetadata(),
+            editorControl: .none,
+            parse: nil
         )
 
         // expect

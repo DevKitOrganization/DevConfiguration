@@ -26,6 +26,15 @@ struct RegisteredConfigVariable: Sendable {
     /// The configuration variable's metadata.
     let metadata: ConfigVariableMetadata
 
+    /// The editor control to use when editing this variable's value in the editor UI.
+    let editorControl: EditorControl
+
+    /// Parses a raw string from the editor UI into a ``ConfigContent`` value.
+    ///
+    /// Returns `nil` if the string cannot be parsed. When this property itself is `nil`, the variable does not support
+    /// editing.
+    let parse: (@Sendable (_ input: String) -> ConfigContent?)?
+
 
     /// Provides dynamic member lookup access to metadata properties.
     ///

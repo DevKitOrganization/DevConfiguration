@@ -41,6 +41,9 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
         #expect(registered?.defaultContent == .int(defaultValue))
         #expect(registered?.secrecy == secrecy)
         #expect(registered?.testTeam == metadata[TestTeamMetadataKey.self])
+        #expect(registered?.editorControl == .numberField)
+        #expect(registered?.parse?("42") == .int(42))
+        #expect(registered?.parse?("notAnInt") == nil)
     }
 
 
@@ -101,7 +104,9 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
                             "",
                             .init(codingPath: [], debugDescription: "")
                         )
-                    }
+                    },
+                    editorControl: .none,
+                    parse: nil
                 )
             )
 

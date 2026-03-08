@@ -68,6 +68,15 @@ public struct ConfigVariableContent<Value>: Sendable where Value: Sendable {
 
     /// Encodes a value into a ``ConfigContent`` for registration.
     let encode: @Sendable (_ value: Value) throws -> ConfigContent
+
+    /// The editor control to use when editing this variable's value in the editor UI.
+    public let editorControl: EditorControl
+
+    /// Parses a raw string from the editor UI into a ``ConfigContent`` value.
+    ///
+    /// Returns `nil` if the string cannot be parsed into a valid value for this content type. When `nil` itself, the
+    /// content type does not support editing.
+    let parse: (@Sendable (_ input: String) -> ConfigContent?)?
 }
 
 
@@ -103,7 +112,9 @@ extension ConfigVariableContent where Value == Bool {
                     }
                 }
             },
-            encode: { .bool($0) }
+            encode: { .bool($0) },
+            editorControl: .toggle,
+            parse: { Bool($0).map { .bool($0) } }
         )
     }
 }
@@ -139,7 +150,9 @@ extension ConfigVariableContent where Value == [Bool] {
                     }
                 }
             },
-            encode: { .boolArray($0) }
+            encode: { .boolArray($0) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -175,7 +188,9 @@ extension ConfigVariableContent where Value == Float64 {
                     }
                 }
             },
-            encode: { .double($0) }
+            encode: { .double($0) },
+            editorControl: .decimalField,
+            parse: { Double($0).map { .double($0) } }
         )
     }
 }
@@ -211,7 +226,9 @@ extension ConfigVariableContent where Value == [Float64] {
                     }
                 }
             },
-            encode: { .doubleArray($0) }
+            encode: { .doubleArray($0) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -247,7 +264,9 @@ extension ConfigVariableContent where Value == Int {
                     }
                 }
             },
-            encode: { .int($0) }
+            encode: { .int($0) },
+            editorControl: .numberField,
+            parse: { Int($0).map { .int($0) } }
         )
     }
 }
@@ -283,7 +302,9 @@ extension ConfigVariableContent where Value == [Int] {
                     }
                 }
             },
-            encode: { .intArray($0) }
+            encode: { .intArray($0) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -319,7 +340,9 @@ extension ConfigVariableContent where Value == String {
                     }
                 }
             },
-            encode: { .string($0) }
+            encode: { .string($0) },
+            editorControl: .textField,
+            parse: { .string($0) }
         )
     }
 }
@@ -355,7 +378,9 @@ extension ConfigVariableContent where Value == [String] {
                     }
                 }
             },
-            encode: { .stringArray($0) }
+            encode: { .stringArray($0) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -391,7 +416,9 @@ extension ConfigVariableContent where Value == [UInt8] {
                     }
                 }
             },
-            encode: { .bytes($0) }
+            encode: { .bytes($0) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -433,7 +460,9 @@ extension ConfigVariableContent where Value == [[UInt8]] {
                     }
                 }
             },
-            encode: { .byteChunkArray($0) }
+            encode: { .byteChunkArray($0) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -481,7 +510,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .string($0.rawValue) }
+            encode: { .string($0.rawValue) },
+            editorControl: .textField,
+            parse: { .string($0) }
         )
     }
 
@@ -525,7 +556,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .stringArray($0.map(\.rawValue)) }
+            encode: { .stringArray($0.map(\.rawValue)) },
+            editorControl: .none,
+            parse: nil
         )
     }
 
@@ -568,7 +601,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .string($0.description) }
+            encode: { .string($0.description) },
+            editorControl: .textField,
+            parse: { .string($0) }
         )
     }
 
@@ -612,7 +647,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .stringArray($0.map(\.description)) }
+            encode: { .stringArray($0.map(\.description)) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -660,7 +697,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .int($0.rawValue) }
+            encode: { .int($0.rawValue) },
+            editorControl: .numberField,
+            parse: { Int($0).map { .int($0) } }
         )
     }
 
@@ -704,7 +743,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .intArray($0.map(\.rawValue)) }
+            encode: { .intArray($0.map(\.rawValue)) },
+            editorControl: .none,
+            parse: nil
         )
     }
 
@@ -747,7 +788,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .int($0.configInt) }
+            encode: { .int($0.configInt) },
+            editorControl: .numberField,
+            parse: { Int($0).map { .int($0) } }
         )
     }
 
@@ -791,7 +834,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .intArray($0.map(\.configInt)) }
+            encode: { .intArray($0.map(\.configInt)) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -931,7 +976,9 @@ extension ConfigVariableContent {
                 let resolvedEncoder = encoder ?? JSONEncoder()
                 let data = try resolvedEncoder.encode(value)
                 return try representation.encodeToContent(data)
-            }
+            },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
