@@ -16,15 +16,6 @@ import Synchronization
 /// overrides the highest priority. Values are stored in memory for fast access and can be persisted to UserDefaults
 /// for durability across app launches.
 final class EditorOverrideProvider: Sendable {
-    /// The UserDefaults suite name used for persistence.
-    static let suiteName = "devkit.DevConfiguration"
-
-    /// The UserDefaults key under which overrides are stored.
-    private static let persistenceKey = "editorOverrides"
-
-    /// The logger used for persistence diagnostics.
-    private static let logger = Logger(subsystem: "DevConfiguration", category: "EditorOverrideProvider")
-
     /// The mutable state of the provider, protected by a `Mutex`.
     private struct MutableState: Sendable {
         /// The current overrides keyed by their configuration key.
@@ -54,6 +45,15 @@ final class EditorOverrideProvider: Sendable {
         }
     }
 
+
+    /// The UserDefaults suite name used for persistence.
+    static let suiteName = "devkit.DevConfiguration"
+
+    /// The UserDefaults key under which overrides are stored.
+    private static let persistenceKey = "editorOverrides"
+
+    /// The logger used for persistence diagnostics.
+    private static let logger = Logger(subsystem: "DevConfiguration", category: "EditorOverrideProvider")
 
     /// The mutable state protected by a mutex.
     private let mutableState: Mutex<MutableState> = .init(MutableState())
