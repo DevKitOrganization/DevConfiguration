@@ -8,11 +8,10 @@ repository.
 
 ### Building and Testing
 
-  - **Build**: `swift build`
-  - **Test all**: `swift test`
-  - **Test specific target**: `swift test --filter DevConfigurationTests`
-  - **Test with coverage**: Use Xcode test plans in `Build Support/Test Plans/` (AllTests.xctestplan
-    for all tests)
+  - **Build**: `xcodebuild build -scheme DevConfiguration -destination 'generic/platform=macOS'`
+  - **Test all**: `xcodebuild test -scheme DevConfiguration -destination 'platform=macOS'`
+  - **Test with coverage**: Use Xcode test plans in `Build Support/Test Plans/`
+    (DevConfiguration.xctestplan)
 
 ### Code Quality
 
@@ -28,22 +27,32 @@ The repository uses GitHub Actions for CI/CD with the workflow in
   - Lints code on PRs using `swift format`
   - Builds and tests on macOS only (other platforms disabled due to GitHub Actions stability)
   - Generates code coverage reports using xccovPretty
-  - Requires Xcode 16.0.1 and macOS 16 runners
+  - Requires Xcode 26.0.1 and macOS 26 runners
 
 
 ## Architecture Overview
 
 DevConfiguration is a type-safe configuration wrapper built on Apple's swift-configuration library.
-It provides structured configuration management with telemetry, caching, and extensible metadata.
+It provides structured configuration management with access reporting via EventBus and extensible
+metadata.
+
+### Source Structure
+
+  - **Sources/DevConfiguration/Core/**: `ConfigVariable`, `ConfigVariableReader`,
+    `ConfigVariableContent`, `CodableValueRepresentation`, `RegisteredConfigVariable`,
+    and `ConfigVariableSecrecy`
+  - **Sources/DevConfiguration/Metadata/**: `ConfigVariableMetadata` and metadata key types
+    (`DisplayNameMetadataKey`, `RequiresRelaunchMetadataKey`)
+  - **Sources/DevConfiguration/Access Reporting/**: EventBus-based access and decoding events
 
 ### Key Documents
 
-  - **Architecture Plan.md**: Complete architectural design and technical decisions
-  - **Implementation Plan.md**: Phased implementation roadmap broken into 6 slices
   - **Documentation/TestingGuidelines.md**: Testing standards and patterns
   - **Documentation/TestMocks.md**: Mock creation and usage guidelines
   - **Documentation/DependencyInjection.md**: Dependency injection patterns
   - **Documentation/MarkdownStyleGuide.md**: Documentation formatting standards
+  - **Documentation/MVVMForSwiftUI.md**: MVVM architecture for SwiftUI
+  - **Documentation/MVVMForSwiftUIBackground.md**: Background on MVVM design decisions
 
 
 ## Dependencies
@@ -62,4 +71,4 @@ External dependencies managed via Swift Package Manager:
   - Minimum deployment targets: iOS, macOS, tvOS, visionOS, and watchOS 26
   - All public APIs must be documented and tested
   - Test coverage target: >99%
-  - Implementation follows phased approach in Implementation Plan.md
+  - SwiftUI views do not currently have automated tests

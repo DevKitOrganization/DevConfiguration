@@ -48,17 +48,6 @@ public struct CodableValueRepresentation: Sendable {
     }
 
 
-    /// Whether this representation uses string-backed storage.
-    var isStringBacked: Bool {
-        switch kind {
-        case .string:
-            true
-        case .data:
-            false
-        }
-    }
-
-
     /// Reads raw data synchronously from the reader based on this representation.
     ///
     /// For string-backed representations, this reads a string value and converts it to `Data` using the representation’s

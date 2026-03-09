@@ -18,36 +18,39 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
 
 
     @Test
-    mutating func registerStoresVariableWithCorrectProperties() {
+    mutating func registerStoresVariableWithCorrectProperties() throws {
         // set up
-        let reader = ConfigVariableReader(providers: [InMemoryProvider(values: [:])], eventBus: EventBus())
+        let reader = ConfigVariableReader(namedProviders: [.init(InMemoryProvider(values: [:]))], eventBus: EventBus())
 
         var metadata = ConfigVariableMetadata()
         metadata[TestTeamMetadataKey.self] = randomAlphanumericString()
 
         let key = randomConfigKey()
         let defaultValue = randomInt(in: .min ... .max)
-        let secrecy = randomConfigVariableSecrecy()
-        let variable = ConfigVariable(key: key, defaultValue: defaultValue, secrecy: secrecy)
+        let isSecret = randomBool()
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, isSecret: isSecret)
             .metadata(\.testTeam, metadata[TestTeamMetadataKey.self])
 
         // exercise
         reader.register(variable)
 
         // expect
-        let registered = reader.registeredVariables[key]
-        #expect(registered != nil)
-        #expect(registered?.key == key)
-        #expect(registered?.defaultContent == .int(defaultValue))
-        #expect(registered?.secrecy == secrecy)
-        #expect(registered?.testTeam == metadata[TestTeamMetadataKey.self])
+        let registered = try #require(reader.registeredVariables[key])
+        #expect(registered.key == key)
+        #expect(registered.defaultContent == .int(defaultValue))
+        #expect(registered.isSecret == isSecret)
+        #expect(registered.testTeam == metadata[TestTeamMetadataKey.self])
+        #expect(registered.destinationTypeName == "Int")
+        #expect(registered.editorControl == .numberField)
+        #expect(registered.parse?("42") == .int(42))
+        #expect(registered.parse?("notAnInt") == nil)
     }
 
 
     @Test
     mutating func registerMultipleVariablesStoresAll() {
         // set up
-        let reader = ConfigVariableReader(providers: [InMemoryProvider(values: [:])], eventBus: EventBus())
+        let reader = ConfigVariableReader(namedProviders: [.init(InMemoryProvider(values: [:]))], eventBus: EventBus())
         let key1 = randomConfigKey()
         let key2 = randomConfigKey()
         let variable1 = ConfigVariable(key: key1, defaultValue: randomBool())
@@ -69,7 +72,7 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
     func registerDuplicateKeyHalts() async {
         await #expect(processExitsWith: .failure) {
             let reader = ConfigVariableReader(
-                providers: [InMemoryProvider(values: [:])],
+                namedProviders: [.init(InMemoryProvider(values: [:]))],
                 eventBus: EventBus()
             )
             let variable1 = ConfigVariable(key: "duplicate.key", defaultValue: 1)
@@ -85,14 +88,13 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
     func registerWithEncodeFailureHalts() async {
         await #expect(processExitsWith: .failure) {
             let reader = ConfigVariableReader(
-                providers: [InMemoryProvider(values: [:])],
+                namedProviders: [.init(InMemoryProvider(values: [:]))],
                 eventBus: EventBus()
             )
             let variable = ConfigVariable(
                 key: "encode.failure",
                 defaultValue: UnencodableValue(),
                 content: ConfigVariableContent<UnencodableValue>(
-                    isAutoSecret: false,
                     read: { _, _, _, defaultValue, _, _, _ in defaultValue },
                     fetch: { _, _, _, defaultValue, _, _, _ in defaultValue },
                     startWatching: { _, _, _, _, _, _, _, _ in },
@@ -101,7 +103,9 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
                             "",
                             .init(codingPath: [], debugDescription: "")
                         )
-                    }
+                    },
+                    editorControl: .none,
+                    parse: nil
                 )
             )
 

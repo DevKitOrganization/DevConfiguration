@@ -30,8 +30,8 @@ import Synchronization
 /// Then create a reader with your providers and query the variable:
 ///
 ///     let reader = ConfigVariableReader(
-///         providers: [
-///             InMemoryProvider(values: ["dark_mode": "true"])
+///         namedProviders: [
+///             .init(InMemoryProvider(values: ["dark_mode": "true"]), displayName: "In-Memory")
 ///         ],
 ///         eventBus: eventBus
 ///     )
@@ -54,13 +54,19 @@ public final class ConfigVariableReader: Sendable {
     /// The configuration reader that is used to resolve configuration values.
     public let reader: ConfigReader
 
-    /// The configuration reader’s providers.
+    /// The configuration reader’s named providers.
     ///
-    /// This is stored so that
-    public let providers: [any ConfigProvider]
+    /// When editor support is enabled, the editor override provider is the first entry.
+    public let namedProviders: [NamedConfigProvider]
 
     /// The event bus used to post diagnostic events like ``ConfigVariableDecodingFailedEvent``.
     public let eventBus: EventBus
+
+    /// The editor override provider, if editor support is enabled.
+    ///
+    /// When non-nil, this provider is the first entry in ``namedProviders`` and takes precedence over all other
+    /// providers.
+    let editorOverrideProvider: EditorOverrideProvider?
 
     /// The mutable state protected by a mutex.
     private let mutableState = Mutex(MutableState())
@@ -74,13 +80,19 @@ public final class ConfigVariableReader: Sendable {
     /// Use this initializer when you want to use the standard `EventBusAccessReporter`.
     ///
     /// - Parameters:
-    ///   - providers: The configuration providers, queried in order until a value is found.
+    ///   - namedProviders: The named configuration providers, queried in order until a value is found.
     ///   - eventBus: The event bus that telemetry events are posted on.
-    public convenience init(providers: [any ConfigProvider], eventBus: EventBus) {
+    ///   - isEditorEnabled: Whether editor override support is enabled. Defaults to `false`.
+    public convenience init(
+        namedProviders: [NamedConfigProvider],
+        eventBus: EventBus,
+        isEditorEnabled: Bool = false
+    ) {
         self.init(
-            providers: providers,
+            namedProviders: namedProviders,
             accessReporter: EventBusAccessReporter(eventBus: eventBus),
-            eventBus: eventBus
+            eventBus: eventBus,
+            isEditorEnabled: isEditorEnabled
         )
     }
 
@@ -90,13 +102,33 @@ public final class ConfigVariableReader: Sendable {
     /// Use this initializer when you want to directly control the access reporter used by the config reader.
     ///
     /// - Parameters:
-    ///   - providers: The configuration providers, queried in order until a value is found.
+    ///   - namedProviders: The named configuration providers, queried in order until a value is found.
     ///   - accessReporter: The access reporter that is used to report configuration access events.
     ///   - eventBus: The event bus used to post diagnostic events.
-    public init(providers: [any ConfigProvider], accessReporter: any AccessReporter, eventBus: EventBus) {
+    ///   - isEditorEnabled: Whether editor override support is enabled. Defaults to `false`.
+    public init(
+        namedProviders: [NamedConfigProvider],
+        accessReporter: any AccessReporter,
+        eventBus: EventBus,
+        isEditorEnabled: Bool = false
+    ) {
+        var editorOverrideProvider: EditorOverrideProvider?
+        var namedProviders = namedProviders
+
+        if isEditorEnabled {
+            let provider = EditorOverrideProvider()
+            provider.load(from: UserDefaults(suiteName: EditorOverrideProvider.suiteName)!)
+            editorOverrideProvider = provider
+            namedProviders.insert(.init(provider, displayName: localizedString("editorOverrideProvider.name")), at: 0)
+        }
+
+        self.editorOverrideProvider = editorOverrideProvider
         self.accessReporter = accessReporter
-        self.reader = ConfigReader(providers: providers, accessReporter: accessReporter)
-        self.providers = providers
+        self.reader = ConfigReader(
+            providers: namedProviders.map(\.provider),
+            accessReporter: accessReporter
+        )
+        self.namedProviders = namedProviders
         self.eventBus = eventBus
     }
 
@@ -140,8 +172,11 @@ extension ConfigVariableReader {
             state.registeredVariables[variable.key] = RegisteredConfigVariable(
                 key: variable.key,
                 defaultContent: defaultContent,
-                secrecy: variable.secrecy,
-                metadata: variable.metadata
+                isSecret: variable.isSecret,
+                metadata: variable.metadata,
+                destinationTypeName: String(describing: Value.self),
+                editorControl: variable.content.editorControl,
+                parse: variable.content.parse
             )
         }
     }
@@ -163,7 +198,7 @@ extension ConfigVariableReader {
         fileID: String = #fileID,
         line: UInt = #line
     ) -> Value {
-        variable.content.read(reader, variable.key, isSecret(variable), variable.defaultValue, eventBus, fileID, line)
+        variable.content.read(reader, variable.key, variable.isSecret, variable.defaultValue, eventBus, fileID, line)
     }
 
 
@@ -198,7 +233,7 @@ extension ConfigVariableReader {
         try await variable.content.fetch(
             reader,
             variable.key,
-            isSecret(variable),
+            variable.isSecret,
             variable.defaultValue,
             eventBus,
             fileID,
@@ -227,7 +262,7 @@ extension ConfigVariableReader {
         // Capture these locally so that the @Sendable task closures below don’t need to capture `self`.
         let configReader = reader
         let eventBus = eventBus
-        let isSecret = isSecret(variable)
+        let isSecret = variable.isSecret
         let (stream, continuation) = AsyncStream<Value>.makeStream()
 
         // We use a task group with two concurrent tasks: one that watches the underlying provider for changes and
@@ -270,24 +305,5 @@ extension ConfigVariableReader {
             // The handler task always returns a non-nil value, so we should never reach this point.
             fatalError()
         }
-    }
-}
-
-
-// MARK: - Secrecy
-
-extension ConfigVariableReader {
-    /// Whether the given variable is secret.
-    ///
-    /// When secrecy is `.auto`, this defers to the variable’s content to determine the appropriate secrecy.
-    /// String- backed and codable content types default to secret, while numeric and boolean types default to public.
-    ///
-    /// - Parameter variable: The config variable whose secrecy is being determined.
-    func isSecret<Value>(_ variable: ConfigVariable<Value>) -> Bool {
-        let resolvedSecrecy =
-            variable.secrecy == .auto
-            ? (variable.content.isAutoSecret ? .secret : .public)
-            : variable.secrecy
-        return resolvedSecrecy == .secret
     }
 }

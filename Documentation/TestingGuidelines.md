@@ -384,7 +384,7 @@ coordination:
         await task.value
 
         // expect the work completed successfully
-        #expect(instance.workCompletedFlag == true)
+        #expect(instance.workCompletedFlag)
     }
 
 **When to use this pattern:**
@@ -533,7 +533,7 @@ execution timing. Prologues execute before the stub, epilogues execute after. Se
         instance.performAction()
 
         // expect intermediate state while mock is blocked
-        await #expect(instance.isProcessing == true)
+        await #expect(instance.isProcessing)
         await #expect(instance.queuedItems.count == 5)
 
         // signal completion to unblock the mock
@@ -543,7 +543,7 @@ execution timing. Prologues execute before the stub, epilogues execute after. Se
         try await Task.sleep(for: .milliseconds(100))
 
         // expect final state after mock completes
-        await #expect(instance.isProcessing == false)
+        await #expect(!instance.isProcessing)
         await #expect(instance.queuedItems.isEmpty)
     }
 
@@ -564,7 +564,7 @@ execution timing. Prologues execute before the stub, epilogues execute after. Se
 
         // expect timeout occurred before mock completed
         try await Task.sleep(for: .milliseconds(150))
-        await #expect(instance.didTimeout == true)
+        await #expect(instance.didTimeout)
     }
 
 #### Pattern: Signaling Completion with Epilogue

@@ -24,7 +24,7 @@ struct ConfigVariableReaderArrayTests: RandomValueGenerating {
 
     /// The reader under test.
     lazy var reader: ConfigVariableReader = {
-        ConfigVariableReader(providers: [provider], eventBus: eventBus)
+        ConfigVariableReader(namedProviders: [.init(provider)], eventBus: eventBus)
     }()
 
     /// Sets a value in the provider for the given key with a random `isSecret` flag.

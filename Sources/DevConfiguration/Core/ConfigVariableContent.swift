@@ -12,8 +12,7 @@ import Foundation
 /// Describes how a ``ConfigVariable`` value maps to and from `ConfigContent` primitives.
 ///
 /// `ConfigVariableContent` encapsulates which `ConfigReader` method to call, how to decode the raw primitive into the
-/// variable’s value type, and how to encode the value back for registration. It also determines secrecy behavior based
-/// on the underlying content type.
+/// variable’s value type, and how to encode the value back for registration.
 ///
 /// For primitive types like `Bool`, `Int`, `String`, etc., you typically don’t need to interact with this type
 /// directly — ``ConfigVariable`` initializers set the appropriate content automatically. For `Codable` types, you
@@ -26,9 +25,6 @@ import Foundation
 ///         content: .json()
 ///     )
 public struct ConfigVariableContent<Value>: Sendable where Value: Sendable {
-    /// Whether `.auto` secrecy treats this content type as secret.
-    public let isAutoSecret: Bool
-
     /// Reads the value synchronously from a `ConfigReader`.
     let read:
         @Sendable (
@@ -68,6 +64,15 @@ public struct ConfigVariableContent<Value>: Sendable where Value: Sendable {
 
     /// Encodes a value into a ``ConfigContent`` for registration.
     let encode: @Sendable (_ value: Value) throws -> ConfigContent
+
+    /// The editor control to use when editing this variable's value in the editor UI.
+    public let editorControl: EditorControl
+
+    /// Parses a raw string from the editor UI into a ``ConfigContent`` value.
+    ///
+    /// Returns `nil` if the string cannot be parsed into a valid value for this content type. When `nil` itself, the
+    /// content type does not support editing.
+    let parse: (@Sendable (_ input: String) -> ConfigContent?)?
 }
 
 
@@ -77,7 +82,6 @@ extension ConfigVariableContent where Value == Bool {
     /// Content for `Bool` values.
     public static var bool: ConfigVariableContent {
         ConfigVariableContent(
-            isAutoSecret: false,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.bool(forKey: key, isSecret: isSecret, default: defaultValue, fileID: fileID, line: line)
             },
@@ -103,7 +107,9 @@ extension ConfigVariableContent where Value == Bool {
                     }
                 }
             },
-            encode: { .bool($0) }
+            encode: { .bool($0) },
+            editorControl: .toggle,
+            parse: { Bool($0).map { .bool($0) } }
         )
     }
 }
@@ -113,7 +119,6 @@ extension ConfigVariableContent where Value == [Bool] {
     /// Content for `[Bool]` values.
     public static var boolArray: ConfigVariableContent {
         ConfigVariableContent(
-            isAutoSecret: false,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.boolArray(forKey: key, isSecret: isSecret, default: defaultValue, fileID: fileID, line: line)
             },
@@ -139,7 +144,9 @@ extension ConfigVariableContent where Value == [Bool] {
                     }
                 }
             },
-            encode: { .boolArray($0) }
+            encode: { .boolArray($0) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -149,7 +156,6 @@ extension ConfigVariableContent where Value == Float64 {
     /// Content for `Float64` values.
     public static var float64: ConfigVariableContent {
         ConfigVariableContent(
-            isAutoSecret: false,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.double(forKey: key, isSecret: isSecret, default: defaultValue, fileID: fileID, line: line)
             },
@@ -175,7 +181,9 @@ extension ConfigVariableContent where Value == Float64 {
                     }
                 }
             },
-            encode: { .double($0) }
+            encode: { .double($0) },
+            editorControl: .decimalField,
+            parse: { Double($0).map { .double($0) } }
         )
     }
 }
@@ -185,7 +193,6 @@ extension ConfigVariableContent where Value == [Float64] {
     /// Content for `[Float64]` values.
     public static var float64Array: ConfigVariableContent {
         ConfigVariableContent(
-            isAutoSecret: false,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.doubleArray(forKey: key, isSecret: isSecret, default: defaultValue, fileID: fileID, line: line)
             },
@@ -211,7 +218,9 @@ extension ConfigVariableContent where Value == [Float64] {
                     }
                 }
             },
-            encode: { .doubleArray($0) }
+            encode: { .doubleArray($0) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -221,7 +230,6 @@ extension ConfigVariableContent where Value == Int {
     /// Content for `Int` values.
     public static var int: ConfigVariableContent {
         ConfigVariableContent(
-            isAutoSecret: false,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.int(forKey: key, isSecret: isSecret, default: defaultValue, fileID: fileID, line: line)
             },
@@ -247,7 +255,9 @@ extension ConfigVariableContent where Value == Int {
                     }
                 }
             },
-            encode: { .int($0) }
+            encode: { .int($0) },
+            editorControl: .numberField,
+            parse: { Int($0).map { .int($0) } }
         )
     }
 }
@@ -257,7 +267,6 @@ extension ConfigVariableContent where Value == [Int] {
     /// Content for `[Int]` values.
     public static var intArray: ConfigVariableContent {
         ConfigVariableContent(
-            isAutoSecret: false,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.intArray(forKey: key, isSecret: isSecret, default: defaultValue, fileID: fileID, line: line)
             },
@@ -283,7 +292,9 @@ extension ConfigVariableContent where Value == [Int] {
                     }
                 }
             },
-            encode: { .intArray($0) }
+            encode: { .intArray($0) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -293,7 +304,6 @@ extension ConfigVariableContent where Value == String {
     /// Content for `String` values.
     public static var string: ConfigVariableContent {
         ConfigVariableContent(
-            isAutoSecret: true,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.string(forKey: key, isSecret: isSecret, default: defaultValue, fileID: fileID, line: line)
             },
@@ -319,7 +329,9 @@ extension ConfigVariableContent where Value == String {
                     }
                 }
             },
-            encode: { .string($0) }
+            encode: { .string($0) },
+            editorControl: .textField,
+            parse: { .string($0) }
         )
     }
 }
@@ -329,7 +341,6 @@ extension ConfigVariableContent where Value == [String] {
     /// Content for `[String]` values.
     public static var stringArray: ConfigVariableContent {
         ConfigVariableContent(
-            isAutoSecret: true,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.stringArray(forKey: key, isSecret: isSecret, default: defaultValue, fileID: fileID, line: line)
             },
@@ -355,7 +366,9 @@ extension ConfigVariableContent where Value == [String] {
                     }
                 }
             },
-            encode: { .stringArray($0) }
+            encode: { .stringArray($0) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -365,7 +378,6 @@ extension ConfigVariableContent where Value == [UInt8] {
     /// Content for `[UInt8]` (bytes) values.
     public static var bytes: ConfigVariableContent {
         ConfigVariableContent(
-            isAutoSecret: false,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.bytes(forKey: key, isSecret: isSecret, default: defaultValue, fileID: fileID, line: line)
             },
@@ -391,7 +403,9 @@ extension ConfigVariableContent where Value == [UInt8] {
                     }
                 }
             },
-            encode: { .bytes($0) }
+            encode: { .bytes($0) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -401,7 +415,6 @@ extension ConfigVariableContent where Value == [[UInt8]] {
     /// Content for `[[UInt8]]` (byte chunk array) values.
     public static var byteChunkArray: ConfigVariableContent {
         ConfigVariableContent(
-            isAutoSecret: false,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.byteChunkArray(
                     forKey: key,
@@ -433,7 +446,9 @@ extension ConfigVariableContent where Value == [[UInt8]] {
                     }
                 }
             },
-            encode: { .byteChunkArray($0) }
+            encode: { .byteChunkArray($0) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -446,7 +461,6 @@ extension ConfigVariableContent {
     public static func rawRepresentableString() -> ConfigVariableContent
     where Value: RawRepresentable & Sendable, Value.RawValue == String {
         ConfigVariableContent(
-            isAutoSecret: true,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.string(
                     forKey: key,
@@ -481,7 +495,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .string($0.rawValue) }
+            encode: { .string($0.rawValue) },
+            editorControl: .textField,
+            parse: { .string($0) }
         )
     }
 
@@ -490,7 +506,6 @@ extension ConfigVariableContent {
     public static func rawRepresentableStringArray<Element>() -> ConfigVariableContent
     where Value == [Element], Element: RawRepresentable & Sendable, Element.RawValue == String {
         ConfigVariableContent(
-            isAutoSecret: true,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.stringArray(
                     forKey: key,
@@ -525,7 +540,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .stringArray($0.map(\.rawValue)) }
+            encode: { .stringArray($0.map(\.rawValue)) },
+            editorControl: .none,
+            parse: nil
         )
     }
 
@@ -533,7 +550,6 @@ extension ConfigVariableContent {
     /// Content for `ExpressibleByConfigString` values.
     public static func expressibleByConfigString() -> ConfigVariableContent where Value: ExpressibleByConfigString {
         ConfigVariableContent(
-            isAutoSecret: true,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.string(
                     forKey: key,
@@ -568,7 +584,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .string($0.description) }
+            encode: { .string($0.description) },
+            editorControl: .textField,
+            parse: { .string($0) }
         )
     }
 
@@ -577,7 +595,6 @@ extension ConfigVariableContent {
     public static func expressibleByConfigStringArray<Element>() -> ConfigVariableContent
     where Value == [Element], Element: ExpressibleByConfigString & Sendable {
         ConfigVariableContent(
-            isAutoSecret: true,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.stringArray(
                     forKey: key,
@@ -612,7 +629,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .stringArray($0.map(\.description)) }
+            encode: { .stringArray($0.map(\.description)) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -625,7 +644,6 @@ extension ConfigVariableContent {
     public static func rawRepresentableInt() -> ConfigVariableContent
     where Value: RawRepresentable & Sendable, Value.RawValue == Int {
         ConfigVariableContent(
-            isAutoSecret: false,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.int(
                     forKey: key,
@@ -660,7 +678,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .int($0.rawValue) }
+            encode: { .int($0.rawValue) },
+            editorControl: .numberField,
+            parse: { Int($0).map { .int($0) } }
         )
     }
 
@@ -669,7 +689,6 @@ extension ConfigVariableContent {
     public static func rawRepresentableIntArray<Element>() -> ConfigVariableContent
     where Value == [Element], Element: RawRepresentable & Sendable, Element.RawValue == Int {
         ConfigVariableContent(
-            isAutoSecret: false,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.intArray(
                     forKey: key,
@@ -704,7 +723,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .intArray($0.map(\.rawValue)) }
+            encode: { .intArray($0.map(\.rawValue)) },
+            editorControl: .none,
+            parse: nil
         )
     }
 
@@ -712,7 +733,6 @@ extension ConfigVariableContent {
     /// Content for `ExpressibleByConfigInt` values.
     public static func expressibleByConfigInt() -> ConfigVariableContent where Value: ExpressibleByConfigInt {
         ConfigVariableContent(
-            isAutoSecret: false,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.int(
                     forKey: key,
@@ -747,7 +767,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .int($0.configInt) }
+            encode: { .int($0.configInt) },
+            editorControl: .numberField,
+            parse: { Int($0).map { .int($0) } }
         )
     }
 
@@ -756,7 +778,6 @@ extension ConfigVariableContent {
     public static func expressibleByConfigIntArray<Element>() -> ConfigVariableContent
     where Value == [Element], Element: ExpressibleByConfigInt & Sendable {
         ConfigVariableContent(
-            isAutoSecret: false,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 reader.intArray(
                     forKey: key,
@@ -791,7 +812,9 @@ extension ConfigVariableContent {
                     }
                 }
             },
-            encode: { .intArray($0.map(\.configInt)) }
+            encode: { .intArray($0.map(\.configInt)) },
+            editorControl: .none,
+            parse: nil
         )
     }
 }
@@ -845,7 +868,6 @@ extension ConfigVariableContent {
         encoder: (any TopLevelEncoder<Data> & Sendable)?
     ) -> ConfigVariableContent where Value: Codable {
         ConfigVariableContent(
-            isAutoSecret: representation.isStringBacked,
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
                 guard
                     let data = representation.readData(
@@ -931,7 +953,9 @@ extension ConfigVariableContent {
                 let resolvedEncoder = encoder ?? JSONEncoder()
                 let data = try resolvedEncoder.encode(value)
                 return try representation.encodeToContent(data)
-            }
+            },
+            editorControl: .none,
+            parse: nil
         )
     }
 }

@@ -6,9 +6,10 @@
 //
 
 import Configuration
-import DevConfiguration
 import DevTesting
 import Foundation
+
+@testable import DevConfiguration
 
 extension RandomValueGenerating {
     mutating func randomAbsoluteConfigKey() -> AbsoluteConfigKey {
@@ -90,11 +91,6 @@ extension RandomValueGenerating {
     }
 
 
-    mutating func randomConfigVariableSecrecy() -> ConfigVariableSecrecy {
-        return randomCase(of: ConfigVariableSecrecy.self)!
-    }
-
-
     mutating func randomError() -> MockError {
         return MockError(id: randomAlphanumericString())
     }
@@ -107,6 +103,27 @@ extension RandomValueGenerating {
 
     mutating func randomIntArray() -> [Int] {
         return Array(count: randomInt(in: 0 ... 5)) { randomInt(in: .min ... .max) }
+    }
+
+
+    mutating func randomRegisteredVariable(
+        key: ConfigKey? = nil,
+        defaultContent: ConfigContent? = nil,
+        isSecret: Bool? = nil,
+        metadata: ConfigVariableMetadata? = nil,
+        destinationTypeName: String? = nil,
+        editorControl: EditorControl? = nil,
+        parse: (@Sendable (_ input: String) -> ConfigContent?)? = nil
+    ) -> RegisteredConfigVariable {
+        RegisteredConfigVariable(
+            key: key ?? randomConfigKey(),
+            defaultContent: defaultContent ?? randomConfigContent(),
+            isSecret: isSecret ?? randomBool(),
+            metadata: metadata ?? ConfigVariableMetadata(),
+            destinationTypeName: destinationTypeName ?? randomAlphanumericString(),
+            editorControl: editorControl ?? .none,
+            parse: parse
+        )
     }
 
 
