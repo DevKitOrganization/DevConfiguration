@@ -116,8 +116,9 @@ public final class ConfigVariableReader: Sendable {
         var namedProviders = namedProviders
 
         if isEditorEnabled {
-            let provider = EditorOverrideProvider()
-            provider.load(from: UserDefaults(suiteName: EditorOverrideProvider.suiteName)!)
+            let provider = EditorOverrideProvider(
+                userDefaults: UserDefaults(suiteName: "devkit.DevConfiguration") ?? .standard
+            )
             editorOverrideProvider = provider
             namedProviders.insert(.init(provider, displayName: localizedString("editorOverrideProvider.name")), at: 0)
         }

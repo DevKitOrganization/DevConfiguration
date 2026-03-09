@@ -16,15 +16,16 @@ import Testing
 struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
     var randomNumberGenerator = makeRandomNumberGenerator()
 
-    let editorOverrideProvider = EditorOverrideProvider()
-    var userDefaults: UserDefaults!
+    let editorOverrideProvider: EditorOverrideProvider
     var workingCopyDisplayName: String!
     let undoManager = UndoManager()
 
 
     init() {
+        let userDefaults = UserDefaults(suiteName: "devkit.DevConfiguration.test.\(UUID())")!
+        userDefaults.removeObject(forKey: "editorOverrides")
+        editorOverrideProvider = EditorOverrideProvider(userDefaults: userDefaults)
         workingCopyDisplayName = randomAlphanumericString()
-        userDefaults = UserDefaults(suiteName: randomAlphanumericString())!
     }
 
 
@@ -39,7 +40,6 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
             workingCopyDisplayName: workingCopyDisplayName,
             namedProviders: namedProviders,
             registeredVariables: registeredVariables,
-            userDefaults: userDefaults,
             undoManager: undoManager
         )
     }

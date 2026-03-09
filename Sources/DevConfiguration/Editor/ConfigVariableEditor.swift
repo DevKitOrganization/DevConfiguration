@@ -46,7 +46,6 @@ public struct ConfigVariableEditor: View {
                 workingCopyDisplayName: localizedString("editorOverrideProvider.name"),
                 namedProviders: namedProviders,
                 registeredVariables: Array(reader.registeredVariables.values),
-                userDefaults: .standard,
                 undoManager: UndoManager()
             )
 

@@ -49,17 +49,28 @@ final class EditorOverrideProvider: Sendable {
     /// The name used to identify this provider.
     static let providerName = "EditorOverrideProvider"
 
-    /// The UserDefaults suite name used for persistence.
-    static let suiteName = "devkit.DevConfiguration"
-
     /// The UserDefaults key under which overrides are stored.
     private static let persistenceKey = "editorOverrides"
 
     /// The logger used for persistence diagnostics.
     private static let logger = Logger(subsystem: "DevConfiguration", category: "EditorOverrideProvider")
 
+    /// The UserDefaults instance used for persistence.
+    nonisolated(unsafe) private let userDefaults: UserDefaults
+
     /// The mutable state protected by a mutex.
     private let mutableState: Mutex<MutableState> = .init(MutableState())
+
+
+    /// Creates a new editor override provider.
+    ///
+    /// Loads any previously persisted overrides from the given UserDefaults instance.
+    ///
+    /// - Parameter userDefaults: The UserDefaults instance used for persistence.
+    init(userDefaults: UserDefaults) {
+        self.userDefaults = userDefaults
+        load()
+    }
 }
 
 
@@ -206,13 +217,10 @@ extension EditorOverrideProvider {
 // MARK: - Persistence
 
 extension EditorOverrideProvider {
-    /// Loads persisted overrides from the given UserDefaults into memory.
+    /// Loads persisted overrides from UserDefaults into memory.
     ///
-    /// Any entries that fail to decode are silently skipped. This method is intended to be called once during setup,
-    /// before the provider is shared with other components.
-    ///
-    /// - Parameter userDefaults: The UserDefaults instance to load from.
-    func load(from userDefaults: UserDefaults) {
+    /// Any entries that fail to decode are silently skipped.
+    private func load() {
         guard let stored = userDefaults.dictionary(forKey: Self.persistenceKey) as? [String: Data] else {
             return
         }
@@ -234,12 +242,10 @@ extension EditorOverrideProvider {
     }
 
 
-    /// Persists the current overrides to the given UserDefaults.
+    /// Persists the current overrides to UserDefaults.
     ///
     /// Each override is JSON-encoded individually. The resulting dictionary is stored under the persistence key.
-    ///
-    /// - Parameter userDefaults: The UserDefaults instance to persist to.
-    func persist(to userDefaults: UserDefaults) {
+    func persist() {
         let currentOverrides = overrides
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
@@ -258,12 +264,10 @@ extension EditorOverrideProvider {
     }
 
 
-    /// Removes all persisted overrides from the given UserDefaults.
+    /// Removes all persisted overrides from UserDefaults.
     ///
     /// This does not affect the in-memory overrides.
-    ///
-    /// - Parameter userDefaults: The UserDefaults instance to clear.
-    func clearPersistence(from userDefaults: UserDefaults) {
+    func clearPersistence() {
         userDefaults.removeObject(forKey: Self.persistenceKey)
     }
 }

@@ -46,9 +46,6 @@ final class EditorDocument {
     /// The editor override provider.
     private let editorOverrideProvider: EditorOverrideProvider
 
-    /// The UserDefaults instance used for persisting overrides.
-    private let userDefaults: UserDefaults
-
     /// The undo manager used for working copy changes.
     let undoManager: UndoManager
 
@@ -75,19 +72,16 @@ final class EditorDocument {
     ///   - workingCopyDisplayName: The display name for the working copy in the UI.
     ///   - namedProviders: The reader's named providers, excluding the editor override provider.
     ///   - registeredVariables: The registered variables to display in the editor.
-    ///   - userDefaults: The UserDefaults instance used for persisting overrides.
     ///   - undoManager: The undo manager for working copy changes.
     init(
         editorOverrideProvider: EditorOverrideProvider,
         workingCopyDisplayName: String,
         namedProviders: [NamedConfigProvider],
         registeredVariables: [RegisteredConfigVariable],
-        userDefaults: UserDefaults,
         undoManager: UndoManager
     ) {
         self.editorOverrideProvider = editorOverrideProvider
         self.workingCopyDisplayName = workingCopyDisplayName
-        self.userDefaults = userDefaults
         self.undoManager = undoManager
 
         // Build registered variables dictionary
@@ -416,7 +410,7 @@ extension EditorDocument {
         }
 
         // Persist
-        editorOverrideProvider.persist(to: userDefaults)
+        editorOverrideProvider.persist()
 
         // Update baseline
         baseline = workingCopy
