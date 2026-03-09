@@ -71,3 +71,4 @@ External dependencies managed via Swift Package Manager:
   - Minimum deployment targets: iOS, macOS, tvOS, visionOS, and watchOS 26
   - All public APIs must be documented and tested
   - Test coverage target: >99%
+  - SwiftUI views do not currently have automated tests
