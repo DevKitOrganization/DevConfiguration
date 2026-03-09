@@ -37,6 +37,25 @@ struct ConfigContent_AdditionsTests: RandomValueGenerating {
 
     @Test(
         arguments: [
+            (ConfigContent.bool(true), "Bool"),
+            (.int(42), "Int"),
+            (.double(3.14), "Float64"),
+            (.string("hello"), "String"),
+            (.bytes([1, 2, 3]), "Data"),
+            (.boolArray([true, false]), "[Bool]"),
+            (.intArray([1, 2]), "[Int]"),
+            (.doubleArray([1.0, 2.0]), "[Float64]"),
+            (.stringArray(["a", "b"]), "[String]"),
+            (.byteChunkArray([[1], [2]]), "[Data]"),
+        ]
+    )
+    func typeDisplayNameReturnsCorrectName(content: ConfigContent, expectedName: String) {
+        #expect(content.typeDisplayName == expectedName)
+    }
+
+
+    @Test(
+        arguments: [
             ConfigContent.string("hello"),
             .int(42),
             .double(3.14),

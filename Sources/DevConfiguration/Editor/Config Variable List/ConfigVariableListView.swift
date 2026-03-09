@@ -20,13 +20,7 @@ import SwiftUI
 struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling>: View {
     @State var viewModel: ViewModel
 
-    /// The closure to call with the changed variables when the user saves.
-    var onSave: ([RegisteredConfigVariable]) -> Void
-
     @Environment(\.dismiss) private var dismiss
-
-    @State private var isShowingSaveAlert = false
-    @State private var isShowingClearAlert = false
 
 
     var body: some View {
@@ -47,12 +41,12 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling>: View {
             .navigationDestination(for: ConfigKey.self) { key in
                 ConfigVariableDetailView(viewModel: viewModel.makeDetailViewModel(for: key))
             }
+            .interactiveDismissDisabled(viewModel.isDirty)
             .searchable(text: $viewModel.searchText)
             .toolbar { toolbarContent }
-            .alert(localizedStringResource("editorView.saveAlert.title"), isPresented: $isShowingSaveAlert) {
+            .alert(localizedStringResource("editorView.saveAlert.title"), isPresented: $viewModel.isShowingSaveAlert) {
                 Button(localizedStringResource("editorView.saveAlert.saveButton")) {
-                    let changedVariables = viewModel.save()
-                    onSave(changedVariables)
+                    viewModel.save()
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)
@@ -65,9 +59,12 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling>: View {
             } message: {
                 Text(localizedStringResource("editorView.saveAlert.message"))
             }
-            .alert(localizedStringResource("editorView.clearAlert.title"), isPresented: $isShowingClearAlert) {
+            .alert(
+                localizedStringResource("editorView.clearAlert.title"),
+                isPresented: $viewModel.isShowingClearAlert
+            ) {
                 Button(localizedStringResource("editorView.clearAlert.clearButton"), role: .destructive) {
-                    viewModel.clearAllOverrides()
+                    viewModel.confirmClearAllOverrides()
                 }
 
                 Button(localizedStringResource("editorView.saveAlert.cancelButton"), role: .cancel) {}
@@ -86,11 +83,7 @@ extension ConfigVariableListView {
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
             Button {
-                if viewModel.isDirty {
-                    isShowingSaveAlert = true
-                } else {
-                    dismiss()
-                }
+                viewModel.requestDismiss { dismiss() }
             } label: {
                 Label(localizedStringResource("editorView.dismissButton"), systemImage: "xmark")
             }
@@ -98,8 +91,7 @@ extension ConfigVariableListView {
 
         ToolbarItem(placement: .confirmationAction) {
             Button {
-                let changedVariables = viewModel.save()
-                onSave(changedVariables)
+                viewModel.save()
                 dismiss()
             } label: {
                 Label(localizedStringResource("editorView.saveButton"), systemImage: "checkmark")
@@ -126,7 +118,7 @@ extension ConfigVariableListView {
                 Divider()
 
                 Button(role: .destructive) {
-                    isShowingClearAlert = true
+                    viewModel.requestClearAllOverrides()
                 } label: {
                     Label(localizedStringResource("editorView.clearOverridesButton"), systemImage: "trash")
                 }
@@ -170,110 +162,6 @@ extension ConfigVariableListView {
             .padding(.vertical, 2)
         }
     }
-}
-
-
-// MARK: - Preview Support
-
-@MainActor @Observable
-private final class PreviewListViewModel: ConfigVariableListViewModeling {
-    var variables: [VariableListItem]
-    var searchText = ""
-    var isDirty: Bool
-    var canUndo = false
-    var canRedo = false
-
-
-    init(variables: [VariableListItem], isDirty: Bool = false) {
-        self.variables = variables
-        self.isDirty = isDirty
-    }
-
-
-    func save() -> [RegisteredConfigVariable] { [] }
-    func clearAllOverrides() {}
-    func undo() {}
-    func redo() {}
-
-
-    func makeDetailViewModel(for key: ConfigKey) -> PreviewEditorDetailViewModel {
-        PreviewEditorDetailViewModel(key: key, displayName: key.description)
-    }
-}
-
-
-@MainActor @Observable
-private final class PreviewEditorDetailViewModel: ConfigVariableDetailViewModeling {
-    let key: ConfigKey
-    let displayName: String
-    let typeName = "String"
-    let metadataEntries: [ConfigVariableMetadata.DisplayText] = []
-    let providerValues: [ProviderValue] = []
-    let isSecret = false
-    let editorControl: EditorControl = .none
-
-    var isOverrideEnabled = false
-    var overrideText = ""
-    var overrideBool = false
-    var isSecretRevealed = false
-
-
-    init(key: ConfigKey, displayName: String) {
-        self.key = key
-        self.displayName = displayName
-    }
-}
-
-
-#Preview {
-    ConfigVariableListView(
-        viewModel: PreviewListViewModel(
-            variables: [
-                VariableListItem(
-                    key: "feature.dark_mode",
-                    displayName: "Dark Mode",
-                    currentValue: "true",
-                    providerName: "Editor",
-                    providerIndex: 0,
-                    isSecret: false,
-                    hasOverride: true,
-                    editorControl: .toggle
-                ),
-                VariableListItem(
-                    key: "feature.api_endpoint",
-                    displayName: "API Endpoint",
-                    currentValue: "https://api.example.com",
-                    providerName: "Remote",
-                    providerIndex: 1,
-                    isSecret: false,
-                    hasOverride: false,
-                    editorControl: .textField
-                ),
-                VariableListItem(
-                    key: "feature.max_retries",
-                    displayName: "Max Retries",
-                    currentValue: "3",
-                    providerName: "Default",
-                    providerIndex: 2,
-                    isSecret: false,
-                    hasOverride: false,
-                    editorControl: .numberField
-                ),
-                VariableListItem(
-                    key: "feature.timeout",
-                    displayName: "Timeout",
-                    currentValue: "30.0",
-                    providerName: "Remote",
-                    providerIndex: 1,
-                    isSecret: false,
-                    hasOverride: false,
-                    editorControl: .decimalField
-                ),
-            ],
-            isDirty: true
-        ),
-        onSave: { _ in }
-    )
 }
 
 #endif

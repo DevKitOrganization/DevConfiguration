@@ -2,7 +2,7 @@
 //  EditorDocumentTests.swift
 //  DevConfiguration
 //
-//  Created by Prachi Gauriar on 3/7/2026.
+//  Created by Prachi Gauriar on 3/9/2026.
 //
 
 import Configuration
@@ -16,606 +16,607 @@ import Testing
 struct EditorDocumentTests: RandomValueGenerating {
     var randomNumberGenerator = makeRandomNumberGenerator()
 
+    let editorOverrideProvider = EditorOverrideProvider()
+    var userDefaults: UserDefaults!
+    var workingCopyDisplayName: String!
+    let undoManager = UndoManager()
 
-    // MARK: - Init
+
+    init() {
+        workingCopyDisplayName = randomAlphanumericString()
+        userDefaults = UserDefaults(suiteName: randomAlphanumericString())!
+    }
+
+
+    // MARK: - Helpers
+
+    mutating func makeDocument(
+        editorOverrideProvider: EditorOverrideProvider? = nil,
+        namedProviders: [NamedConfigProvider] = [],
+        registeredVariables: [RegisteredConfigVariable]? = nil
+    ) -> EditorDocument {
+        EditorDocument(
+            editorOverrideProvider: editorOverrideProvider ?? self.editorOverrideProvider,
+            workingCopyDisplayName: workingCopyDisplayName,
+            namedProviders: namedProviders,
+            registeredVariables: registeredVariables ?? [randomRegisteredVariable()],
+            userDefaults: userDefaults,
+            undoManager: undoManager
+        )
+    }
+
+
+    // MARK: - Initialization
 
     @Test
-    func initWithEmptyProvider() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
+    mutating func initStoresRegisteredVariablesByKey() throws {
+        // set up with multiple registered variables
+        let variable1 = randomRegisteredVariable()
+        let variable2 = randomRegisteredVariable()
 
-        // expect
-        #expect(document.workingCopy.isEmpty)
-        #expect(!document.isDirty)
+        // exercise
+        let document = makeDocument(registeredVariables: [variable1, variable2])
+
+        // expect each variable is stored keyed by its config key
+        #expect(document.registeredVariables.count == 2)
+
+        let registered1 = try #require(document.registeredVariables[variable1.key])
+        #expect(registered1.key == variable1.key)
+        #expect(registered1.defaultContent == variable1.defaultContent)
+
+        let registered2 = try #require(document.registeredVariables[variable2.key])
+        #expect(registered2.key == variable2.key)
+        #expect(registered2.defaultContent == variable2.defaultContent)
     }
 
 
     @Test
-    mutating func initWithPopulatedProvider() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let key1 = randomConfigKey()
-        let content1 = randomConfigContent()
-        let key2 = randomConfigKey()
-        let content2 = randomConfigContent()
-        provider.setOverride(content1, forKey: key1)
-        provider.setOverride(content2, forKey: key2)
+    mutating func initSnapshotsProviders() throws {
+        // set up with a registered variable and an InMemoryProvider that has a value for it
+        let defaultContent = ConfigContent.string(randomAlphanumericString())
+        let variable = randomRegisteredVariable(defaultContent: defaultContent)
+
+        let providerContent = ConfigContent.string(randomAlphanumericString())
+        let provider = InMemoryProvider(
+            values: [
+                AbsoluteConfigKey(variable.key): ConfigValue(providerContent, isSecret: false)
+            ]
+        )
+        let displayName = randomAlphanumericString()
 
         // exercise
-        let document = EditorDocument(provider: provider)
+        let document = makeDocument(
+            namedProviders: [.init(provider, displayName: displayName)],
+            registeredVariables: [variable]
+        )
 
-        // expect
-        #expect(document.workingCopy == [key1: content1, key2: content2])
-        #expect(!document.isDirty)
+        // expect first snapshot has correct display name, index, and value
+        let snapshot = try #require(document.providerSnapshots.first)
+        #expect(snapshot.displayName == displayName)
+        #expect(snapshot.index == 0)
+        #expect(snapshot.values[variable.key] == providerContent)
+    }
+
+
+    @Test
+    mutating func initAppendsDefaultSnapshot() throws {
+        // set up with a registered variable and one named provider
+        let defaultContent = ConfigContent.int(randomInt(in: .min ... .max))
+        let variable = randomRegisteredVariable(defaultContent: defaultContent)
+
+        let provider = InMemoryProvider(values: [:])
+
+        // exercise
+        let document = makeDocument(
+            namedProviders: [.init(provider, displayName: randomAlphanumericString())],
+            registeredVariables: [variable]
+        )
+
+        // expect last snapshot is "Default" with index = namedProviders.count and default values
+        let defaultSnapshot = try #require(document.providerSnapshots.last)
+        #expect(defaultSnapshot.displayName == localizedString("editor.defaultProviderName"))
+        #expect(defaultSnapshot.index == 1)
+        #expect(defaultSnapshot.values[variable.key] == defaultContent)
+    }
+
+
+    @Test
+    mutating func initCopiesExistingOverridesToWorkingCopy() {
+        // set up by pre-populating the editor override provider
+        let key = randomConfigKey()
+        let content = ConfigContent.string(randomAlphanumericString())
+        editorOverrideProvider.setOverride(content, forKey: key)
+
+        let variable = randomRegisteredVariable(key: key, defaultContent: .string(randomAlphanumericString()))
+
+        // exercise
+        let document = makeDocument(registeredVariables: [variable])
+
+        // expect working copy contains the pre-existing override
+        #expect(document.workingCopy[key] == content)
+    }
+
+
+    // MARK: - Value Resolution
+
+    @Test
+    mutating func resolvedValuePrefersWorkingCopyOverProviders() throws {
+        // set up with a provider value and a working copy override for the same key
+        let defaultContent = ConfigContent.string(randomAlphanumericString())
+        let variable = randomRegisteredVariable(defaultContent: defaultContent)
+
+        let providerContent = ConfigContent.string(randomAlphanumericString())
+        let provider = InMemoryProvider(
+            values: [
+                AbsoluteConfigKey(variable.key): ConfigValue(providerContent, isSecret: false)
+            ]
+        )
+
+        let document = makeDocument(
+            namedProviders: [.init(provider, displayName: randomAlphanumericString())],
+            registeredVariables: [variable]
+        )
+
+        let overrideContent = ConfigContent.string(randomAlphanumericString())
+        document.setOverride(overrideContent, forKey: variable.key)
+
+        // exercise
+        let resolved = try #require(document.resolvedValue(forKey: variable.key))
+
+        // expect working copy wins
+        #expect(resolved.content == overrideContent)
+        #expect(resolved.providerDisplayName == workingCopyDisplayName)
+        #expect(resolved.providerIndex == nil)
+    }
+
+
+    @Test
+    mutating func resolvedValueSkipsMismatchedTypes() throws {
+        // set up with a string variable but an int override in working copy
+        let defaultContent = ConfigContent.string(randomAlphanumericString())
+        let variable = randomRegisteredVariable(defaultContent: defaultContent)
+
+        let providerContent = ConfigContent.string(randomAlphanumericString())
+        let providerDisplayName = randomAlphanumericString()
+        let provider = InMemoryProvider(
+            values: [
+                AbsoluteConfigKey(variable.key): ConfigValue(providerContent, isSecret: false)
+            ]
+        )
+
+        let document = makeDocument(
+            namedProviders: [.init(provider, displayName: providerDisplayName)],
+            registeredVariables: [variable]
+        )
+
+        // set a mismatched type in the working copy
+        document.setOverride(.int(randomInt(in: .min ... .max)), forKey: variable.key)
+
+        // exercise
+        let resolved = try #require(document.resolvedValue(forKey: variable.key))
+
+        // expect the provider value wins since working copy type doesn't match
+        #expect(resolved.content == providerContent)
+        #expect(resolved.providerDisplayName == providerDisplayName)
+        #expect(resolved.providerIndex == 0)
+    }
+
+
+    @Test
+    mutating func resolvedValueFallsThroughToDefault() throws {
+        // set up with no provider values and no working copy override
+        let defaultContent = ConfigContent.bool(randomBool())
+        let variable = randomRegisteredVariable(defaultContent: defaultContent)
+
+        let document = makeDocument(registeredVariables: [variable])
+
+        // exercise
+        let resolved = try #require(document.resolvedValue(forKey: variable.key))
+
+        // expect the default snapshot value wins
+        #expect(resolved.content == defaultContent)
+        #expect(resolved.providerDisplayName == localizedString("editor.defaultProviderName"))
+        #expect(resolved.providerIndex == 0)
+    }
+
+
+    @Test
+    mutating func resolvedValueReturnsNilForUnregisteredKey() {
+        // set up with a document that has no variable for the queried key
+        let document = makeDocument()
+
+        // exercise
+        let resolved = document.resolvedValue(forKey: randomConfigKey())
+
+        // expect nil for an unregistered key
+        #expect(resolved == nil)
+    }
+
+
+    // MARK: - Provider Values
+
+    @Test
+    mutating func providerValuesIncludesAllProvidersWithValues() {
+        // set up with a working copy override, a provider value, and a default value
+        let defaultContent = ConfigContent.string(randomAlphanumericString())
+        let variable = randomRegisteredVariable(defaultContent: defaultContent)
+
+        let providerContent = ConfigContent.string(randomAlphanumericString())
+        let provider = InMemoryProvider(
+            values: [
+                AbsoluteConfigKey(variable.key): ConfigValue(providerContent, isSecret: false)
+            ]
+        )
+        let providerDisplayName = randomAlphanumericString()
+
+        let document = makeDocument(
+            namedProviders: [.init(provider, displayName: providerDisplayName)],
+            registeredVariables: [variable]
+        )
+
+        let overrideContent = ConfigContent.string(randomAlphanumericString())
+        document.setOverride(overrideContent, forKey: variable.key)
+
+        // exercise
+        let values = document.providerValues(forKey: variable.key)
+
+        // expect three entries: working copy, provider, and default
+        let expected = [
+            ProviderValue(
+                providerName: workingCopyDisplayName,
+                providerIndex: nil,
+                isActive: true,
+                valueString: overrideContent.displayString,
+                contentTypeMatches: true
+            ),
+            ProviderValue(
+                providerName: providerDisplayName,
+                providerIndex: 0,
+                isActive: false,
+                valueString: providerContent.displayString,
+                contentTypeMatches: true
+            ),
+            ProviderValue(
+                providerName: localizedString("editor.defaultProviderName"),
+                providerIndex: 1,
+                isActive: false,
+                valueString: defaultContent.displayString,
+                contentTypeMatches: true
+            ),
+        ]
+        #expect(values == expected)
+    }
+
+
+    @Test
+    mutating func providerValuesMarksActiveAndContentTypeMatch() {
+        // set up with a matching working copy override and a mismatched provider value
+        let defaultContent = ConfigContent.string(randomAlphanumericString())
+        let variable = randomRegisteredVariable(defaultContent: defaultContent)
+
+        let mismatchedContent = ConfigContent.int(randomInt(in: .min ... .max))
+        let provider = InMemoryProvider(
+            values: [
+                AbsoluteConfigKey(variable.key): ConfigValue(mismatchedContent, isSecret: false)
+            ]
+        )
+        let providerDisplayName = randomAlphanumericString()
+
+        let document = makeDocument(
+            namedProviders: [.init(provider, displayName: providerDisplayName)],
+            registeredVariables: [variable]
+        )
+
+        let overrideContent = ConfigContent.string(randomAlphanumericString())
+        document.setOverride(overrideContent, forKey: variable.key)
+
+        // exercise
+        let values = document.providerValues(forKey: variable.key)
+
+        // expect working copy active and matching, provider mismatched, default matching but inactive
+        let expected = [
+            ProviderValue(
+                providerName: workingCopyDisplayName,
+                providerIndex: nil,
+                isActive: true,
+                valueString: overrideContent.displayString,
+                contentTypeMatches: true
+            ),
+            ProviderValue(
+                providerName: providerDisplayName,
+                providerIndex: 0,
+                isActive: false,
+                valueString: mismatchedContent.displayString,
+                contentTypeMatches: false
+            ),
+            ProviderValue(
+                providerName: localizedString("editor.defaultProviderName"),
+                providerIndex: 1,
+                isActive: false,
+                valueString: defaultContent.displayString,
+                contentTypeMatches: true
+            ),
+        ]
+        #expect(values == expected)
+    }
+
+
+    @Test
+    mutating func providerValuesReturnsEmptyForUnregisteredKey() {
+        // set up
+        let document = makeDocument()
+
+        // exercise
+        let values = document.providerValues(forKey: randomConfigKey())
+
+        // expect empty for an unregistered key
+        #expect(values.isEmpty)
     }
 
 
     // MARK: - Working Copy
 
     @Test
-    mutating func setOverrideThenRetrieve() {
+    mutating func setAndRemoveOverride() {
         // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        let key = randomConfigKey()
-        let content = randomConfigContent()
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+
+        let overrideContent = ConfigContent.string(randomAlphanumericString())
+
+        // exercise set
+        document.setOverride(overrideContent, forKey: variable.key)
+
+        // expect override is present
+        #expect(document.workingCopy[variable.key] == overrideContent)
+
+        // exercise remove
+        document.removeOverride(forKey: variable.key)
+
+        // expect override is gone
+        #expect(document.workingCopy[variable.key] == nil)
+    }
+
+
+    @Test
+    mutating func setOverrideWithSameValueIsNoOp() {
+        // set up with an existing override
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+
+        let content = ConfigContent.string(randomAlphanumericString())
+        document.setOverride(content, forKey: variable.key)
+        undoManager.removeAllActions()
+
+        // exercise by setting the same value again
+        document.setOverride(content, forKey: variable.key)
+
+        // expect no undo action was registered
+        #expect(!undoManager.canUndo)
+    }
+
+
+    @Test
+    mutating func removeAllOverrides() {
+        // set up with multiple overrides
+        let variable1 = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let variable2 = randomRegisteredVariable(defaultContent: .int(randomInt(in: .min ... .max)))
+        let document = makeDocument(registeredVariables: [variable1, variable2])
+
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable1.key)
+        document.setOverride(.int(randomInt(in: .min ... .max)), forKey: variable2.key)
 
         // exercise
-        document.setOverride(content, forKey: key)
+        document.removeAllOverrides()
 
-        // expect
-        #expect(document.override(forKey: key) == content)
+        // expect working copy is empty
+        #expect(document.workingCopy.isEmpty)
     }
 
 
     @Test
-    mutating func setOverrideOverwritesPreviousValue() {
+    mutating func hasOverrideReturnsTrueWhenOverrideExists() {
         // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        let key = randomConfigKey()
-        let content1 = ConfigContent.string(randomAlphanumericString())
-        let content2 = ConfigContent.int(randomInt(in: .min ... .max))
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
 
-        document.setOverride(content1, forKey: key)
+        // expect false before setting an override
+        #expect(!document.hasOverride(forKey: variable.key))
 
         // exercise
-        document.setOverride(content2, forKey: key)
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
 
-        // expect
-        #expect(document.override(forKey: key) == content2)
+        // expect true after setting an override
+        #expect(document.hasOverride(forKey: variable.key))
     }
 
 
     @Test
-    mutating func overrideForNonexistentKeyReturnsNil() {
+    mutating func overrideReturnsContentWhenOverrideExists() {
         // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
 
-        // expect
-        #expect(document.override(forKey: randomConfigKey()) == nil)
-    }
-
-
-    @Test
-    mutating func hasOverrideReturnsTrueForExistingKey() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        let key = randomConfigKey()
-        document.setOverride(randomConfigContent(), forKey: key)
-
-        // expect
-        #expect(document.hasOverride(forKey: key))
-    }
-
-
-    @Test
-    mutating func hasOverrideReturnsFalseForNonexistentKey() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-
-        // expect
-        #expect(!document.hasOverride(forKey: randomConfigKey()))
-    }
-
-
-    @Test
-    mutating func removeOverrideClearsValue() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        let key = randomConfigKey()
-        document.setOverride(randomConfigContent(), forKey: key)
+        // expect nil before setting an override
+        #expect(document.override(forKey: variable.key) == nil)
 
         // exercise
-        document.removeOverride(forKey: key)
+        let content = ConfigContent.string(randomAlphanumericString())
+        document.setOverride(content, forKey: variable.key)
 
-        // expect
-        #expect(document.override(forKey: key) == nil)
-        #expect(!document.hasOverride(forKey: key))
+        // expect the override content is returned
+        #expect(document.override(forKey: variable.key) == content)
     }
 
 
     @Test
-    mutating func removeOverrideForNonexistentKeyIsNoOp() {
+    mutating func removeOverrideForMissingKeyIsNoOp() {
         // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        let key = randomConfigKey()
-        document.setOverride(randomConfigContent(), forKey: key)
+        let document = makeDocument()
+        undoManager.removeAllActions()
 
-        // exercise
+        // exercise by removing an override for a key that has none
         document.removeOverride(forKey: randomConfigKey())
 
-        // expect — original override is untouched
-        #expect(document.workingCopy.count == 1)
+        // expect no undo action was registered
+        #expect(!undoManager.canUndo)
     }
 
 
     @Test
-    mutating func removeAllOverridesClearsWorkingCopy() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        document.setOverride(randomConfigContent(), forKey: randomConfigKey())
-        document.setOverride(randomConfigContent(), forKey: randomConfigKey())
+    mutating func removeAllOverridesWhenEmptyIsNoOp() {
+        // set up with no overrides
+        let document = makeDocument()
+        undoManager.removeAllActions()
 
         // exercise
         document.removeAllOverrides()
 
-        // expect
-        #expect(document.workingCopy.isEmpty)
+        // expect no undo action was registered
+        #expect(!undoManager.canUndo)
     }
 
 
     @Test
-    func removeAllOverridesWhenEmptyIsNoOp() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
+    mutating func undoRemoveAllOverridesRestoresValues() async {
+        // set up with multiple overrides, yielding to close the undo group before removing
+        let variable1 = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let variable2 = randomRegisteredVariable(defaultContent: .int(randomInt(in: .min ... .max)))
+        let document = makeDocument(registeredVariables: [variable1, variable2])
 
-        // exercise
+        let content1 = ConfigContent.string(randomAlphanumericString())
+        let content2 = ConfigContent.int(randomInt(in: .min ... .max))
+        document.setOverride(content1, forKey: variable1.key)
+        document.setOverride(content2, forKey: variable2.key)
+        await Task.yield()
+
         document.removeAllOverrides()
 
-        // expect
-        #expect(document.workingCopy.isEmpty)
-        #expect(!document.isDirty)
-    }
-
-
-    // MARK: - Dirty Tracking
-
-    @Test
-    func isNotDirtyAfterInit() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-
-        // expect
-        #expect(!document.isDirty)
-    }
-
-
-    @Test
-    mutating func isDirtyAfterSetOverride() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-
         // exercise
-        document.setOverride(randomConfigContent(), forKey: randomConfigKey())
+        undoManager.undo()
 
-        // expect
-        #expect(document.isDirty)
-    }
-
-
-    @Test
-    mutating func isNotDirtyAfterRevertingToBaseline() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        let key = randomConfigKey()
-
-        document.setOverride(randomConfigContent(), forKey: key)
-        #expect(document.isDirty)
-
-        // exercise
-        document.removeOverride(forKey: key)
-
-        // expect
-        #expect(!document.isDirty)
-    }
-
-
-    @Test
-    mutating func isDirtyAfterRemovingBaselineOverride() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let key = randomConfigKey()
-        provider.setOverride(randomConfigContent(), forKey: key)
-        let document = EditorDocument(provider: provider)
-
-        // exercise
-        document.removeOverride(forKey: key)
-
-        // expect
-        #expect(document.isDirty)
-    }
-
-
-    @Test
-    mutating func isDirtyAfterChangingBaselineValue() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let key = randomConfigKey()
-        provider.setOverride(.bool(true), forKey: key)
-        let document = EditorDocument(provider: provider)
-
-        // exercise
-        document.setOverride(.bool(false), forKey: key)
-
-        // expect
-        #expect(document.isDirty)
-    }
-
-
-    @Test
-    func changedKeysIsEmptyAfterInit() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-
-        // expect
-        #expect(document.changedKeys.isEmpty)
-    }
-
-
-    @Test
-    mutating func changedKeysIncludesAddedKey() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        let key = randomConfigKey()
-
-        // exercise
-        document.setOverride(randomConfigContent(), forKey: key)
-
-        // expect
-        #expect(document.changedKeys == [key])
-    }
-
-
-    @Test
-    mutating func changedKeysIncludesRemovedKey() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let key = randomConfigKey()
-        provider.setOverride(randomConfigContent(), forKey: key)
-        let document = EditorDocument(provider: provider)
-
-        // exercise
-        document.removeOverride(forKey: key)
-
-        // expect
-        #expect(document.changedKeys == [key])
-    }
-
-
-    @Test
-    mutating func changedKeysIncludesModifiedKey() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let key = randomConfigKey()
-        provider.setOverride(.bool(true), forKey: key)
-        let document = EditorDocument(provider: provider)
-
-        // exercise
-        document.setOverride(.bool(false), forKey: key)
-
-        // expect
-        #expect(document.changedKeys == [key])
-    }
-
-
-    @Test
-    mutating func changedKeysExcludesUnchangedKey() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let unchangedKey = randomConfigKey()
-        let changedKey = randomConfigKey()
-        provider.setOverride(.bool(true), forKey: unchangedKey)
-        let document = EditorDocument(provider: provider)
-
-        // exercise
-        document.setOverride(randomConfigContent(), forKey: changedKey)
-
-        // expect
-        #expect(document.changedKeys == [changedKey])
-    }
-
-
-    // MARK: - Save
-
-    @Test
-    mutating func saveReturnsChangedKeys() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        let key1 = randomConfigKey()
-        let key2 = randomConfigKey()
-        document.setOverride(randomConfigContent(), forKey: key1)
-        document.setOverride(randomConfigContent(), forKey: key2)
-
-        // exercise
-        let changed = document.save()
-
-        // expect
-        #expect(changed == [key1, key2])
-    }
-
-
-    @Test
-    mutating func saveResetsBaselineSoDocumentIsClean() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        document.setOverride(randomConfigContent(), forKey: randomConfigKey())
-        #expect(document.isDirty)
-
-        // exercise
-        document.save()
-
-        // expect
-        #expect(!document.isDirty)
-        #expect(document.changedKeys.isEmpty)
-    }
-
-
-    @Test
-    mutating func saveUpdatesProviderOverrides() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        let key = randomConfigKey()
-        let content = randomConfigContent()
-        document.setOverride(content, forKey: key)
-
-        // exercise
-        document.save()
-
-        // expect
-        #expect(provider.overrides == [key: content])
-    }
-
-
-    @Test
-    mutating func savePersistsToUserDefaults() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        let key = randomConfigKey()
-        let content = randomConfigContent()
-        document.setOverride(content, forKey: key)
-
-        // exercise
-        document.save()
-
-        // expect — verify persistence by loading into a fresh provider
-        let freshProvider = EditorOverrideProvider()
-        freshProvider.load(from: UserDefaults(suiteName: EditorOverrideProvider.suiteName)!)
-        #expect(freshProvider.overrides[key] == content)
-
-        // clean up
-        provider.clearPersistence(from: UserDefaults(suiteName: EditorOverrideProvider.suiteName)!)
-    }
-
-
-    @Test
-    func saveWithNoChangesReturnsEmptySet() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-
-        // exercise
-        let changed = document.save()
-
-        // expect
-        #expect(changed.isEmpty)
-    }
-
-
-    @Test
-    mutating func saveWithRemovedBaselineKeyIncludesItInChangedKeys() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let key = randomConfigKey()
-        provider.setOverride(randomConfigContent(), forKey: key)
-        let document = EditorDocument(provider: provider)
-        document.removeOverride(forKey: key)
-
-        // exercise
-        let changed = document.save()
-
-        // expect
-        #expect(changed == [key])
-        #expect(provider.overrides.isEmpty)
+        // expect both overrides are restored
+        #expect(document.workingCopy[variable1.key] == content1)
+        #expect(document.workingCopy[variable2.key] == content2)
     }
 
 
     // MARK: - Undo/Redo
 
     @Test
-    mutating func undoSetOverrideRestoresPreviousValue() {
-        // set up
-        let undoManager = UndoManager()
-        let provider = EditorOverrideProvider()
-        let key = randomConfigKey()
+    mutating func undoSetOverrideRestoresPreviousState() {
+        // set up by setting an override on a fresh key
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
+
+        // exercise
+        undoManager.undo()
+
+        // expect the override is removed
+        #expect(document.workingCopy[variable.key] == nil)
+    }
+
+
+    @Test
+    mutating func undoSetOverrideRestoresOldValue() async {
+        // set up by setting an override, yielding to close the undo group, then overwriting
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+
         let originalContent = ConfigContent.string(randomAlphanumericString())
-        provider.setOverride(originalContent, forKey: key)
-        let document = EditorDocument(provider: provider, undoManager: undoManager)
+        document.setOverride(originalContent, forKey: variable.key)
+        await Task.yield()
 
-        document.setOverride(.bool(true), forKey: key)
-        #expect(document.override(forKey: key) == .bool(true))
-
-        // exercise
-        undoManager.undo()
-
-        // expect
-        #expect(document.override(forKey: key) == originalContent)
-    }
-
-
-    @Test
-    mutating func undoSetOverrideRemovesNewKey() {
-        // set up
-        let undoManager = UndoManager()
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider, undoManager: undoManager)
-        let key = randomConfigKey()
-
-        document.setOverride(randomConfigContent(), forKey: key)
-        #expect(document.hasOverride(forKey: key))
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
 
         // exercise
         undoManager.undo()
 
-        // expect
-        #expect(!document.hasOverride(forKey: key))
+        // expect the original value is restored
+        #expect(document.workingCopy[variable.key] == originalContent)
     }
 
 
     @Test
-    mutating func redoSetOverrideReapplies() {
-        // set up
-        let undoManager = UndoManager()
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider, undoManager: undoManager)
-        let key = randomConfigKey()
-        let content = randomConfigContent()
+    mutating func undoRemoveOverrideRestoresValue() async {
+        // set up by setting an override, yielding to close the undo group, then removing
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
 
-        document.setOverride(content, forKey: key)
-        undoManager.undo()
-        #expect(!document.hasOverride(forKey: key))
+        let content = ConfigContent.string(randomAlphanumericString())
+        document.setOverride(content, forKey: variable.key)
+        await Task.yield()
 
-        // exercise
-        undoManager.redo()
-
-        // expect
-        #expect(document.override(forKey: key) == content)
-    }
-
-
-    @Test
-    mutating func undoRemoveOverrideRestoresValue() {
-        // set up
-        let undoManager = UndoManager()
-        let provider = EditorOverrideProvider()
-        let key = randomConfigKey()
-        let content = randomConfigContent()
-        provider.setOverride(content, forKey: key)
-        let document = EditorDocument(provider: provider, undoManager: undoManager)
-
-        document.removeOverride(forKey: key)
-        #expect(!document.hasOverride(forKey: key))
+        document.removeOverride(forKey: variable.key)
 
         // exercise
         undoManager.undo()
 
-        // expect
-        #expect(document.override(forKey: key) == content)
+        // expect the value is restored
+        #expect(document.workingCopy[variable.key] == content)
+    }
+
+
+    // MARK: - Dirty Tracking and Save
+
+    @Test
+    mutating func dirtyTrackingReflectsWorkingCopyChanges() {
+        // set up
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+
+        // expect clean initially
+        #expect(!document.isDirty)
+        #expect(document.changedKeys.isEmpty)
+
+        // exercise by adding an override
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
+
+        // expect dirty with the changed key
+        #expect(document.isDirty)
+        #expect(document.changedKeys == [variable.key])
     }
 
 
     @Test
-    mutating func redoRemoveOverrideRemovesAgain() {
-        // set up
-        let undoManager = UndoManager()
-        let provider = EditorOverrideProvider()
-        let key = randomConfigKey()
-        let content = randomConfigContent()
-        provider.setOverride(content, forKey: key)
-        let document = EditorDocument(provider: provider, undoManager: undoManager)
+    mutating func saveCommitsToProviderAndResetsDirtyState() {
+        // set up with an override
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
 
-        document.removeOverride(forKey: key)
-        undoManager.undo()
-        #expect(document.hasOverride(forKey: key))
+        let overrideContent = ConfigContent.string(randomAlphanumericString())
+        document.setOverride(overrideContent, forKey: variable.key)
 
         // exercise
-        undoManager.redo()
+        document.save()
 
-        // expect
-        #expect(!document.hasOverride(forKey: key))
+        // expect dirty state is reset
+        #expect(!document.isDirty)
+        #expect(document.changedKeys.isEmpty)
+
+        // expect the override was committed to the provider
+        #expect(editorOverrideProvider.overrides[variable.key] == overrideContent)
     }
 
 
     @Test
-    mutating func undoRemoveAllOverridesRestoresAll() {
-        // set up
-        let undoManager = UndoManager()
-        let provider = EditorOverrideProvider()
-        let key1 = randomConfigKey()
-        let content1 = randomConfigContent()
-        let key2 = randomConfigKey()
-        let content2 = randomConfigContent()
-        provider.setOverride(content1, forKey: key1)
-        provider.setOverride(content2, forKey: key2)
-        let document = EditorDocument(provider: provider, undoManager: undoManager)
+    mutating func saveRemovesDeletedOverridesFromProvider() {
+        // set up by saving an override, then removing it from the working copy
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
 
-        document.removeAllOverrides()
-        #expect(document.workingCopy.isEmpty)
+        let content = ConfigContent.string(randomAlphanumericString())
+        document.setOverride(content, forKey: variable.key)
+        document.save()
+
+        document.removeOverride(forKey: variable.key)
 
         // exercise
-        undoManager.undo()
+        document.save()
 
-        // expect
-        #expect(document.workingCopy == [key1: content1, key2: content2])
-    }
-
-
-    @Test
-    mutating func redoRemoveAllOverridesClearsAgain() {
-        // set up
-        let undoManager = UndoManager()
-        let provider = EditorOverrideProvider()
-        let key1 = randomConfigKey()
-        let content1 = randomConfigContent()
-        let key2 = randomConfigKey()
-        let content2 = randomConfigContent()
-        provider.setOverride(content1, forKey: key1)
-        provider.setOverride(content2, forKey: key2)
-        let document = EditorDocument(provider: provider, undoManager: undoManager)
-
-        document.removeAllOverrides()
-        undoManager.undo()
-        #expect(document.workingCopy.count == 2)
-
-        // exercise
-        undoManager.redo()
-
-        // expect
-        #expect(document.workingCopy.isEmpty)
-    }
-
-
-    @Test
-    mutating func noUndoManagerDoesNotCrash() {
-        // set up
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        let key = randomConfigKey()
-
-        // exercise — all mutations should work without an undo manager
-        document.setOverride(randomConfigContent(), forKey: key)
-        document.removeOverride(forKey: key)
-        document.setOverride(randomConfigContent(), forKey: key)
-        document.removeAllOverrides()
-
-        // expect
-        #expect(document.workingCopy.isEmpty)
+        // expect the override is removed from the provider
+        #expect(!editorOverrideProvider.hasOverride(forKey: variable.key))
     }
 }

@@ -28,7 +28,9 @@ struct VariableListItem: Hashable, Sendable {
     let providerName: String
 
     /// The index of the provider in the reader's provider list, used for color assignment.
-    let providerIndex: Int
+    ///
+    /// This is `nil` when the working copy (editor override provider) owns the value.
+    let providerIndex: Int?
 
     /// Whether this variable's value is secret and should be redacted in the list.
     let isSecret: Bool

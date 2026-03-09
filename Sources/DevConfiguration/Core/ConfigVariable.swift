@@ -39,8 +39,11 @@ public struct ConfigVariable<Value>: Sendable where Value: Sendable {
     /// Describes how this variable’s value maps to and from `ConfigContent` primitives.
     public let content: Content
 
-    /// Whether this value should be treated as a secret.
-    public let secrecy: ConfigVariableSecrecy
+    /// Whether this variable’s value should be treated as secret.
+    ///
+    /// Secret values are redacted or obfuscated in telemetry, logging, and other observability systems to prevent
+    /// sensitive information from being exposed. Defaults to `false`.
+    public let isSecret: Bool
 
     /// The configuration variable’s metadata.
     private(set) var metadata = ConfigVariableMetadata()
@@ -52,12 +55,12 @@ public struct ConfigVariable<Value>: Sendable where Value: Sendable {
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
     ///   - content: Describes how the value maps to and from `ConfigContent` primitives.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: Value, content: Content, secrecy: ConfigVariableSecrecy = .auto) {
+    ///   - isSecret: Whether this variable’s value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: Value, content: Content, isSecret: Bool = false) {
         self.key = key
         self.defaultValue = defaultValue
         self.content = content
-        self.secrecy = secrecy
+        self.isSecret = isSecret
     }
 
 
@@ -116,9 +119,9 @@ extension ConfigVariable where Value == Bool {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: Bool, secrecy: ConfigVariableSecrecy = .auto) {
-        self.init(key: key, defaultValue: defaultValue, content: .bool, secrecy: secrecy)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: Bool, isSecret: Bool = false) {
+        self.init(key: key, defaultValue: defaultValue, content: .bool, isSecret: isSecret)
     }
 }
 
@@ -131,9 +134,9 @@ extension ConfigVariable where Value == [Bool] {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: [Bool], secrecy: ConfigVariableSecrecy = .auto) {
-        self.init(key: key, defaultValue: defaultValue, content: .boolArray, secrecy: secrecy)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: [Bool], isSecret: Bool = false) {
+        self.init(key: key, defaultValue: defaultValue, content: .boolArray, isSecret: isSecret)
     }
 }
 
@@ -146,9 +149,9 @@ extension ConfigVariable where Value == Float64 {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: Float64, secrecy: ConfigVariableSecrecy = .auto) {
-        self.init(key: key, defaultValue: defaultValue, content: .float64, secrecy: secrecy)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: Float64, isSecret: Bool = false) {
+        self.init(key: key, defaultValue: defaultValue, content: .float64, isSecret: isSecret)
     }
 }
 
@@ -161,9 +164,9 @@ extension ConfigVariable where Value == [Float64] {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: [Float64], secrecy: ConfigVariableSecrecy = .auto) {
-        self.init(key: key, defaultValue: defaultValue, content: .float64Array, secrecy: secrecy)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: [Float64], isSecret: Bool = false) {
+        self.init(key: key, defaultValue: defaultValue, content: .float64Array, isSecret: isSecret)
     }
 }
 
@@ -176,9 +179,9 @@ extension ConfigVariable where Value == Int {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: Int, secrecy: ConfigVariableSecrecy = .auto) {
-        self.init(key: key, defaultValue: defaultValue, content: .int, secrecy: secrecy)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: Int, isSecret: Bool = false) {
+        self.init(key: key, defaultValue: defaultValue, content: .int, isSecret: isSecret)
     }
 }
 
@@ -191,9 +194,9 @@ extension ConfigVariable where Value == [Int] {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: [Int], secrecy: ConfigVariableSecrecy = .auto) {
-        self.init(key: key, defaultValue: defaultValue, content: .intArray, secrecy: secrecy)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: [Int], isSecret: Bool = false) {
+        self.init(key: key, defaultValue: defaultValue, content: .intArray, isSecret: isSecret)
     }
 }
 
@@ -206,9 +209,9 @@ extension ConfigVariable where Value == String {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: String, secrecy: ConfigVariableSecrecy = .auto) {
-        self.init(key: key, defaultValue: defaultValue, content: .string, secrecy: secrecy)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: String, isSecret: Bool = false) {
+        self.init(key: key, defaultValue: defaultValue, content: .string, isSecret: isSecret)
     }
 }
 
@@ -221,9 +224,9 @@ extension ConfigVariable where Value == [String] {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: [String], secrecy: ConfigVariableSecrecy = .auto) {
-        self.init(key: key, defaultValue: defaultValue, content: .stringArray, secrecy: secrecy)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: [String], isSecret: Bool = false) {
+        self.init(key: key, defaultValue: defaultValue, content: .stringArray, isSecret: isSecret)
     }
 }
 
@@ -236,9 +239,9 @@ extension ConfigVariable where Value == [UInt8] {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: [UInt8], secrecy: ConfigVariableSecrecy = .auto) {
-        self.init(key: key, defaultValue: defaultValue, content: .bytes, secrecy: secrecy)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: [UInt8], isSecret: Bool = false) {
+        self.init(key: key, defaultValue: defaultValue, content: .bytes, isSecret: isSecret)
     }
 }
 
@@ -251,9 +254,9 @@ extension ConfigVariable where Value == [[UInt8]] {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: [[UInt8]], secrecy: ConfigVariableSecrecy = .auto) {
-        self.init(key: key, defaultValue: defaultValue, content: .byteChunkArray, secrecy: secrecy)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: [[UInt8]], isSecret: Bool = false) {
+        self.init(key: key, defaultValue: defaultValue, content: .byteChunkArray, isSecret: isSecret)
     }
 }
 
@@ -269,10 +272,10 @@ extension ConfigVariable {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: Value, secrecy: ConfigVariableSecrecy = .auto)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: Value, isSecret: Bool = false)
     where Value: RawRepresentable & Sendable, Value.RawValue == String {
-        self.init(key: key, defaultValue: defaultValue, content: .rawRepresentableString(), secrecy: secrecy)
+        self.init(key: key, defaultValue: defaultValue, content: .rawRepresentableString(), isSecret: isSecret)
     }
 }
 
@@ -285,10 +288,10 @@ extension ConfigVariable {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init<Element>(key: ConfigKey, defaultValue: [Element], secrecy: ConfigVariableSecrecy = .auto)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init<Element>(key: ConfigKey, defaultValue: [Element], isSecret: Bool = false)
     where Value == [Element], Element: RawRepresentable & Sendable, Element.RawValue == String {
-        self.init(key: key, defaultValue: defaultValue, content: .rawRepresentableStringArray(), secrecy: secrecy)
+        self.init(key: key, defaultValue: defaultValue, content: .rawRepresentableStringArray(), isSecret: isSecret)
     }
 }
 
@@ -302,10 +305,10 @@ extension ConfigVariable {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: Value, secrecy: ConfigVariableSecrecy = .auto)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: Value, isSecret: Bool = false)
     where Value: ExpressibleByConfigString {
-        self.init(key: key, defaultValue: defaultValue, content: .expressibleByConfigString(), secrecy: secrecy)
+        self.init(key: key, defaultValue: defaultValue, content: .expressibleByConfigString(), isSecret: isSecret)
     }
 }
 
@@ -318,10 +321,10 @@ extension ConfigVariable {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init<Element>(key: ConfigKey, defaultValue: [Element], secrecy: ConfigVariableSecrecy = .auto)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init<Element>(key: ConfigKey, defaultValue: [Element], isSecret: Bool = false)
     where Value == [Element], Element: ExpressibleByConfigString & Sendable {
-        self.init(key: key, defaultValue: defaultValue, content: .expressibleByConfigStringArray(), secrecy: secrecy)
+        self.init(key: key, defaultValue: defaultValue, content: .expressibleByConfigStringArray(), isSecret: isSecret)
     }
 }
 
@@ -337,10 +340,10 @@ extension ConfigVariable {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: Value, secrecy: ConfigVariableSecrecy = .auto)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: Value, isSecret: Bool = false)
     where Value: RawRepresentable & Sendable, Value.RawValue == Int {
-        self.init(key: key, defaultValue: defaultValue, content: .rawRepresentableInt(), secrecy: secrecy)
+        self.init(key: key, defaultValue: defaultValue, content: .rawRepresentableInt(), isSecret: isSecret)
     }
 }
 
@@ -353,10 +356,10 @@ extension ConfigVariable {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init<Element>(key: ConfigKey, defaultValue: [Element], secrecy: ConfigVariableSecrecy = .auto)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init<Element>(key: ConfigKey, defaultValue: [Element], isSecret: Bool = false)
     where Value == [Element], Element: RawRepresentable & Sendable, Element.RawValue == Int {
-        self.init(key: key, defaultValue: defaultValue, content: .rawRepresentableIntArray(), secrecy: secrecy)
+        self.init(key: key, defaultValue: defaultValue, content: .rawRepresentableIntArray(), isSecret: isSecret)
     }
 }
 
@@ -370,10 +373,10 @@ extension ConfigVariable {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init(key: ConfigKey, defaultValue: Value, secrecy: ConfigVariableSecrecy = .auto)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: Value, isSecret: Bool = false)
     where Value: ExpressibleByConfigInt {
-        self.init(key: key, defaultValue: defaultValue, content: .expressibleByConfigInt(), secrecy: secrecy)
+        self.init(key: key, defaultValue: defaultValue, content: .expressibleByConfigInt(), isSecret: isSecret)
     }
 }
 
@@ -386,9 +389,9 @@ extension ConfigVariable {
     /// - Parameters:
     ///   - key: The configuration key.
     ///   - defaultValue: The default value to use when variable resolution fails.
-    ///   - secrecy: The secrecy setting for this variable. Defaults to `.auto`.
-    public init<Element>(key: ConfigKey, defaultValue: [Element], secrecy: ConfigVariableSecrecy = .auto)
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init<Element>(key: ConfigKey, defaultValue: [Element], isSecret: Bool = false)
     where Value == [Element], Element: ExpressibleByConfigInt & Sendable {
-        self.init(key: key, defaultValue: defaultValue, content: .expressibleByConfigIntArray(), secrecy: secrecy)
+        self.init(key: key, defaultValue: defaultValue, content: .expressibleByConfigIntArray(), isSecret: isSecret)
     }
 }

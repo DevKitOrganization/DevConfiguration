@@ -20,7 +20,6 @@ configuration management with extensible metadata, a variable management UI, and
 
 - ``ConfigVariableMetadata``
 - ``ConfigVariableMetadataKey``
-- ``ConfigVariableSecrecy``
 
 ### Access Reporting
 

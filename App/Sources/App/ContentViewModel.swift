@@ -21,7 +21,7 @@ final class ContentViewModel {
         .metadata(\.displayName, "Newton’s Gravitational Constant")
     let intVariable = ConfigVariable(key: "configurationRefreshInterval", defaultValue: 1000)
         .metadata(\.displayName, "Configuration Refresh Interval (ms)")
-    let stringVariable = ConfigVariable(key: "appName", defaultValue: "Example", secrecy: .public)
+    let stringVariable = ConfigVariable(key: "appName", defaultValue: "Example")
         .metadata(\.displayName, "App Name")
 
     let boolArrayVariable = ConfigVariable(key: "bool_array", defaultValue: [false, true, true, false])
@@ -32,18 +32,16 @@ final class ContentViewModel {
         .metadata(\.displayName, "Int Array Example")
     let stringArrayVariable = ConfigVariable(
         key: "string_array",
-        defaultValue: ["Thom", "Jonny", "Ed", "Colin", "Phil"],
-        secrecy: .public
+        defaultValue: ["Thom", "Jonny", "Ed", "Colin", "Phil"]
     ).metadata(\.displayName, "String Array Example")
 
     let jsonVariable = ConfigVariable(
         key: "complexConfig",
         defaultValue: ComplexConfiguration(field1: "a", field2: 1),
-        content: .json(representation: .data),
-        secrecy: .public
+        content: .json(representation: .data)
     ).metadata(\.displayName, "Complex Config")
 
-    let intBackedVariable = ConfigVariable(key: "favoriteCardSuit", defaultValue: CardSuit.spades)
+    let intBackedVariable = ConfigVariable(key: "favoriteCardSuit", defaultValue: CardSuit.spades, isSecret: true)
         .metadata(\.displayName, "Favorite Card Suit")
 
     let stringBackedVariable = ConfigVariable(key: "favoriteBeatle", defaultValue: Beatle.john)

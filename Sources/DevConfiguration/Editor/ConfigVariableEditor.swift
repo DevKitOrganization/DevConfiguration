@@ -25,32 +25,33 @@ public struct ConfigVariableEditor: View {
     /// The list view model created from the reader.
     @State private var viewModel: ConfigVariableListViewModel?
 
-    /// The closure to call with the changed variables when the user saves.
-    private let onSave: ([RegisteredConfigVariable]) -> Void
-
 
     /// Creates a new configuration variable editor.
     ///
     /// - Parameters:
-    ///   - reader: The configuration variable reader. If the reader does was not created with `isEditorEnabled` set to
+    ///   - reader: The configuration variable reader. If the reader was not created with `isEditorEnabled` set to
     ///     `true`, the view is empty.
     ///   - onSave: A closure called with the registered variables whose overrides changed when the user saves.
     public init(
         reader: ConfigVariableReader,
         onSave: @escaping ([RegisteredConfigVariable]) -> Void
     ) {
-        self.onSave = onSave
-
         if let editorOverrideProvider = reader.editorOverrideProvider {
-            let undoManager = UndoManager()
-            let document = EditorDocument(provider: editorOverrideProvider, undoManager: undoManager)
+            // Exclude the editor override provider from the named providers passed to the document,
+            // since it is always the first entry in the reader's provider list
+            let namedProviders = Array(reader.namedProviders.dropFirst())
+
+            let document = EditorDocument(
+                editorOverrideProvider: editorOverrideProvider,
+                workingCopyDisplayName: localizedString("editorOverrideProvider.name"),
+                namedProviders: namedProviders,
+                registeredVariables: Array(reader.registeredVariables.values),
+                userDefaults: .standard,
+                undoManager: UndoManager()
+            )
+
             self._viewModel = State(
-                initialValue: ConfigVariableListViewModel(
-                    document: document,
-                    registeredVariables: reader.registeredVariables,
-                    namedProviders: reader.namedProviders,
-                    undoManager: undoManager
-                )
+                initialValue: ConfigVariableListViewModel(document: document, onSave: onSave)
             )
         }
     }
@@ -58,7 +59,7 @@ public struct ConfigVariableEditor: View {
 
     public var body: some View {
         if let viewModel {
-            ConfigVariableListView(viewModel: viewModel, onSave: onSave)
+            ConfigVariableListView(viewModel: viewModel)
         }
     }
 }

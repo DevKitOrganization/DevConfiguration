@@ -172,8 +172,9 @@ extension ConfigVariableReader {
             state.registeredVariables[variable.key] = RegisteredConfigVariable(
                 key: variable.key,
                 defaultContent: defaultContent,
-                isSecret: isSecret(variable),
+                isSecret: variable.isSecret,
                 metadata: variable.metadata,
+                destinationTypeName: String(describing: Value.self),
                 editorControl: variable.content.editorControl,
                 parse: variable.content.parse
             )
@@ -197,7 +198,7 @@ extension ConfigVariableReader {
         fileID: String = #fileID,
         line: UInt = #line
     ) -> Value {
-        variable.content.read(reader, variable.key, isSecret(variable), variable.defaultValue, eventBus, fileID, line)
+        variable.content.read(reader, variable.key, variable.isSecret, variable.defaultValue, eventBus, fileID, line)
     }
 
 
@@ -232,7 +233,7 @@ extension ConfigVariableReader {
         try await variable.content.fetch(
             reader,
             variable.key,
-            isSecret(variable),
+            variable.isSecret,
             variable.defaultValue,
             eventBus,
             fileID,
@@ -261,7 +262,7 @@ extension ConfigVariableReader {
         // Capture these locally so that the @Sendable task closures below don’t need to capture `self`.
         let configReader = reader
         let eventBus = eventBus
-        let isSecret = isSecret(variable)
+        let isSecret = variable.isSecret
         let (stream, continuation) = AsyncStream<Value>.makeStream()
 
         // We use a task group with two concurrent tasks: one that watches the underlying provider for changes and
@@ -304,24 +305,5 @@ extension ConfigVariableReader {
             // The handler task always returns a non-nil value, so we should never reach this point.
             fatalError()
         }
-    }
-}
-
-
-// MARK: - Secrecy
-
-extension ConfigVariableReader {
-    /// Whether the given variable is secret.
-    ///
-    /// When secrecy is `.auto`, this defers to the variable’s content to determine the appropriate secrecy.
-    /// String- backed and codable content types default to secret, while numeric and boolean types default to public.
-    ///
-    /// - Parameter variable: The config variable whose secrecy is being determined.
-    func isSecret<Value>(_ variable: ConfigVariable<Value>) -> Bool {
-        let resolvedSecrecy =
-            variable.secrecy == .auto
-            ? (variable.content.isAutoSecret ? .secret : .public)
-            : variable.secrecy
-        return resolvedSecrecy == .secret
     }
 }

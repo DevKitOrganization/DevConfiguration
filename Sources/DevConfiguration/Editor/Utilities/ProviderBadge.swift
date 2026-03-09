@@ -41,19 +41,24 @@ struct ProviderBadge: View {
 
 /// Returns a color for the provider at the given index.
 ///
-/// Colors are assigned from a fixed palette and wrap around if there are more providers than colors.
+/// Colors are assigned from a fixed palette and wrap around if there are more providers than colors. When `index` is
+/// `nil` (i.e., the working copy), the color is ``Color/blue``.
 ///
-/// - Parameter index: The provider's index in the reader's provider list.
+/// - Parameter index: The provider's index in the reader's provider list, or `nil` for the working copy.
 /// - Returns: A color for the provider.
-func providerColor(at index: Int) -> Color {
-    let palette: [Color] = [.blue, .green, .indigo, .gray, .cyan, .yellow, .orange, .purple, .mint, .red]
+func providerColor(at index: Int?) -> Color {
+    guard let index else {
+        return .blue
+    }
+
+    let palette: [Color] = [.cyan, .green, .yellow, .orange, .pink, .indigo, .purple]
     return palette[index % palette.count]
 }
 
 
 #Preview {
     VStack(spacing: 8) {
-        ForEach(Array(0 ..< 9), id: \.self) { index in
+        ForEach(Array(0 ..< 7), id: \.self) { index in
             ProviderBadge(providerName: "Provider \(index)", color: providerColor(at: index))
         }
 

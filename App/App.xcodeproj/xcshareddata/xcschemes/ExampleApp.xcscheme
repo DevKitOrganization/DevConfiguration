@@ -58,7 +58,7 @@
          </EnvironmentVariable>
          <EnvironmentVariable
             key = "GRAVITATIONAL_CONSTANT"
-            value = "1.234"
+            value = "Invalid"
             isEnabled = "YES">
          </EnvironmentVariable>
       </EnvironmentVariables>

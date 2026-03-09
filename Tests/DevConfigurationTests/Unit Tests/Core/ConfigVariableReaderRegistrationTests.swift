@@ -27,8 +27,8 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
 
         let key = randomConfigKey()
         let defaultValue = randomInt(in: .min ... .max)
-        let secrecy = randomConfigVariableSecrecy()
-        let variable = ConfigVariable(key: key, defaultValue: defaultValue, secrecy: secrecy)
+        let isSecret = randomBool()
+        let variable = ConfigVariable(key: key, defaultValue: defaultValue, isSecret: isSecret)
             .metadata(\.testTeam, metadata[TestTeamMetadataKey.self])
 
         // exercise
@@ -38,8 +38,9 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
         let registered = try #require(reader.registeredVariables[key])
         #expect(registered.key == key)
         #expect(registered.defaultContent == .int(defaultValue))
-        #expect(registered.isSecret == reader.isSecret(variable))
+        #expect(registered.isSecret == isSecret)
         #expect(registered.testTeam == metadata[TestTeamMetadataKey.self])
+        #expect(registered.destinationTypeName == "Int")
         #expect(registered.editorControl == .numberField)
         #expect(registered.parse?("42") == .int(42))
         #expect(registered.parse?("notAnInt") == nil)
@@ -94,7 +95,6 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
                 key: "encode.failure",
                 defaultValue: UnencodableValue(),
                 content: ConfigVariableContent<UnencodableValue>(
-                    isAutoSecret: false,
                     read: { _, _, _, defaultValue, _, _, _ in defaultValue },
                     fetch: { _, _, _, defaultValue, _, _, _ in defaultValue },
                     startWatching: { _, _, _, _, _, _, _, _ in },

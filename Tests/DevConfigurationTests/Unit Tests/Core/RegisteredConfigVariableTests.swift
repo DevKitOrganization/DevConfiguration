@@ -27,6 +27,7 @@ struct RegisteredConfigVariableTests: RandomValueGenerating {
             defaultContent: randomConfigContent(),
             isSecret: randomBool(),
             metadata: metadata,
+            destinationTypeName: randomAlphanumericString(),
             editorControl: .none,
             parse: nil
         )
@@ -44,6 +45,7 @@ struct RegisteredConfigVariableTests: RandomValueGenerating {
             defaultContent: randomConfigContent(),
             isSecret: randomBool(),
             metadata: ConfigVariableMetadata(),
+            destinationTypeName: randomAlphanumericString(),
             editorControl: .none,
             parse: nil
         )

@@ -2,10 +2,8 @@
 //  ConfigVariableListViewModelTests.swift
 //  DevConfiguration
 //
-//  Created by Prachi Gauriar on 3/8/2026.
+//  Created by Prachi Gauriar on 3/9/2026.
 //
-
-#if canImport(SwiftUI)
 
 import Configuration
 import DevTesting
@@ -18,384 +16,433 @@ import Testing
 struct ConfigVariableListViewModelTests: RandomValueGenerating {
     var randomNumberGenerator = makeRandomNumberGenerator()
 
+    let editorOverrideProvider = EditorOverrideProvider()
+    var userDefaults: UserDefaults!
+    var workingCopyDisplayName: String!
+    let undoManager = UndoManager()
 
-    // MARK: - Variables
+    nonisolated(unsafe) var onSaveStub: Stub<[RegisteredConfigVariable], Void>!
 
-    @Test
-    mutating func variablesSortedByDisplayName() {
-        // set up
-        let displayNames = Array(count: 3) { randomAlphanumericString() }
-        let sortedNames = displayNames.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
 
-        var variables: [ConfigKey: RegisteredConfigVariable] = [:]
-        for name in displayNames {
-            let key = randomConfigKey()
-            var metadata = ConfigVariableMetadata()
-            metadata.displayName = name
-            variables[key] = randomRegisteredVariable(key: key, metadata: metadata)
-        }
-
-        let viewModel = makeListViewModel(registeredVariables: variables)
-
-        // exercise
-        let resultNames = viewModel.variables.map(\.displayName)
-
-        // expect
-        #expect(resultNames == sortedNames)
+    init() {
+        workingCopyDisplayName = randomAlphanumericString()
+        userDefaults = UserDefaults(suiteName: randomAlphanumericString())!
+        onSaveStub = Stub()
     }
 
 
-    @Test
-    mutating func variableUsesKeyDescriptionWhenNoDisplayName() throws {
-        // set up
-        let key = randomConfigKey()
-        let variables: [ConfigKey: RegisteredConfigVariable] = [
-            key: randomRegisteredVariable(key: key)
-        ]
-
-        let viewModel = makeListViewModel(registeredVariables: variables)
-
-        // exercise
-        let item = try #require(viewModel.variables.first)
-
-        // expect
-        #expect(item.displayName == key.description)
-    }
-
-
-    @Test
-    mutating func variableShowsOverrideValueWhenOverrideExists() throws {
-        // set up
-        let key = randomConfigKey()
-        let overrideContent = ConfigContent.int(randomInt(in: -100 ... 100))
-        let variables: [ConfigKey: RegisteredConfigVariable] = [
-            key: randomRegisteredVariable(key: key, defaultContent: .int(0), editorControl: .numberField)
-        ]
-
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        document.setOverride(overrideContent, forKey: key)
-
-        let viewModel = makeListViewModel(document: document, registeredVariables: variables, providers: [provider])
-
-        // exercise
-        let item = try #require(viewModel.variables.first)
-
-        // expect
-        #expect(item.currentValue == overrideContent.displayString)
-        #expect(item.providerName == EditorOverrideProvider.providerName)
-        #expect(item.hasOverride)
-    }
-
-
-    @Test
-    mutating func variableShowsProviderValueWhenNoOverride() throws {
-        // set up
-        let key = randomConfigKey()
-        let content = ConfigContent.string(randomAlphanumericString())
-        let inMemoryProvider = InMemoryProvider(
-            name: randomAlphanumericString(),
-            values: [AbsoluteConfigKey(key): ConfigValue(content, isSecret: false)]
-        )
-
-        let variables: [ConfigKey: RegisteredConfigVariable] = [
-            key: randomRegisteredVariable(key: key, defaultContent: .string(""), editorControl: .textField)
-        ]
-
-        let viewModel = makeListViewModel(registeredVariables: variables, providers: [inMemoryProvider])
-
-        // exercise
-        let item = try #require(viewModel.variables.first)
-
-        // expect
-        #expect(item.currentValue == content.displayString)
-        #expect(item.providerName == inMemoryProvider.providerName)
-        #expect(!item.hasOverride)
-    }
-
-
-    @Test
-    mutating func variableShowsDefaultWhenNoProviderHasValue() throws {
-        // set up
-        let key = randomConfigKey()
-        let defaultContent = ConfigContent.bool(randomBool())
-
-        let variables: [ConfigKey: RegisteredConfigVariable] = [
-            key: randomRegisteredVariable(key: key, defaultContent: defaultContent, editorControl: .toggle)
-        ]
-
-        let viewModel = makeListViewModel(registeredVariables: variables)
-
-        // exercise
-        let item = try #require(viewModel.variables.first)
-
-        // expect
-        #expect(item.currentValue == defaultContent.displayString)
-        #expect(item.providerName != "editor.defaultProviderName")
-    }
-
-
-    // MARK: - Search
-
-    @Test
-    mutating func searchFiltersVariablesByDisplayName() {
-        // set up
-        let targetName = randomAlphanumericString()
-        let otherName = randomAlphanumericString()
-
-        let key1 = randomConfigKey()
-        let key2 = randomConfigKey()
-
-        var metadata1 = ConfigVariableMetadata()
-        metadata1.displayName = targetName
-        var metadata2 = ConfigVariableMetadata()
-        metadata2.displayName = otherName
-
-        let variables: [ConfigKey: RegisteredConfigVariable] = [
-            key1: randomRegisteredVariable(key: key1, metadata: metadata1),
-            key2: randomRegisteredVariable(key: key2, metadata: metadata2),
-        ]
-
-        let viewModel = makeListViewModel(registeredVariables: variables)
-
-        // exercise
-        viewModel.searchText = targetName
-
-        // expect
-        #expect(viewModel.variables.map(\.displayName) == [targetName])
-    }
-
-
-    @Test
-    mutating func searchFiltersVariablesByCurrentValue() {
-        // set up
-        let key = randomConfigKey()
-        let searchableValue = randomAlphanumericString()
-        let content = ConfigContent.string(searchableValue)
-        let inMemoryProvider = InMemoryProvider(
-            values: [AbsoluteConfigKey(key): ConfigValue(content, isSecret: false)]
-        )
-
-        let variables: [ConfigKey: RegisteredConfigVariable] = [
-            key: randomRegisteredVariable(key: key, defaultContent: .string(""), editorControl: .textField)
-        ]
-
-        let viewModel = makeListViewModel(registeredVariables: variables, providers: [inMemoryProvider])
-
-        // exercise
-        viewModel.searchText = searchableValue
-
-        // expect
-        #expect(viewModel.variables.count == 1)
-    }
-
-
-    @Test
-    mutating func searchWithNoMatchReturnsEmpty() {
-        // set up
-        let key = randomConfigKey()
-        var metadata = ConfigVariableMetadata()
-        metadata.displayName = randomAlphanumericString()
-        let variables: [ConfigKey: RegisteredConfigVariable] = [
-            key: randomRegisteredVariable(key: key, metadata: metadata)
-        ]
-
-        let viewModel = makeListViewModel(registeredVariables: variables)
-
-        // exercise
-        viewModel.searchText = randomAlphanumericString()
-
-        // expect
-        #expect(viewModel.variables.isEmpty)
-    }
-
-
-    @Test
-    mutating func emptySearchReturnsAllVariables() {
-        // set up
-        let key1 = randomConfigKey()
-        let key2 = randomConfigKey()
-        let variables: [ConfigKey: RegisteredConfigVariable] = [
-            key1: randomRegisteredVariable(key: key1),
-            key2: randomRegisteredVariable(key: key2),
-        ]
-
-        let viewModel = makeListViewModel(registeredVariables: variables)
-
-        // exercise
-        viewModel.searchText = ""
-
-        // expect
-        #expect(viewModel.variables.count == 2)
-    }
-
-
-    // MARK: - Dirty Tracking
-
-    @Test
-    mutating func isDirtyDelegatesToDocument() {
-        // set up
-        let key = randomConfigKey()
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        let viewModel = makeListViewModel(document: document)
-
-        #expect(!viewModel.isDirty)
-
-        // exercise
-        document.setOverride(randomConfigContent(), forKey: key)
-
-        // expect
-        #expect(viewModel.isDirty)
-    }
-
-
-    // MARK: - Save
-
-    @Test
-    mutating func saveReturnsChangedRegisteredVariables() {
-        // set up
-        let key1 = randomConfigKey()
-        let key2 = randomConfigKey()
-
-        let variable1 = randomRegisteredVariable(key: key1)
-        let variable2 = randomRegisteredVariable(key: key2)
-
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        document.setOverride(randomConfigContent(), forKey: key1)
-
-        let viewModel = makeListViewModel(
-            document: document,
-            registeredVariables: [key1: variable1, key2: variable2],
-            providers: [provider]
-        )
-
-        // exercise
-        let changed = viewModel.save()
-
-        // expect
-        #expect(changed.map(\.key) == [key1])
-    }
-
-
-    // MARK: - Clear All Overrides
-
-    @Test
-    mutating func clearAllOverridesDelegatesToDocument() {
-        // set up
-        let key = randomConfigKey()
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        document.setOverride(randomConfigContent(), forKey: key)
-
-        let viewModel = makeListViewModel(document: document)
-
-        // exercise
-        viewModel.clearAllOverrides()
-
-        // expect
-        #expect(document.workingCopy.isEmpty)
-    }
-
-
-    // MARK: - Undo/Redo
-
-    @Test
-    mutating func undoDelegatesToUndoManager() {
-        // set up
-        let key = randomConfigKey()
-        let undoManager = UndoManager()
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider, undoManager: undoManager)
-        document.setOverride(randomConfigContent(), forKey: key)
-
-        let viewModel = makeListViewModel(document: document, undoManager: undoManager)
-        #expect(viewModel.canUndo)
-
-        // exercise
-        viewModel.undo()
-
-        // expect
-        #expect(!document.hasOverride(forKey: key))
-    }
-
-
-    @Test
-    mutating func redoDelegatesToUndoManager() {
-        // set up
-        let key = randomConfigKey()
-        let content = randomConfigContent()
-        let undoManager = UndoManager()
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider, undoManager: undoManager)
-        document.setOverride(content, forKey: key)
-        undoManager.undo()
-
-        let viewModel = makeListViewModel(document: document, undoManager: undoManager)
-        #expect(viewModel.canRedo)
-
-        // exercise
-        viewModel.redo()
-
-        // expect
-        #expect(document.override(forKey: key) == content)
-    }
-
-
-    // MARK: - Detail View Model
-
-    @Test
-    mutating func makeDetailViewModelReturnsViewModel() {
-        // set up
-        let key = randomConfigKey()
-        let variable = randomRegisteredVariable(key: key)
-
-        let viewModel = makeListViewModel(registeredVariables: [key: variable])
-
-        // exercise
-        let detailVM = viewModel.makeDetailViewModel(for: key)
-
-        // expect
-        #expect(detailVM.key == key)
-    }
-}
-
-
-// MARK: - Helpers
-
-extension ConfigVariableListViewModelTests {
-    private func makeListViewModel(
-        document: EditorDocument? = nil,
-        registeredVariables: [ConfigKey: RegisteredConfigVariable] = [:],
-        providers: [any ConfigProvider] = [],
-        undoManager: UndoManager = UndoManager()
-    ) -> ConfigVariableListViewModel {
-        let effectiveDocument = document ?? EditorDocument(provider: EditorOverrideProvider())
-        return ConfigVariableListViewModel(
-            document: effectiveDocument,
-            registeredVariables: registeredVariables,
-            namedProviders: providers.map { NamedConfigProvider($0) },
+    // MARK: - Helpers
+
+    mutating func makeDocument(
+        namedProviders: [NamedConfigProvider] = [],
+        registeredVariables: [RegisteredConfigVariable]? = nil
+    ) -> EditorDocument {
+        EditorDocument(
+            editorOverrideProvider: editorOverrideProvider,
+            workingCopyDisplayName: workingCopyDisplayName,
+            namedProviders: namedProviders,
+            registeredVariables: registeredVariables ?? [randomRegisteredVariable()],
+            userDefaults: userDefaults,
             undoManager: undoManager
         )
     }
 
 
-    private mutating func randomRegisteredVariable(
-        key: ConfigKey? = nil,
-        defaultContent: ConfigContent = .bool(false),
-        metadata: ConfigVariableMetadata = ConfigVariableMetadata(),
-        editorControl: EditorControl = .toggle
-    ) -> RegisteredConfigVariable {
-        RegisteredConfigVariable(
-            key: key ?? randomConfigKey(),
-            defaultContent: defaultContent,
-            isSecret: randomBool(),
-            metadata: metadata,
-            editorControl: editorControl,
-            parse: nil
+    func makeViewModel(document: EditorDocument) -> ConfigVariableListViewModel {
+        ConfigVariableListViewModel(document: document, onSave: { self.onSaveStub($0) })
+    }
+
+
+    // MARK: - variables
+
+    @Test
+    mutating func variablesMapsItemsFromDocument() {
+        // set up with two registered variables that have display names
+        var metadata1 = ConfigVariableMetadata()
+        metadata1.displayName = "Alpha"
+        let defaultContent1 = ConfigContent.string(randomAlphanumericString())
+        let variable1 = randomRegisteredVariable(defaultContent: defaultContent1, metadata: metadata1)
+
+        var metadata2 = ConfigVariableMetadata()
+        metadata2.displayName = "Beta"
+        let defaultContent2 = ConfigContent.int(randomInt(in: .min ... .max))
+        let variable2 = randomRegisteredVariable(defaultContent: defaultContent2, metadata: metadata2)
+
+        let document = makeDocument(registeredVariables: [variable1, variable2])
+        let viewModel = makeViewModel(document: document)
+
+        // exercise
+        let items = viewModel.variables
+
+        // expect items sorted by display name with correct fields
+        let expected = [
+            VariableListItem(
+                key: variable1.key,
+                displayName: "Alpha",
+                currentValue: defaultContent1.displayString,
+                providerName: localizedString("editor.defaultProviderName"),
+                providerIndex: 0,
+                isSecret: variable1.isSecret,
+                hasOverride: false,
+                editorControl: variable1.editorControl
+            ),
+            VariableListItem(
+                key: variable2.key,
+                displayName: "Beta",
+                currentValue: defaultContent2.displayString,
+                providerName: localizedString("editor.defaultProviderName"),
+                providerIndex: 0,
+                isSecret: variable2.isSecret,
+                hasOverride: false,
+                editorControl: variable2.editorControl
+            ),
+        ]
+        #expect(items == expected)
+    }
+
+
+    @Test
+    mutating func variablesUsesKeyDescriptionWhenDisplayNameIsNil() {
+        // set up with a variable that has no display name metadata
+        let defaultContent = ConfigContent.string(randomAlphanumericString())
+        let variable = randomRegisteredVariable(defaultContent: defaultContent)
+
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+
+        // exercise
+        let items = viewModel.variables
+
+        // expect the item uses the key's description as the display name
+        let expected = [
+            VariableListItem(
+                key: variable.key,
+                displayName: variable.key.description,
+                currentValue: defaultContent.displayString,
+                providerName: localizedString("editor.defaultProviderName"),
+                providerIndex: 0,
+                isSecret: variable.isSecret,
+                hasOverride: false,
+                editorControl: variable.editorControl
+            )
+        ]
+        #expect(items == expected)
+    }
+
+
+    @Test
+    mutating func variablesFiltersByDisplayName() {
+        // set up with two variables, one matching the search text
+        var metadata1 = ConfigVariableMetadata()
+        metadata1.displayName = "ServerURL"
+        let variable1 = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadata1
         )
+
+        var metadata2 = ConfigVariableMetadata()
+        metadata2.displayName = "Timeout"
+        let variable2 = randomRegisteredVariable(
+            defaultContent: .int(randomInt(in: .min ... .max)),
+            metadata: metadata2
+        )
+
+        let document = makeDocument(registeredVariables: [variable1, variable2])
+        let viewModel = makeViewModel(document: document)
+        viewModel.searchText = "Server"
+
+        // exercise
+        let items = viewModel.variables
+
+        // expect only the matching variable is returned
+        #expect(items.count == 1)
+        #expect(items.first?.displayName == "ServerURL")
+    }
+
+
+    @Test
+    mutating func variablesFiltersByKeyDescription() {
+        // set up with a variable whose display name doesn't match but key does
+        var metadata = ConfigVariableMetadata()
+        metadata.displayName = "Something Else"
+        let key = ConfigKey(["server", "url"])
+        let variable = randomRegisteredVariable(
+            key: key,
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadata
+        )
+
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+        viewModel.searchText = "server"
+
+        // exercise
+        let items = viewModel.variables
+
+        // expect the variable is returned because the key matches
+        #expect(items.count == 1)
+        #expect(items.first?.key == key)
+    }
+
+
+    @Test
+    mutating func variablesReturnsAllWhenSearchTextIsEmpty() {
+        // set up with two variables and empty search text
+        let variable1 = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let variable2 = randomRegisteredVariable(defaultContent: .int(randomInt(in: .min ... .max)))
+
+        let document = makeDocument(registeredVariables: [variable1, variable2])
+        let viewModel = makeViewModel(document: document)
+
+        // exercise
+        let items = viewModel.variables
+
+        // expect all variables are returned
+        #expect(items.count == 2)
+    }
+
+
+    @Test
+    mutating func variablesSortsByDisplayName() {
+        // set up with variables whose display names sort in a specific order
+        var metadataC = ConfigVariableMetadata()
+        metadataC.displayName = "Charlie"
+        let variableC = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadataC
+        )
+
+        var metadataA = ConfigVariableMetadata()
+        metadataA.displayName = "Alpha"
+        let variableA = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadataA
+        )
+
+        var metadataB = ConfigVariableMetadata()
+        metadataB.displayName = "Bravo"
+        let variableB = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadataB
+        )
+
+        // register in non-sorted order
+        let document = makeDocument(registeredVariables: [variableC, variableA, variableB])
+        let viewModel = makeViewModel(document: document)
+
+        // exercise
+        let items = viewModel.variables
+
+        // expect items are sorted by display name
+        let displayNames = items.map(\.displayName)
+        #expect(displayNames == ["Alpha", "Bravo", "Charlie"])
+    }
+
+
+    // MARK: - isDirty
+
+    @Test
+    mutating func isDirtyDelegatesToDocument() {
+        // set up
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+
+        // expect clean initially
+        #expect(!viewModel.isDirty)
+
+        // exercise by adding an override
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
+
+        // expect dirty
+        #expect(viewModel.isDirty)
+    }
+
+
+    // MARK: - canUndo
+
+    @Test
+    mutating func canUndoDelegatesToUndoManager() {
+        // set up
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+
+        // expect can't undo initially
+        #expect(!viewModel.canUndo)
+
+        // exercise by adding an override
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
+
+        // expect can undo
+        #expect(viewModel.canUndo)
+    }
+
+
+    // MARK: - canRedo
+
+    @Test
+    mutating func canRedoDelegatesToUndoManager() {
+        // set up with an override then undo
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
+        undoManager.undo()
+
+        // exercise
+        let canRedo = viewModel.canRedo
+
+        // expect can redo after undo
+        #expect(canRedo)
+    }
+
+
+    // MARK: - requestDismiss
+
+    @Test
+    mutating func requestDismissCallsDismissWhenClean() async {
+        // set up with no overrides
+        let document = makeDocument()
+        let viewModel = makeViewModel(document: document)
+
+        // exercise
+        await confirmation { dismissed in
+            viewModel.requestDismiss { dismissed() }
+        }
+
+        // expect save alert is not showing
+        #expect(!viewModel.isShowingSaveAlert)
+    }
+
+
+    @Test
+    mutating func requestDismissShowsSaveAlertWhenDirty() {
+        // set up with an override to make the document dirty
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
+
+        // exercise
+        viewModel.requestDismiss {}
+
+        // expect save alert is showing and dismiss was not called
+        #expect(viewModel.isShowingSaveAlert)
+    }
+
+
+    // MARK: - save
+
+    @Test
+    mutating func saveCallsOnSaveWithChangedVariables() throws {
+        // set up with an override
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
+
+        // exercise
+        viewModel.save()
+
+        // expect onSave was called with the changed variable and document is no longer dirty
+        let savedVariables = try #require(onSaveStub.callArguments.first)
+        #expect(savedVariables.map(\.key) == [variable.key])
+        #expect(!viewModel.isDirty)
+    }
+
+
+    // MARK: - requestClearAllOverrides
+
+    @Test
+    mutating func requestClearAllOverridesShowsClearAlert() {
+        // set up
+        let document = makeDocument()
+        let viewModel = makeViewModel(document: document)
+
+        // exercise
+        viewModel.requestClearAllOverrides()
+
+        // expect clear alert is showing
+        #expect(viewModel.isShowingClearAlert)
+    }
+
+
+    // MARK: - confirmClearAllOverrides
+
+    @Test
+    mutating func confirmClearAllOverridesDelegatesToDocument() {
+        // set up with an override
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
+
+        // exercise
+        viewModel.confirmClearAllOverrides()
+
+        // expect working copy is empty
+        #expect(document.workingCopy.isEmpty)
+    }
+
+
+    // MARK: - undo
+
+    @Test
+    mutating func undoDelegatesToUndoManager() {
+        // set up with an override
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
+
+        // exercise
+        viewModel.undo()
+
+        // expect override is removed
+        #expect(!document.hasOverride(forKey: variable.key))
+    }
+
+
+    // MARK: - redo
+
+    @Test
+    mutating func redoDelegatesToUndoManager() {
+        // set up with an override then undo
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+
+        let content = ConfigContent.string(randomAlphanumericString())
+        document.setOverride(content, forKey: variable.key)
+        undoManager.undo()
+
+        // exercise
+        viewModel.redo()
+
+        // expect override is restored
+        #expect(document.override(forKey: variable.key) == content)
+    }
+
+
+    // MARK: - makeDetailViewModel
+
+    @Test
+    mutating func makeDetailViewModelReturnsViewModelForKey() {
+        // set up
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+
+        // exercise
+        let detailViewModel = viewModel.makeDetailViewModel(for: variable.key)
+
+        // expect the detail view model has the correct key
+        #expect(detailViewModel.key == variable.key)
     }
 }
-
-#endif

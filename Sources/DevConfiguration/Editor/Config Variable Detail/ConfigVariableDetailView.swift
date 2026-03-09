@@ -103,6 +103,7 @@ extension ConfigVariableDetailView {
                     localizedStringResource("detailView.overrideSection.valueTextField"),
                     text: $viewModel.overrideText
                 )
+                .onSubmit { viewModel.commitOverrideText() }
                 .textFieldStyle(.roundedBorder)
                 .multilineTextAlignment(.trailing)
                 #if os(iOS) || os(visionOS)
@@ -137,12 +138,14 @@ extension ConfigVariableDetailView {
                     LabeledContent {
                         Text(providerValue.valueString)
                             .font(.caption.monospaced())
+                            .strikethrough(!providerValue.contentTypeMatches)
                     } label: {
                         ProviderBadge(
                             providerName: providerValue.providerName,
                             color: providerColor(at: providerValue.providerIndex),
                             isActive: providerValue.isActive
                         )
+                        .strikethrough(!providerValue.contentTypeMatches)
                     }
                 }
 
@@ -166,114 +169,6 @@ extension ConfigVariableDetailView {
                 }
             }
         }
-    }
-}
-
-
-// MARK: - Preview Support
-
-@MainActor @Observable
-private final class PreviewDetailViewModel: ConfigVariableDetailViewModeling {
-    let key: ConfigKey
-    let displayName: String
-    let typeName: String
-    let metadataEntries: [ConfigVariableMetadata.DisplayText]
-    let providerValues: [ProviderValue]
-    let isSecret: Bool
-    let editorControl: EditorControl
-
-    var isOverrideEnabled = false
-    var overrideText = ""
-    var overrideBool = false
-    var isSecretRevealed = false
-
-
-    init(
-        key: ConfigKey,
-        displayName: String,
-        typeName: String = "String",
-        metadataEntries: [ConfigVariableMetadata.DisplayText] = [],
-        providerValues: [ProviderValue] = [],
-        isSecret: Bool = false,
-        editorControl: EditorControl = .textField,
-        isOverrideEnabled: Bool = false,
-        overrideText: String = "",
-        overrideBool: Bool = false
-    ) {
-        self.key = key
-        self.displayName = displayName
-        self.typeName = typeName
-        self.metadataEntries = metadataEntries
-        self.providerValues = providerValues
-        self.isSecret = isSecret
-        self.editorControl = editorControl
-        self.isOverrideEnabled = isOverrideEnabled
-        self.overrideText = overrideText
-        self.overrideBool = overrideBool
-    }
-}
-
-
-#Preview("Text Field") {
-    NavigationStack {
-        ConfigVariableDetailView(
-            viewModel: PreviewDetailViewModel(
-                key: "feature.api_endpoint",
-                displayName: "API Endpoint",
-                metadataEntries: [
-                    .init(key: "Display Name", value: "API Endpoint"),
-                    .init(key: "Requires Relaunch", value: "Yes"),
-                ],
-                providerValues: [
-                    ProviderValue(
-                        providerName: "Remote", providerIndex: 1, isActive: false,
-                        valueString: "https://api.example.com"),
-                    ProviderValue(
-                        providerName: "Default", providerIndex: 2, isActive: false,
-                        valueString: "https://localhost:8080"),
-                ],
-                editorControl: .textField,
-                isOverrideEnabled: true,
-                overrideText: "https://staging.example.com"
-            )
-        )
-    }
-}
-
-
-#Preview("Toggle") {
-    NavigationStack {
-        ConfigVariableDetailView(
-            viewModel: PreviewDetailViewModel(
-                key: "feature.dark_mode",
-                displayName: "Dark Mode",
-                typeName: "Bool",
-                providerValues: [
-                    ProviderValue(providerName: "Remote", providerIndex: 1, isActive: false, valueString: "false")
-                ],
-                editorControl: .toggle,
-                isOverrideEnabled: true,
-                overrideBool: true
-            )
-        )
-    }
-}
-
-
-#Preview("Secret") {
-    NavigationStack {
-        ConfigVariableDetailView(
-            viewModel: PreviewDetailViewModel(
-                key: "service.api_key",
-                displayName: "API Key",
-                providerValues: [
-                    ProviderValue(
-                        providerName: "Remote", providerIndex: 1, isActive: true, valueString: "sk-1234567890abcdef")
-                ],
-                isSecret: true,
-                editorControl: .textField
-            )
-        )
     }
 }
 

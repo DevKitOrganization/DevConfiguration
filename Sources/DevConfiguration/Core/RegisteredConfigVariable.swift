@@ -21,12 +21,17 @@ public struct RegisteredConfigVariable: Sendable {
     public let defaultContent: ConfigContent
 
     /// Whether this variable's value should be treated as secret.
-    ///
-    /// This is resolved at registration time from the variable's ``ConfigVariableSecrecy`` setting and content type.
     public let isSecret: Bool
 
     /// The configuration variable's metadata.
     public let metadata: ConfigVariableMetadata
+
+    /// The name of the variable's Swift value type (e.g., `"Int"`, `"CardSuit"`).
+    ///
+    /// This is captured at registration time via `String(describing: Value.self)` and may differ from the content type
+    /// name when the variable uses a type that maps to a primitive content type (e.g., an `Int`-backed enum stored as
+    /// ``ConfigContent/int(_:)``).
+    public let destinationTypeName: String
 
     /// The editor control to use when editing this variable's value in the editor UI.
     public let editorControl: EditorControl

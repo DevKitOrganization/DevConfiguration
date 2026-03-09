@@ -2,17 +2,19 @@
 //  ConfigVariableDetailViewModeling.swift
 //  DevConfiguration
 //
-//  Created by Prachi Gauriar on 3/8/2026.
+//  Created by Prachi Gauriar on 3/9/2026.
 //
+
+#if canImport(SwiftUI)
 
 import Configuration
 import Foundation
 
-/// The view model protocol for the configuration variable detail view.
+/// The interface for a configuration variable detail view's view model.
 ///
-/// `ConfigVariableDetailViewModeling` defines the interface that the detail view uses to display a single
-/// configuration variable's metadata, provider values, and override controls. It supports enabling and editing
-/// overrides via the appropriate editor control, and toggling secret value visibility.
+/// `ConfigVariableDetailViewModeling` defines the minimal interface that ``ConfigVariableDetailView`` needs to display
+/// and edit a single configuration variable. The view binds to properties and calls methods on this protocol without
+/// knowing the concrete implementation.
 @MainActor
 protocol ConfigVariableDetailViewModeling: Observable {
     /// The configuration key for this variable.
@@ -21,36 +23,38 @@ protocol ConfigVariableDetailViewModeling: Observable {
     /// The human-readable display name for this variable.
     var displayName: String { get }
 
-    /// A human-readable name for this variable's value type, such as `"String"` or `"Int"`.
+    /// The type name to display in the header (e.g., `"Int"` or `"CardSuit"`).
     var typeName: String { get }
 
-    /// The metadata entries to display.
+    /// The metadata entries to display in the metadata section.
     var metadataEntries: [ConfigVariableMetadata.DisplayText] { get }
 
-    /// The value from each provider for this variable.
+    /// The provider values to display in the provider values section.
     var providerValues: [ProviderValue] { get }
-
-    /// Whether an editor override is enabled for this variable.
-    ///
-    /// Setting this to `true` enables the override with the variable's default value. Setting it to `false` removes
-    /// the override.
-    var isOverrideEnabled: Bool { get set }
-
-    /// The override value as a string, for text-based editor controls.
-    ///
-    /// Setting this parses the string into a ``ConfigContent`` value using the variable's parse closure and updates
-    /// the working copy if parsing succeeds.
-    var overrideText: String { get set }
-
-    /// The override value as a boolean, for toggle editor controls.
-    var overrideBool: Bool { get set }
-
-    /// The editor control to use when editing this variable's value.
-    var editorControl: EditorControl { get }
 
     /// Whether this variable's value is secret.
     var isSecret: Bool { get }
 
-    /// Whether the variable's secret value is currently revealed.
+    /// The editor control to use for this variable's override.
+    var editorControl: EditorControl { get }
+
+    /// Whether the user has enabled an override for this variable.
+    var isOverrideEnabled: Bool { get set }
+
+    /// The text value for the override, used with text field and number field controls.
+    var overrideText: String { get set }
+
+    /// The boolean value for the override, used with toggle controls.
+    var overrideBool: Bool { get set }
+
+    /// Whether the secret value is currently revealed.
     var isSecretRevealed: Bool { get set }
+
+    /// Commits the current override text to the document.
+    ///
+    /// Called when the user submits the text field. Parses the text into a ``ConfigContent`` and sets the override
+    /// on the document.
+    func commitOverrideText()
 }
+
+#endif

@@ -16,20 +16,19 @@ struct ConfigVariableTests: RandomValueGenerating {
 
     // MARK: - init(key: ConfigKey, …)
 
-    @Test
-    mutating func initWithConfigKeyStoresParameters() {
-        // set up the test by creating random parameters
+    @Test(arguments: [false, true])
+    mutating func initWithConfigKeyStoresParameters(isSecret: Bool) {
+        // set up
         let configKey = randomConfigKey()
         let defaultValue = randomInt(in: .min ... .max)
-        let secrecy = randomConfigVariableSecrecy()
 
-        // exercise the test by creating the config variable
-        let variable = ConfigVariable(key: configKey, defaultValue: defaultValue, secrecy: secrecy)
+        // exercise
+        let variable = ConfigVariable(key: configKey, defaultValue: defaultValue, isSecret: isSecret)
 
-        // expect that the variable stores the parameters
+        // expect
         #expect(variable.key == configKey)
         #expect(variable.defaultValue == defaultValue)
-        #expect(variable.secrecy == secrecy)
+        #expect(variable.isSecret == isSecret)
     }
 
 

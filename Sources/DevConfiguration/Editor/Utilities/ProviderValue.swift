@@ -14,11 +14,16 @@ struct ProviderValue: Hashable, Sendable {
     let providerName: String
 
     /// The index of the provider in the reader's provider list, used for color assignment.
-    let providerIndex: Int
+    ///
+    /// This is `nil` for the working copy (editor override provider).
+    let providerIndex: Int?
 
     /// Whether this provider is the one currently supplying the resolved value.
     let isActive: Bool
 
     /// The provider's value for the variable, formatted as a display string.
     let valueString: String
+
+    /// Whether this provider's value has a content type that matches the registered variable's expected type.
+    let contentTypeMatches: Bool
 }

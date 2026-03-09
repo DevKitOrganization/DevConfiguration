@@ -2,7 +2,7 @@
 //  ConfigVariableDetailViewModel.swift
 //  DevConfiguration
 //
-//  Created by Prachi Gauriar on 3/8/2026.
+//  Created by Prachi Gauriar on 3/9/2026.
 //
 
 #if canImport(SwiftUI)
@@ -10,174 +10,116 @@
 import Configuration
 import Foundation
 
-/// The concrete detail view model for a single configuration variable in the editor.
+/// The concrete view model for the configuration variable detail view.
 ///
-/// `ConfigVariableDetailViewModel` displays a variable's metadata, the value from each provider, and override
-/// controls. It delegates override mutations to the ``EditorDocument`` and parses text input using the variable's
-/// parse closure.
-@MainActor @Observable
+/// `ConfigVariableDetailViewModel` queries an ``EditorDocument`` for a single registered variable's data and manages
+/// override editing state. It is the single source of truth for the detail view's display and interaction logic.
+@MainActor
+@Observable
 final class ConfigVariableDetailViewModel: ConfigVariableDetailViewModeling {
-    /// The registered variable this detail view model represents.
-    private let variable: RegisteredConfigVariable
-
-    /// The editor document managing the working copy.
+    /// The document that owns the variable data.
     private let document: EditorDocument
 
-    /// The reader's named providers, queried for per-provider values.
-    private let namedProviders: [NamedConfigProvider]
+    /// The registered variable this view model represents.
+    private let registeredVariable: RegisteredConfigVariable
 
-    /// Whether the variable's secret value is currently revealed.
+    let key: ConfigKey
+    let displayName: String
+    let typeName: String
+    let metadataEntries: [ConfigVariableMetadata.DisplayText]
+    let isSecret: Bool
+    let editorControl: EditorControl
+
+    var overrideText = ""
     var isSecretRevealed = false
-
-
-    var isSecret: Bool {
-        variable.isSecret
-    }
 
 
     /// Creates a new detail view model.
     ///
     /// - Parameters:
-    ///   - variable: The registered variable to display.
-    ///   - document: The editor document managing the working copy.
-    ///   - namedProviders: The reader's named providers.
-    init(
-        variable: RegisteredConfigVariable,
-        document: EditorDocument,
-        namedProviders: [NamedConfigProvider]
-    ) {
-        self.variable = variable
+    ///   - document: The editor document.
+    ///   - registeredVariable: The registered variable to display.
+    init(document: EditorDocument, registeredVariable: RegisteredConfigVariable) {
         self.document = document
-        self.namedProviders = namedProviders
+        self.registeredVariable = registeredVariable
+        self.key = registeredVariable.key
+        self.displayName = registeredVariable.displayName ?? registeredVariable.key.description
+        self.typeName = registeredVariable.destinationTypeName
+        self.metadataEntries = registeredVariable.metadata.displayTextEntries
+        self.isSecret = registeredVariable.isSecret
+        self.editorControl = registeredVariable.editorControl
+
+        if let content = document.override(forKey: registeredVariable.key) {
+            self.overrideText = content.displayString
+        } else if let resolved = document.resolvedValue(forKey: registeredVariable.key) {
+            self.overrideText = resolved.content.displayString
+        }
     }
 
 
-    var key: ConfigKey {
-        variable.key
-    }
-
-
-    var displayName: String {
-        variable.displayName ?? variable.key.description
-    }
-
-
-    var typeName: String {
-        variable.defaultContent.typeDisplayName
-    }
-
-
-    var metadataEntries: [ConfigVariableMetadata.DisplayText] {
-        variable.metadata.displayTextEntries
-    }
-
+    // MARK: - Provider Values
 
     var providerValues: [ProviderValue] {
-        let absoluteKey = AbsoluteConfigKey(variable.key)
-        let expectedType = variable.defaultContent.configType
-        let overrideContent = document.override(forKey: variable.key)
-        let hasOverride = overrideContent != nil
-
-        var values: [ProviderValue] = []
-
-        // If there's a working copy override, show it as the editor provider value
-        if let overrideContent {
-            let editorIndex =
-                namedProviders.firstIndex { $0.provider.providerName == EditorOverrideProvider.providerName } ?? 0
-
-            values.append(
-                ProviderValue(
-                    providerName: namedProviders[editorIndex].displayName,
-                    providerIndex: editorIndex,
-                    isActive: true,
-                    valueString: overrideContent.displayString
-                )
-            )
-        }
-
-        var foundActive = false
-        for (index, namedProvider) in namedProviders.enumerated() {
-            // Skip the editor provider since we handle it above from the working copy
-            if namedProvider.provider.providerName == EditorOverrideProvider.providerName {
-                continue
-            }
-
-            guard
-                let result = try? namedProvider.provider.value(forKey: absoluteKey, type: expectedType),
-                let configValue = result.value
-            else {
-                continue
-            }
-
-            let isActive = !hasOverride && !foundActive
-            foundActive = foundActive || isActive
-
-            values.append(
-                ProviderValue(
-                    providerName: namedProvider.displayName,
-                    providerIndex: index,
-                    isActive: isActive,
-                    valueString: configValue.content.displayString
-                )
-            )
-        }
-
-        // Always show the default value last
-        values.append(
-            ProviderValue(
-                providerName: localizedString("editor.defaultProviderName"),
-                providerIndex: namedProviders.count,
-                isActive: !hasOverride && !foundActive,
-                valueString: variable.defaultContent.displayString
-            )
-        )
-
-        return values
+        document.providerValues(forKey: key)
     }
 
+
+    // MARK: - Override Management
 
     var isOverrideEnabled: Bool {
         get {
-            document.hasOverride(forKey: variable.key)
+            document.hasOverride(forKey: key)
         }
         set {
             if newValue {
-                document.setOverride(variable.defaultContent, forKey: variable.key)
+                enableOverride()
             } else {
-                document.removeOverride(forKey: variable.key)
+                document.removeOverride(forKey: key)
             }
-        }
-    }
-
-
-    var overrideText: String {
-        get {
-            return document.override(forKey: variable.key)?.displayString ?? ""
-        }
-        set {
-            guard let parse = variable.parse, let content = parse(newValue) else {
-                return
-            }
-            document.setOverride(content, forKey: variable.key)
         }
     }
 
 
     var overrideBool: Bool {
         get {
-            guard case .bool(let value) = document.override(forKey: variable.key) else {
+            guard case .bool(let value) = document.override(forKey: key) else {
                 return false
             }
             return value
         }
         set {
-            document.setOverride(.bool(newValue), forKey: variable.key)
+            document.setOverride(.bool(newValue), forKey: key)
         }
     }
 
 
-    var editorControl: EditorControl {
-        variable.editorControl
+    func commitOverrideText() {
+        guard let parse = registeredVariable.parse else {
+            return
+        }
+
+        let text = overrideText
+        guard let content = parse(text) else {
+            return
+        }
+
+        document.setOverride(content, forKey: key)
+    }
+
+
+    // MARK: - Private
+
+    /// Enables an override by setting the default content or the current resolved value.
+    private func enableOverride() {
+        let content: ConfigContent
+        if let resolved = document.resolvedValue(forKey: key) {
+            content = resolved.content
+        } else {
+            content = registeredVariable.defaultContent
+        }
+
+        overrideText = content.displayString
+        document.setOverride(content, forKey: key)
     }
 }
 

@@ -90,7 +90,7 @@ struct ConfigVariableReaderEditorTests: RandomValueGenerating {
         let variable = ConfigVariable(
             key: key,
             defaultValue: randomAlphanumericString(),
-            secrecy: .public
+            isSecret: false
         )
 
         // Verify the provider value is returned before any override
