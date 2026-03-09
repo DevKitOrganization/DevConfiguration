@@ -25,7 +25,8 @@ final class ConfigVariableDetailViewModel: ConfigVariableDetailViewModeling {
 
     let key: ConfigKey
     let displayName: String
-    let typeName: String
+    let contentTypeName: String
+    let variableTypeName: String
     let metadataEntries: [ConfigVariableMetadata.DisplayText]
     let isSecret: Bool
     let editorControl: EditorControl
@@ -44,7 +45,8 @@ final class ConfigVariableDetailViewModel: ConfigVariableDetailViewModeling {
         self.registeredVariable = registeredVariable
         self.key = registeredVariable.key
         self.displayName = registeredVariable.displayName ?? registeredVariable.key.description
-        self.typeName = registeredVariable.destinationTypeName
+        self.contentTypeName = registeredVariable.contentTypeName
+        self.variableTypeName = registeredVariable.destinationTypeName
         self.metadataEntries = registeredVariable.metadata.displayTextEntries
         self.isSecret = registeredVariable.isSecret
         self.editorControl = registeredVariable.editorControl

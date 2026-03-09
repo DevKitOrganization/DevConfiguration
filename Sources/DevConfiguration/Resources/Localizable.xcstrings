@@ -11,12 +11,22 @@
         }
       }
     },
-    "detailView.headerSection.type" : {
+    "detailView.headerSection.contentType" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Type"
+            "value" : "Content Type"
+          }
+        }
+      }
+    },
+    "detailView.headerSection.variableType" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Variable Type"
           }
         }
       }

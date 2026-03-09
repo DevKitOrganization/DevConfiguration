@@ -78,7 +78,8 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
         // expect all constant properties are set from the registered variable
         #expect(viewModel.key == variable.key)
         #expect(viewModel.displayName == metadata.displayName)
-        #expect(viewModel.typeName == destinationTypeName)
+        #expect(viewModel.contentTypeName == variable.contentTypeName)
+        #expect(viewModel.variableTypeName == variable.destinationTypeName)
         #expect(viewModel.metadataEntries == metadata.displayTextEntries)
         #expect(viewModel.isSecret == isSecret)
         #expect(viewModel.editorControl == .textField)

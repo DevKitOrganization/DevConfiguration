@@ -23,8 +23,11 @@ protocol ConfigVariableDetailViewModeling: Observable {
     /// The human-readable display name for this variable.
     var displayName: String { get }
 
-    /// The type name to display in the header (e.g., `"Int"` or `"CardSuit"`).
-    var typeName: String { get }
+    /// The content type name to display in the header (e.g., `"Bool"` or `"[Int]"`).
+    var contentTypeName: String { get }
+
+    /// The variable type name to display in the header (e.g., `"Int"` or `"CardSuit"`).
+    var variableTypeName: String { get }
 
     /// The metadata entries to display in the metadata section.
     var metadataEntries: [ConfigVariableMetadata.DisplayText] { get }

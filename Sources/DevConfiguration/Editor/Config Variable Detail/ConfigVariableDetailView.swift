@@ -40,8 +40,13 @@ extension ConfigVariableDetailView {
                     .font(.caption.monospaced())
             }
 
-            LabeledContent(localizedStringResource("detailView.headerSection.type")) {
-                Text(viewModel.typeName)
+            LabeledContent(localizedStringResource("detailView.headerSection.contentType")) {
+                Text(viewModel.contentTypeName)
+                    .font(.caption.monospaced())
+            }
+
+            LabeledContent(localizedStringResource("detailView.headerSection.variableType")) {
+                Text(viewModel.variableTypeName)
                     .font(.caption.monospaced())
             }
         }
