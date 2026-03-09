@@ -19,7 +19,10 @@ struct ConfigVariableReaderEditorTests: RandomValueGenerating {
     @Test
     func editorDisabledByDefault() {
         // set up
-        let reader = ConfigVariableReader(providers: [InMemoryProvider(values: [:])], eventBus: EventBus())
+        let reader = ConfigVariableReader(
+            namedProviders: [.init(InMemoryProvider(values: [:]))],
+            eventBus: EventBus()
+        )
 
         // expect
         #expect(reader.editorOverrideProvider == nil)
@@ -30,7 +33,7 @@ struct ConfigVariableReaderEditorTests: RandomValueGenerating {
     func editorDisabledExplicitly() {
         // set up
         let reader = ConfigVariableReader(
-            providers: [InMemoryProvider(values: [:])],
+            namedProviders: [.init(InMemoryProvider(values: [:]))],
             eventBus: EventBus(),
             isEditorEnabled: false
         )
@@ -43,7 +46,7 @@ struct ConfigVariableReaderEditorTests: RandomValueGenerating {
     @Test
     func editorEnabledCreatesProvider() {
         // set up
-        let reader = ConfigVariableReader(providers: [], eventBus: EventBus(), isEditorEnabled: true)
+        let reader = ConfigVariableReader(namedProviders: [], eventBus: EventBus(), isEditorEnabled: true)
 
         // expect
         #expect(reader.editorOverrideProvider != nil)
@@ -55,14 +58,14 @@ struct ConfigVariableReaderEditorTests: RandomValueGenerating {
         // set up
         let otherProvider = InMemoryProvider(values: [:])
         let reader = ConfigVariableReader(
-            providers: [otherProvider],
+            namedProviders: [.init(otherProvider)],
             eventBus: EventBus(),
             isEditorEnabled: true
         )
 
         // expect
-        #expect(reader.providers.count == 2)
-        #expect(reader.providers.first is EditorOverrideProvider)
+        #expect(reader.namedProviders.count == 2)
+        #expect(reader.namedProviders.first?.provider is EditorOverrideProvider)
     }
 
 
@@ -79,7 +82,7 @@ struct ConfigVariableReaderEditorTests: RandomValueGenerating {
             ]
         )
         let reader = ConfigVariableReader(
-            providers: [otherProvider],
+            namedProviders: [.init(otherProvider)],
             eventBus: EventBus(),
             isEditorEnabled: true
         )
@@ -104,7 +107,7 @@ struct ConfigVariableReaderEditorTests: RandomValueGenerating {
     @Test
     func convenienceInitPassesIsEditorEnabled() {
         // set up
-        let reader = ConfigVariableReader(providers: [], eventBus: EventBus(), isEditorEnabled: true)
+        let reader = ConfigVariableReader(namedProviders: [], eventBus: EventBus(), isEditorEnabled: true)
 
         // expect
         #expect(reader.editorOverrideProvider != nil)

@@ -1,5 +1,5 @@
 //
-//  ConfigVariableEditorView.swift
+//  ConfigVariableListView.swift
 //  DevConfiguration
 //
 //  Created by Prachi Gauriar on 3/8/2026.
@@ -12,73 +12,67 @@ import SwiftUI
 
 /// The list view for the configuration variable editor.
 ///
-/// `ConfigVariableEditorView` displays all registered configuration variables in a searchable, sorted list. Each row
+/// `ConfigVariableListView` displays all registered configuration variables in a searchable, sorted list. Each row
 /// shows the variable's display name, key, current value, and a provider badge. Tapping a row navigates to the
 /// variable's detail view.
 ///
 /// The toolbar provides Cancel, Save, and an overflow menu with Undo, Redo, and Clear Editor Overrides actions.
-struct ConfigVariableEditorView<ViewModel: ConfigVariableListViewModeling>: View {
+struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling>: View {
     @State var viewModel: ViewModel
 
     /// The closure to call with the changed variables when the user saves.
     var onSave: ([RegisteredConfigVariable]) -> Void
 
-    /// The closure to call when the user cancels editing.
-    var onCancel: () -> Void
+    @Environment(\.dismiss) private var dismiss
 
-    @State private var isShowingDiscardAlert = false
+    @State private var isShowingSaveAlert = false
     @State private var isShowingClearAlert = false
 
 
     var body: some View {
         NavigationStack {
-            List(viewModel.variables, id: \.key) { item in
-                NavigationLink(value: item.key) {
-                    VariableRow(item: item)
+            List {
+                Section(localizedStringResource("editorView.variablesSection.header")) {
+                    ForEach(viewModel.variables, id: \.key) { item in
+                        NavigationLink(value: item.key) {
+                            VariableRow(item: item)
+                        }
+                    }
                 }
             }
-            .navigationTitle(String(localized: "editorView.navigationTitle", bundle: #bundle))
+            .navigationTitle(localizedStringResource("editorView.navigationTitle"))
+            #if os(iOS) || os(watchOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
             .navigationDestination(for: ConfigKey.self) { key in
                 ConfigVariableDetailView(viewModel: viewModel.makeDetailViewModel(for: key))
             }
             .searchable(text: $viewModel.searchText)
             .toolbar { toolbarContent }
-            .alert(
-                String(localized: "editorView.discardAlert.title", bundle: #bundle),
-                isPresented: $isShowingDiscardAlert
-            ) {
-                Button(
-                    String(localized: "editorView.discardAlert.discardButton", bundle: #bundle),
-                    role: .destructive
-                ) {
-                    viewModel.cancel()
-                    onCancel()
+            .alert(localizedStringResource("editorView.saveAlert.title"), isPresented: $isShowingSaveAlert) {
+                Button(localizedStringResource("editorView.saveAlert.saveButton")) {
+                    let changedVariables = viewModel.save()
+                    onSave(changedVariables)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+
+                Button(localizedStringResource("editorView.saveAlert.dontSaveButton"), role: .destructive) {
+                    dismiss()
                 }
 
-                Button(
-                    String(localized: "editorView.discardAlert.keepEditingButton", bundle: #bundle),
-                    role: .cancel
-                ) {}
+                Button(localizedStringResource("editorView.saveAlert.cancelButton"), role: .cancel) {}
             } message: {
-                Text(String(localized: "editorView.discardAlert.message", bundle: #bundle))
+                Text(localizedStringResource("editorView.saveAlert.message"))
             }
-            .alert(
-                String(localized: "editorView.clearAlert.title", bundle: #bundle),
-                isPresented: $isShowingClearAlert
-            ) {
-                Button(
-                    String(localized: "editorView.clearAlert.clearButton", bundle: #bundle),
-                    role: .destructive
-                ) {
+            .alert(localizedStringResource("editorView.clearAlert.title"), isPresented: $isShowingClearAlert) {
+                Button(localizedStringResource("editorView.clearAlert.clearButton"), role: .destructive) {
                     viewModel.clearAllOverrides()
                 }
 
-                Button(
-                    String(localized: "editorView.discardAlert.keepEditingButton", bundle: #bundle),
-                    role: .cancel
-                ) {}
+                Button(localizedStringResource("editorView.saveAlert.cancelButton"), role: .cancel) {}
             } message: {
-                Text(String(localized: "editorView.clearAlert.message", bundle: #bundle))
+                Text(localizedStringResource("editorView.clearAlert.message"))
             }
         }
     }
@@ -87,19 +81,18 @@ struct ConfigVariableEditorView<ViewModel: ConfigVariableListViewModeling>: View
 
 // MARK: - Toolbar
 
-extension ConfigVariableEditorView {
+extension ConfigVariableListView {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
             Button {
                 if viewModel.isDirty {
-                    isShowingDiscardAlert = true
+                    isShowingSaveAlert = true
                 } else {
-                    viewModel.cancel()
-                    onCancel()
+                    dismiss()
                 }
             } label: {
-                Label(String(localized: "editorView.cancelButton", bundle: #bundle), systemImage: "xmark")
+                Label(localizedStringResource("editorView.dismissButton"), systemImage: "xmark")
             }
         }
 
@@ -107,33 +100,38 @@ extension ConfigVariableEditorView {
             Button {
                 let changedVariables = viewModel.save()
                 onSave(changedVariables)
+                dismiss()
             } label: {
-                Label(String(localized: "editorView.saveButton", bundle: #bundle), systemImage: "checkmark")
+                Label(localizedStringResource("editorView.saveButton"), systemImage: "checkmark")
             }
+            .disabled(!viewModel.isDirty)
         }
 
         ToolbarItem(placement: .primaryAction) {
             Menu {
-                Button(String(localized: "editorView.undoButton", bundle: #bundle)) {
+                Button {
                     viewModel.undo()
+                } label: {
+                    Label(localizedStringResource("editorView.undoButton"), systemImage: "arrow.uturn.backward")
                 }
                 .disabled(!viewModel.canUndo)
 
-                Button(String(localized: "editorView.redoButton", bundle: #bundle)) {
+                Button {
                     viewModel.redo()
+                } label: {
+                    Label(localizedStringResource("editorView.redoButton"), systemImage: "arrow.uturn.forward")
                 }
                 .disabled(!viewModel.canRedo)
 
                 Divider()
 
-                Button(String(localized: "editorView.clearOverridesButton", bundle: #bundle), role: .destructive) {
+                Button(role: .destructive) {
                     isShowingClearAlert = true
+                } label: {
+                    Label(localizedStringResource("editorView.clearOverridesButton"), systemImage: "trash")
                 }
             } label: {
-                Label(
-                    String(localized: "editorView.overflowMenu.label", bundle: #bundle),
-                    systemImage: "ellipsis.circle"
-                )
+                Label(localizedStringResource("editorView.overflowMenu.label"), systemImage: "ellipsis")
             }
         }
     }
@@ -142,34 +140,32 @@ extension ConfigVariableEditorView {
 
 // MARK: - Variable Row
 
-extension ConfigVariableEditorView {
+extension ConfigVariableListView {
     /// A single row in the configuration variable list.
     private struct VariableRow: View {
         let item: VariableListItem
 
 
         var body: some View {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(item.displayName)
-                    .font(.body)
+                    .font(.headline)
 
                 Text(item.key.description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.caption.monospaced())
 
-                HStack {
-                    Text(item.currentValue)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-
-                    Spacer()
-
+                HStack(alignment: .firstTextBaseline) {
                     ProviderBadge(
                         providerName: item.providerName,
                         color: providerColor(at: item.providerIndex)
                     )
+                    Spacer()
+                    Text(item.isSecret ? "••••••••" : item.currentValue)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
+                .padding(.top, 8)
             }
             .padding(.vertical, 2)
         }
@@ -195,7 +191,6 @@ private final class PreviewListViewModel: ConfigVariableListViewModeling {
 
 
     func save() -> [RegisteredConfigVariable] { [] }
-    func cancel() {}
     func clearAllOverrides() {}
     func undo() {}
     func redo() {}
@@ -211,6 +206,7 @@ private final class PreviewListViewModel: ConfigVariableListViewModeling {
 private final class PreviewEditorDetailViewModel: ConfigVariableDetailViewModeling {
     let key: ConfigKey
     let displayName: String
+    let typeName = "String"
     let metadataEntries: [ConfigVariableMetadata.DisplayText] = []
     let providerValues: [ProviderValue] = []
     let isSecret = false
@@ -230,7 +226,7 @@ private final class PreviewEditorDetailViewModel: ConfigVariableDetailViewModeli
 
 
 #Preview {
-    ConfigVariableEditorView(
+    ConfigVariableListView(
         viewModel: PreviewListViewModel(
             variables: [
                 VariableListItem(
@@ -239,6 +235,7 @@ private final class PreviewEditorDetailViewModel: ConfigVariableDetailViewModeli
                     currentValue: "true",
                     providerName: "Editor",
                     providerIndex: 0,
+                    isSecret: false,
                     hasOverride: true,
                     editorControl: .toggle
                 ),
@@ -248,6 +245,7 @@ private final class PreviewEditorDetailViewModel: ConfigVariableDetailViewModeli
                     currentValue: "https://api.example.com",
                     providerName: "Remote",
                     providerIndex: 1,
+                    isSecret: false,
                     hasOverride: false,
                     editorControl: .textField
                 ),
@@ -257,6 +255,7 @@ private final class PreviewEditorDetailViewModel: ConfigVariableDetailViewModeli
                     currentValue: "3",
                     providerName: "Default",
                     providerIndex: 2,
+                    isSecret: false,
                     hasOverride: false,
                     editorControl: .numberField
                 ),
@@ -266,14 +265,14 @@ private final class PreviewEditorDetailViewModel: ConfigVariableDetailViewModeli
                     currentValue: "30.0",
                     providerName: "Remote",
                     providerIndex: 1,
+                    isSecret: false,
                     hasOverride: false,
                     editorControl: .decimalField
                 ),
             ],
             isDirty: true
         ),
-        onSave: { _ in },
-        onCancel: {}
+        onSave: { _ in }
     )
 }
 

@@ -38,9 +38,6 @@ protocol ConfigVariableListViewModeling: Observable {
     /// Saves the current working copy and returns the registered variables whose overrides changed.
     func save() -> [RegisteredConfigVariable]
 
-    /// Cancels editing, discarding any unsaved changes.
-    func cancel()
-
     /// Removes all editor overrides from the working copy.
     func clearAllOverrides()
 

@@ -369,7 +369,7 @@ extension ConfigVariableDetailViewModelTests {
         return ConfigVariableDetailViewModel(
             variable: variable,
             document: effectiveDocument,
-            providers: providers
+            namedProviders: providers.map { NamedConfigProvider($0) }
         )
     }
 }

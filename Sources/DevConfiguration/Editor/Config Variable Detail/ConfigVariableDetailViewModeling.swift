@@ -21,6 +21,9 @@ protocol ConfigVariableDetailViewModeling: Observable {
     /// The human-readable display name for this variable.
     var displayName: String { get }
 
+    /// A human-readable name for this variable's value type, such as `"String"` or `"Int"`.
+    var typeName: String { get }
+
     /// The metadata entries to display.
     var metadataEntries: [ConfigVariableMetadata.DisplayText] { get }
 

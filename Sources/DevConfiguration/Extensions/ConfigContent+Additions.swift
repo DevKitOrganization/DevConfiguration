@@ -30,6 +30,27 @@ extension ConfigContent {
 }
 
 
+// MARK: - Type Display Name
+
+extension ConfigContent {
+    /// A human-readable name for this content's type.
+    var typeDisplayName: String {
+        switch self {
+        case .bool: "Bool"
+        case .int: "Int"
+        case .double: "Float64"
+        case .string: "String"
+        case .bytes: "Data"
+        case .boolArray: "[Bool]"
+        case .intArray: "[Int]"
+        case .doubleArray: "[Float64]"
+        case .stringArray: "[String]"
+        case .byteChunkArray: "[Data]"
+        }
+    }
+}
+
+
 // MARK: - Display String
 
 extension ConfigContent {

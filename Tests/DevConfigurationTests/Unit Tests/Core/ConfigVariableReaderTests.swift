@@ -24,7 +24,7 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
 
     /// The reader under test.
     lazy var reader: ConfigVariableReader = {
-        ConfigVariableReader(providers: [provider], eventBus: eventBus)
+        ConfigVariableReader(namedProviders: [.init(provider)], eventBus: eventBus)
     }()
 
 
@@ -109,7 +109,7 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
         let isNotPublic = [.secret, .auto].contains(secrecy)
         let isSecret = secrecy == .secret
 
-        let reader = ConfigVariableReader(providers: [InMemoryProvider(values: [:])], eventBus: EventBus())
+        let reader = ConfigVariableReader(namedProviders: [.init(InMemoryProvider(values: [:]))], eventBus: EventBus())
         #expect(reader.isSecret(intVariable) == isSecret)
         #expect(reader.isSecret(stringVariable) == isNotPublic)
         #expect(reader.isSecret(stringArrayVariable) == isNotPublic)

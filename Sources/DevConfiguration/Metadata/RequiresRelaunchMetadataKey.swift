@@ -10,7 +10,7 @@ import Foundation
 /// The metadata key indicating that changes to a variable require an app relaunch to take effect.
 private struct RequiresRelaunchMetadataKey: ConfigVariableMetadataKey {
     static let defaultValue = false
-    static let keyDisplayText = String(localized: "requiresRelaunchMetadata.keyDisplayText", bundle: #bundle)
+    static let keyDisplayText = localizedString("requiresRelaunchMetadata.keyDisplayText")
 }
 
 

@@ -183,7 +183,7 @@ Build the views. All inside `#if canImport(SwiftUI)`.
   - **Provider color assignment** — static function mapping provider index to system color;
     editor override provider always returns `.orange`
 
-### 5b: ConfigVariableEditorView (List)
+### 5b: ConfigVariableListView (List)
 
   - Generic on `ViewModel: ConfigVariableListViewModeling`
   - `NavigationStack` with `List`
@@ -198,7 +198,7 @@ Build the views. All inside `#if canImport(SwiftUI)`.
 ### 5c: ConfigVariableDetailView
 
   - Generic on `ViewModel: ConfigVariableDetailViewModeling`
-  - Sections: Header, Override, Provider Values, Metadata
+  - Sections: Header, Override, Values, Metadata
   - Override section:
     - "Enable Override" toggle
     - When enabled, shows editor control based on `editorControl`

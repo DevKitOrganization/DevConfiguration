@@ -35,9 +35,15 @@ struct ConfigVariableDetailView<ViewModel: ConfigVariableDetailViewModeling>: Vi
 extension ConfigVariableDetailView {
     private var headerSection: some View {
         Section {
-            Text(viewModel.key.description)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            LabeledContent(localizedStringResource("detailView.headerSection.key")) {
+                Text(viewModel.key.description)
+                    .font(.caption.monospaced())
+            }
+
+            LabeledContent(localizedStringResource("detailView.headerSection.type")) {
+                Text(viewModel.typeName)
+                    .font(.caption.monospaced())
+            }
         }
     }
 
@@ -45,11 +51,29 @@ extension ConfigVariableDetailView {
     @ViewBuilder
     private var overrideSection: some View {
         if viewModel.editorControl != .none {
-            Section(String(localized: "detailView.overrideSection.header", bundle: #bundle)) {
-                Toggle(
-                    String(localized: "detailView.overrideSection.enableToggle", bundle: #bundle),
-                    isOn: $viewModel.isOverrideEnabled
-                )
+            Section(localizedStringResource("detailView.overrideSection.header")) {
+                LabeledContent(localizedStringResource("detailView.overrideSection.editorOverrideLabel")) {
+                    if viewModel.isOverrideEnabled {
+                        Button(role: .destructive) {
+                            viewModel.isOverrideEnabled = false
+                        } label: {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(localized: "detailView.overrideSection.removeOverride")
+                                Image(systemName: "xmark.circle.fill")
+                            }
+                        }
+                        .tint(.red)
+                    } else {
+                        Button {
+                            viewModel.isOverrideEnabled = true
+                        } label: {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(localized: "detailView.overrideSection.addOverride")
+                                Image(systemName: "plus.circle.fill")
+                            }
+                        }
+                    }
+                }
 
                 if viewModel.isOverrideEnabled {
                     overrideControl
@@ -61,19 +85,30 @@ extension ConfigVariableDetailView {
 
     @ViewBuilder
     private var overrideControl: some View {
-        if viewModel.editorControl == .toggle {
-            Toggle(
-                String(localized: "detailView.overrideSection.valueToggle", bundle: #bundle),
-                isOn: $viewModel.overrideBool
-            )
-        } else {
-            TextField(
-                String(localized: "detailView.overrideSection.valueTextField", bundle: #bundle),
-                text: $viewModel.overrideText
-            )
-            #if os(iOS) || os(visionOS)
-            .keyboardType(keyboardType)
-            #endif
+        LabeledContent(localizedStringResource("detailView.overrideSection.valueLabel")) {
+            if viewModel.editorControl == .toggle {
+                HStack {
+                    Spacer().layoutPriority(0)
+                    Picker(
+                        localizedStringResource("detailView.overrideSection.valuePicker"),
+                        selection: $viewModel.overrideBool
+                    ) {
+                        Text(localized: "detailView.overridenSection.valuePickerFalse").tag(false)
+                        Text(localized: "detailView.overridenSection.valuePickerTrue").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                }
+            } else {
+                TextField(
+                    localizedStringResource("detailView.overrideSection.valueTextField"),
+                    text: $viewModel.overrideText
+                )
+                .textFieldStyle(.roundedBorder)
+                .multilineTextAlignment(.trailing)
+                #if os(iOS) || os(visionOS)
+                .keyboardType(keyboardType)
+                #endif
+            }
         }
     }
 
@@ -92,20 +127,28 @@ extension ConfigVariableDetailView {
 
 
     private var providerValuesSection: some View {
-        Section(String(localized: "detailView.providerValuesSection.header", bundle: #bundle)) {
+        Section(localizedStringResource("detailView.providerValuesSection.header")) {
             if viewModel.isSecret && !viewModel.isSecretRevealed {
-                Button(String(localized: "detailView.providerValuesSection.tapToReveal", bundle: #bundle)) {
+                Button(localizedStringResource("detailView.providerValuesSection.tapToReveal")) {
                     viewModel.isSecretRevealed = true
                 }
             } else {
                 ForEach(viewModel.providerValues, id: \.self) { providerValue in
                     LabeledContent {
+                        Text(providerValue.valueString)
+                            .font(.caption.monospaced())
+                    } label: {
                         ProviderBadge(
                             providerName: providerValue.providerName,
-                            color: providerColor(at: providerValue.providerIndex)
+                            color: providerColor(at: providerValue.providerIndex),
+                            isActive: providerValue.isActive
                         )
-                    } label: {
-                        Text(providerValue.valueString)
+                    }
+                }
+
+                if viewModel.isSecret {
+                    Button(localizedStringResource("detailView.providerValuesSection.hideValues")) {
+                        viewModel.isSecretRevealed = false
                     }
                 }
             }
@@ -117,7 +160,7 @@ extension ConfigVariableDetailView {
     private var metadataSection: some View {
         let entries = viewModel.metadataEntries
         if !entries.isEmpty {
-            Section(String(localized: "detailView.metadataSection.header", bundle: #bundle)) {
+            Section(localizedStringResource("detailView.metadataSection.header")) {
                 ForEach(entries, id: \.key) { entry in
                     LabeledContent(entry.key, value: entry.value ?? "—")
                 }
@@ -133,6 +176,7 @@ extension ConfigVariableDetailView {
 private final class PreviewDetailViewModel: ConfigVariableDetailViewModeling {
     let key: ConfigKey
     let displayName: String
+    let typeName: String
     let metadataEntries: [ConfigVariableMetadata.DisplayText]
     let providerValues: [ProviderValue]
     let isSecret: Bool
@@ -147,6 +191,7 @@ private final class PreviewDetailViewModel: ConfigVariableDetailViewModeling {
     init(
         key: ConfigKey,
         displayName: String,
+        typeName: String = "String",
         metadataEntries: [ConfigVariableMetadata.DisplayText] = [],
         providerValues: [ProviderValue] = [],
         isSecret: Bool = false,
@@ -157,6 +202,7 @@ private final class PreviewDetailViewModel: ConfigVariableDetailViewModeling {
     ) {
         self.key = key
         self.displayName = displayName
+        self.typeName = typeName
         self.metadataEntries = metadataEntries
         self.providerValues = providerValues
         self.isSecret = isSecret
@@ -179,8 +225,12 @@ private final class PreviewDetailViewModel: ConfigVariableDetailViewModeling {
                     .init(key: "Requires Relaunch", value: "Yes"),
                 ],
                 providerValues: [
-                    ProviderValue(providerName: "Remote", providerIndex: 1, valueString: "https://api.example.com"),
-                    ProviderValue(providerName: "Default", providerIndex: 2, valueString: "https://localhost:8080"),
+                    ProviderValue(
+                        providerName: "Remote", providerIndex: 1, isActive: false,
+                        valueString: "https://api.example.com"),
+                    ProviderValue(
+                        providerName: "Default", providerIndex: 2, isActive: false,
+                        valueString: "https://localhost:8080"),
                 ],
                 editorControl: .textField,
                 isOverrideEnabled: true,
@@ -197,8 +247,9 @@ private final class PreviewDetailViewModel: ConfigVariableDetailViewModeling {
             viewModel: PreviewDetailViewModel(
                 key: "feature.dark_mode",
                 displayName: "Dark Mode",
+                typeName: "Bool",
                 providerValues: [
-                    ProviderValue(providerName: "Remote", providerIndex: 1, valueString: "false")
+                    ProviderValue(providerName: "Remote", providerIndex: 1, isActive: false, valueString: "false")
                 ],
                 editorControl: .toggle,
                 isOverrideEnabled: true,
@@ -216,7 +267,8 @@ private final class PreviewDetailViewModel: ConfigVariableDetailViewModeling {
                 key: "service.api_key",
                 displayName: "API Key",
                 providerValues: [
-                    ProviderValue(providerName: "Remote", providerIndex: 1, valueString: "sk-1234567890abcdef")
+                    ProviderValue(
+                        providerName: "Remote", providerIndex: 1, isActive: true, valueString: "sk-1234567890abcdef")
                 ],
                 isSecret: true,
                 editorControl: .textField

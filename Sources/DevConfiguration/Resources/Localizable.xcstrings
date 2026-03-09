@@ -1,6 +1,146 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "detailView.headerSection.key" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key"
+          }
+        }
+      }
+    },
+    "detailView.headerSection.type" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type"
+          }
+        }
+      }
+    },
+    "detailView.metadataSection.header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metadata"
+          }
+        }
+      }
+    },
+    "detailView.overridenSection.valuePickerFalse" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "False"
+          }
+        }
+      }
+    },
+    "detailView.overridenSection.valuePickerTrue" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "True"
+          }
+        }
+      }
+    },
+    "detailView.overrideSection.addOverride" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add"
+          }
+        }
+      }
+    },
+    "detailView.overrideSection.editorOverrideLabel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editor Override"
+          }
+        }
+      }
+    },
+    "detailView.overrideSection.header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Override"
+          }
+        }
+      }
+    },
+    "detailView.overrideSection.removeOverride" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove"
+          }
+        }
+      }
+    },
+    "detailView.overrideSection.valueLabel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Value"
+          }
+        }
+      }
+    },
+    "detailView.overrideSection.valueTextField" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Value"
+          }
+        }
+      }
+    },
+    "detailView.providerValuesSection.header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Values"
+          }
+        }
+      }
+    },
+    "detailView.providerValuesSection.hideValues" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide Values"
+          }
+        }
+      }
+    },
+    "detailView.providerValuesSection.tapToReveal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Values"
+          }
+        }
+      }
+    },
     "displayNameMetadata.keyDisplayText" : {
       "localizations" : {
         "en" : {
@@ -11,32 +151,22 @@
         }
       }
     },
+    "editor.defaultProviderName" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Default"
+          }
+        }
+      }
+    },
     "editorOverrideProvider.name" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Editor"
-          }
-        }
-      }
-    },
-    "requiresRelaunchMetadata.keyDisplayText" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Requires Relaunch"
-          }
-        }
-      }
-    },
-    "editorView.cancelButton" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
           }
         }
       }
@@ -76,47 +206,17 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Clear Editor Overrides"
+            "value" : "Clear Overrides"
           }
         }
       }
     },
-    "editorView.discardAlert.discardButton" : {
+    "editorView.dismissButton" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Discard"
-          }
-        }
-      }
-    },
-    "editorView.discardAlert.keepEditingButton" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keep Editing"
-          }
-        }
-      }
-    },
-    "editorView.discardAlert.message" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You have unsaved changes that will be lost."
-          }
-        }
-      }
-    },
-    "editorView.discardAlert.title" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Discard Changes?"
+            "value" : "Dismiss"
           }
         }
       }
@@ -151,6 +251,56 @@
         }
       }
     },
+    "editorView.saveAlert.cancelButton" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "editorView.saveAlert.dontSaveButton" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discard"
+          }
+        }
+      }
+    },
+    "editorView.saveAlert.message" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "If you don’t save, your changes will be lost."
+          }
+        }
+      }
+    },
+    "editorView.saveAlert.saveButton" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        }
+      }
+    },
+    "editorView.saveAlert.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save Changes?"
+          }
+        }
+      }
+    },
     "editorView.saveButton" : {
       "localizations" : {
         "en" : {
@@ -171,82 +321,22 @@
         }
       }
     },
-    "detailView.metadataSection.header" : {
+    "editorView.variablesSection.header" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Metadata"
+            "value" : "Variables"
           }
         }
       }
     },
-    "detailView.overrideSection.enableToggle" : {
+    "requiresRelaunchMetadata.keyDisplayText" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enable Override"
-          }
-        }
-      }
-    },
-    "detailView.overrideSection.header" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Override"
-          }
-        }
-      }
-    },
-    "detailView.overrideSection.valueTextField" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Value"
-          }
-        }
-      }
-    },
-    "detailView.overrideSection.valueToggle" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Value"
-          }
-        }
-      }
-    },
-    "detailView.providerValuesSection.header" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Provider Values"
-          }
-        }
-      }
-    },
-    "detailView.providerValuesSection.tapToReveal" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap to Reveal"
-          }
-        }
-      }
-    },
-    "variableListItem.unknownProviderName" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unknown"
+            "value" : "Requires Relaunch"
           }
         }
       }

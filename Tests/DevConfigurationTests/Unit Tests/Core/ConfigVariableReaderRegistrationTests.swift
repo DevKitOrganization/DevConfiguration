@@ -20,7 +20,7 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
     @Test
     mutating func registerStoresVariableWithCorrectProperties() throws {
         // set up
-        let reader = ConfigVariableReader(providers: [InMemoryProvider(values: [:])], eventBus: EventBus())
+        let reader = ConfigVariableReader(namedProviders: [.init(InMemoryProvider(values: [:]))], eventBus: EventBus())
 
         var metadata = ConfigVariableMetadata()
         metadata[TestTeamMetadataKey.self] = randomAlphanumericString()
@@ -49,7 +49,7 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
     @Test
     mutating func registerMultipleVariablesStoresAll() {
         // set up
-        let reader = ConfigVariableReader(providers: [InMemoryProvider(values: [:])], eventBus: EventBus())
+        let reader = ConfigVariableReader(namedProviders: [.init(InMemoryProvider(values: [:]))], eventBus: EventBus())
         let key1 = randomConfigKey()
         let key2 = randomConfigKey()
         let variable1 = ConfigVariable(key: key1, defaultValue: randomBool())
@@ -71,7 +71,7 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
     func registerDuplicateKeyHalts() async {
         await #expect(processExitsWith: .failure) {
             let reader = ConfigVariableReader(
-                providers: [InMemoryProvider(values: [:])],
+                namedProviders: [.init(InMemoryProvider(values: [:]))],
                 eventBus: EventBus()
             )
             let variable1 = ConfigVariable(key: "duplicate.key", defaultValue: 1)
@@ -87,7 +87,7 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
     func registerWithEncodeFailureHalts() async {
         await #expect(processExitsWith: .failure) {
             let reader = ConfigVariableReader(
-                providers: [InMemoryProvider(values: [:])],
+                namedProviders: [.init(InMemoryProvider(values: [:]))],
                 eventBus: EventBus()
             )
             let variable = ConfigVariable(

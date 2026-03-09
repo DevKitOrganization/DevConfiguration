@@ -83,7 +83,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
 
         // expect
         #expect(item.currentValue == overrideContent.displayString)
-        #expect(item.providerName == EditorOverrideProvider.editorProviderName)
+        #expect(item.providerName == EditorOverrideProvider.providerName)
         #expect(item.hasOverride)
     }
 
@@ -131,7 +131,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
 
         // expect
         #expect(item.currentValue == defaultContent.displayString)
-        #expect(item.providerName != "variableListItem.unknownProviderName")
+        #expect(item.providerName != "editor.defaultProviderName")
     }
 
 
@@ -343,28 +343,6 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
     }
 
 
-    // MARK: - Cancel
-
-    @Test
-    mutating func cancelDoesNotModifyDocument() {
-        // set up
-        let key = randomConfigKey()
-        let content = randomConfigContent()
-        let provider = EditorOverrideProvider()
-        let document = EditorDocument(provider: provider)
-        document.setOverride(content, forKey: key)
-
-        let viewModel = makeListViewModel(document: document)
-
-        // exercise
-        viewModel.cancel()
-
-        // expect
-        #expect(document.override(forKey: key) == content)
-        #expect(document.isDirty)
-    }
-
-
     // MARK: - Detail View Model
 
     @Test
@@ -397,7 +375,7 @@ extension ConfigVariableListViewModelTests {
         return ConfigVariableListViewModel(
             document: effectiveDocument,
             registeredVariables: registeredVariables,
-            providers: providers,
+            namedProviders: providers.map { NamedConfigProvider($0) },
             undoManager: undoManager
         )
     }

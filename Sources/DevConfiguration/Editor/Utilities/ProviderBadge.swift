@@ -21,6 +21,11 @@ struct ProviderBadge: View {
     /// The color to use for the badge.
     let color: Color
 
+    /// Whether this badge represents the active provider.
+    ///
+    /// Inactive badges use a muted gray style.
+    var isActive: Bool = true
+
 
     var body: some View {
         Text(providerName)
@@ -28,8 +33,8 @@ struct ProviderBadge: View {
             .fontWeight(.medium)
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
-            .foregroundStyle(.white)
-            .background(color, in: .capsule)
+            .foregroundStyle(isActive ? .white : .secondary)
+            .background(isActive ? color : Color(white: 0.9), in: .capsule)
     }
 }
 
@@ -41,7 +46,7 @@ struct ProviderBadge: View {
 /// - Parameter index: The provider's index in the reader's provider list.
 /// - Returns: A color for the provider.
 func providerColor(at index: Int) -> Color {
-    let palette: [Color] = [.blue, .green, .yellow, .orange, .red, .indigo, .purple, .mint, .cyan]
+    let palette: [Color] = [.blue, .green, .indigo, .gray, .cyan, .yellow, .orange, .purple, .mint, .red]
     return palette[index % palette.count]
 }
 
@@ -51,6 +56,8 @@ func providerColor(at index: Int) -> Color {
         ForEach(Array(0 ..< 9), id: \.self) { index in
             ProviderBadge(providerName: "Provider \(index)", color: providerColor(at: index))
         }
+
+        ProviderBadge(providerName: "Provider 9", color: .red, isActive: false)
     }
     .padding()
 }

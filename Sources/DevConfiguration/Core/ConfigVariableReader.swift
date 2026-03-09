@@ -30,8 +30,8 @@ import Synchronization
 /// Then create a reader with your providers and query the variable:
 ///
 ///     let reader = ConfigVariableReader(
-///         providers: [
-///             InMemoryProvider(values: ["dark_mode": "true"])
+///         namedProviders: [
+///             .init(InMemoryProvider(values: ["dark_mode": "true"]), displayName: "In-Memory")
 ///         ],
 ///         eventBus: eventBus
 ///     )
@@ -54,17 +54,18 @@ public final class ConfigVariableReader: Sendable {
     /// The configuration reader that is used to resolve configuration values.
     public let reader: ConfigReader
 
-    /// The configuration reader’s providers.
+    /// The configuration reader’s named providers.
     ///
-    /// This is stored so that
-    public let providers: [any ConfigProvider]
+    /// When editor support is enabled, the editor override provider is the first entry.
+    public let namedProviders: [NamedConfigProvider]
 
     /// The event bus used to post diagnostic events like ``ConfigVariableDecodingFailedEvent``.
     public let eventBus: EventBus
 
     /// The editor override provider, if editor support is enabled.
     ///
-    /// When non-nil, this provider is the first entry in ``providers`` and takes precedence over all other providers.
+    /// When non-nil, this provider is the first entry in ``namedProviders`` and takes precedence over all other
+    /// providers.
     let editorOverrideProvider: EditorOverrideProvider?
 
     /// The mutable state protected by a mutex.
@@ -79,16 +80,16 @@ public final class ConfigVariableReader: Sendable {
     /// Use this initializer when you want to use the standard `EventBusAccessReporter`.
     ///
     /// - Parameters:
-    ///   - providers: The configuration providers, queried in order until a value is found.
+    ///   - namedProviders: The named configuration providers, queried in order until a value is found.
     ///   - eventBus: The event bus that telemetry events are posted on.
     ///   - isEditorEnabled: Whether editor override support is enabled. Defaults to `false`.
     public convenience init(
-        providers: [any ConfigProvider],
+        namedProviders: [NamedConfigProvider],
         eventBus: EventBus,
         isEditorEnabled: Bool = false
     ) {
         self.init(
-            providers: providers,
+            namedProviders: namedProviders,
             accessReporter: EventBusAccessReporter(eventBus: eventBus),
             eventBus: eventBus,
             isEditorEnabled: isEditorEnabled
@@ -101,33 +102,33 @@ public final class ConfigVariableReader: Sendable {
     /// Use this initializer when you want to directly control the access reporter used by the config reader.
     ///
     /// - Parameters:
-    ///   - providers: The configuration providers, queried in order until a value is found.
+    ///   - namedProviders: The named configuration providers, queried in order until a value is found.
     ///   - accessReporter: The access reporter that is used to report configuration access events.
     ///   - eventBus: The event bus used to post diagnostic events.
     ///   - isEditorEnabled: Whether editor override support is enabled. Defaults to `false`.
     public init(
-        providers: [any ConfigProvider],
+        namedProviders: [NamedConfigProvider],
         accessReporter: any AccessReporter,
         eventBus: EventBus,
         isEditorEnabled: Bool = false
     ) {
-        let editorOverrideProvider: EditorOverrideProvider?
-        let effectiveProviders: [any ConfigProvider]
+        var editorOverrideProvider: EditorOverrideProvider?
+        var namedProviders = namedProviders
 
         if isEditorEnabled {
             let provider = EditorOverrideProvider()
             provider.load(from: UserDefaults(suiteName: EditorOverrideProvider.suiteName)!)
             editorOverrideProvider = provider
-            effectiveProviders = [provider] + providers
-        } else {
-            editorOverrideProvider = nil
-            effectiveProviders = providers
+            namedProviders.insert(.init(provider, displayName: localizedString("editorOverrideProvider.name")), at: 0)
         }
 
         self.editorOverrideProvider = editorOverrideProvider
         self.accessReporter = accessReporter
-        self.reader = ConfigReader(providers: effectiveProviders, accessReporter: accessReporter)
-        self.providers = effectiveProviders
+        self.reader = ConfigReader(
+            providers: namedProviders.map(\.provider),
+            accessReporter: accessReporter
+        )
+        self.namedProviders = namedProviders
         self.eventBus = eventBus
     }
 

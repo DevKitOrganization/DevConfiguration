@@ -136,7 +136,7 @@ Two new metadata keys:
 ## Views
 
 
-### ConfigVariableEditorView (List View)
+### ConfigVariableListView (List View)
 
 The top-level editor view showing all registered variables.
 
@@ -177,7 +177,7 @@ The detail view for a single variable.
     - "Enable Override" toggle
     - When enabled, shows the appropriate editor control based on `EditorControl`
     - Changes register with `UndoManager`
-  - **Provider Values**: value from each provider, each with its provider capsule
+  - **Values**: value from each provider, each with its provider capsule
     - Incompatible values (wrong `ConfigContent` case for the variable's type) shown with
       strikethrough
     - Secret values redacted by default with tap-to-reveal (detail view only)

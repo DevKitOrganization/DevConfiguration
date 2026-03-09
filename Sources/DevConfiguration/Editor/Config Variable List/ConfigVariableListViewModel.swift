@@ -24,8 +24,8 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
     /// The registered variables from the reader, keyed by configuration key.
     private let registeredVariables: [ConfigKey: RegisteredConfigVariable]
 
-    /// The reader's providers, queried in order for value resolution.
-    private let providers: [any ConfigProvider]
+    /// The reader's named providers, queried in order for value resolution.
+    private let namedProviders: [NamedConfigProvider]
 
     /// The undo manager for the editor session.
     private let undoManager: UndoManager
@@ -40,17 +40,17 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
     /// - Parameters:
     ///   - document: The editor document managing the working copy.
     ///   - registeredVariables: The registered variables from the reader.
-    ///   - providers: The reader's providers, queried in order for value resolution.
+    ///   - namedProviders: The reader's named providers, queried in order for value resolution.
     ///   - undoManager: The undo manager for the editor session.
     init(
         document: EditorDocument,
         registeredVariables: [ConfigKey: RegisteredConfigVariable],
-        providers: [any ConfigProvider],
+        namedProviders: [NamedConfigProvider],
         undoManager: UndoManager
     ) {
         self.document = document
         self.registeredVariables = registeredVariables
-        self.providers = providers
+        self.namedProviders = namedProviders
         self.undoManager = undoManager
     }
 
@@ -64,6 +64,7 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
                 currentValue: content.displayString,
                 providerName: providerName,
                 providerIndex: providerIndex,
+                isSecret: variable.isSecret,
                 hasOverride: document.hasOverride(forKey: variable.key),
                 editorControl: variable.editorControl
             )
@@ -106,9 +107,6 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
     }
 
 
-    func cancel() {}
-
-
     func clearAllOverrides() {
         document.removeAllOverrides()
     }
@@ -132,7 +130,7 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
         return ConfigVariableDetailViewModel(
             variable: variable,
             document: document,
-            providers: providers
+            namedProviders: namedProviders
         )
     }
 }
@@ -147,23 +145,26 @@ extension ConfigVariableListViewModel {
     /// default content if no provider has a value.
     private func resolvedValue(for variable: RegisteredConfigVariable) -> (ConfigContent, String, Int) {
         if let override = document.override(forKey: variable.key) {
-            let editorIndex = providers.firstIndex { $0.providerName == EditorOverrideProvider.editorProviderName } ?? 0
-            return (override, EditorOverrideProvider.editorProviderName, editorIndex)
+            let editorIndex =
+                namedProviders.firstIndex { $0.provider.providerName == EditorOverrideProvider.providerName } ?? 0
+            return (override, namedProviders[editorIndex].displayName, editorIndex)
         }
 
         let absoluteKey = AbsoluteConfigKey(variable.key)
         let expectedType = variable.defaultContent.configType
 
-        for (index, provider) in providers.enumerated() {
-            if let result = try? provider.value(forKey: absoluteKey, type: expectedType), let value = result.value {
-                return (value.content, provider.providerName, index)
+        for (index, namedProvider) in namedProviders.enumerated() {
+            if let result = try? namedProvider.provider.value(forKey: absoluteKey, type: expectedType),
+                let value = result.value
+            {
+                return (value.content, namedProvider.displayName, index)
             }
         }
 
         return (
             variable.defaultContent,
-            String(localized: "variableListItem.unknownProviderName", bundle: #bundle),
-            providers.count
+            localizedString("editor.defaultProviderName"),
+            namedProviders.count
         )
     }
 }

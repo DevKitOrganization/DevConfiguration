@@ -30,6 +30,9 @@ struct VariableListItem: Hashable, Sendable {
     /// The index of the provider in the reader's provider list, used for color assignment.
     let providerIndex: Int
 
+    /// Whether this variable's value is secret and should be redacted in the list.
+    let isSecret: Bool
+
     /// Whether an editor override is active for this variable in the working copy.
     let hasOverride: Bool
 

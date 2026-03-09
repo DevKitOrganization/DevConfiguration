@@ -10,7 +10,7 @@ import Foundation
 /// The metadata key for a human-readable display name.
 private struct DisplayNameMetadataKey: ConfigVariableMetadataKey {
     static let defaultValue: String? = nil
-    static let keyDisplayText = String(localized: "displayNameMetadata.keyDisplayText", bundle: #bundle)
+    static let keyDisplayText = localizedString("displayNameMetadata.keyDisplayText")
 }
 
 
