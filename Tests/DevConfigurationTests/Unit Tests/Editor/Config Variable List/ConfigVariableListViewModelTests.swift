@@ -16,8 +16,7 @@ import Testing
 struct ConfigVariableListViewModelTests: RandomValueGenerating {
     var randomNumberGenerator = makeRandomNumberGenerator()
 
-    let editorOverrideProvider = EditorOverrideProvider()
-    var userDefaults: UserDefaults!
+    let editorOverrideProvider: EditorOverrideProvider
     var workingCopyDisplayName: String!
     let undoManager = UndoManager()
 
@@ -25,8 +24,10 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
 
 
     init() {
+        let userDefaults = UserDefaults(suiteName: "devkit.DevConfiguration.test.\(UUID())")!
+        userDefaults.removeObject(forKey: "editorOverrides")
+        editorOverrideProvider = EditorOverrideProvider(userDefaults: userDefaults)
         workingCopyDisplayName = randomAlphanumericString()
-        userDefaults = UserDefaults(suiteName: randomAlphanumericString())!
         onSaveStub = Stub()
     }
 
@@ -42,7 +43,6 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
             workingCopyDisplayName: workingCopyDisplayName,
             namedProviders: namedProviders,
             registeredVariables: registeredVariables ?? [randomRegisteredVariable()],
-            userDefaults: userDefaults,
             undoManager: undoManager
         )
     }

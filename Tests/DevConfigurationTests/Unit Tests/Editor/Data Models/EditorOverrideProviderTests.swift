@@ -16,10 +16,19 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     var randomNumberGenerator = makeRandomNumberGenerator()
 
 
+    /// Creates an editor override provider backed by a test-specific UserDefaults suite.
+    private func makeTestProvider() -> EditorOverrideProvider {
+        let suiteName = "devkit.DevConfiguration.test.\(UUID())"
+        let userDefaults = UserDefaults(suiteName: suiteName)!
+        userDefaults.removeObject(forKey: "editorOverrides")
+        return EditorOverrideProvider(userDefaults: userDefaults)
+    }
+
+
     @Test
     func providerNameIsEditor() {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
 
         // expect
         #expect(provider.providerName != "editorOverrideProvider.name")
@@ -29,7 +38,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func setOverrideThenRetrieve() {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
         let content = ConfigContent.string(randomAlphanumericString())
 
@@ -44,7 +53,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func removeOverrideClearsStoredValue() {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
         provider.setOverride(.bool(true), forKey: key)
 
@@ -59,7 +68,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func removeOverrideForNonexistentKeyIsNoOp() {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
 
         // exercise
@@ -73,7 +82,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     func removeAllOverridesWhenEmptyIsNoOp() {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
 
         // exercise
         provider.removeAllOverrides()
@@ -86,7 +95,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func removeAllOverridesClearsEverything() {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key1 = randomConfigKey()
         let key2 = randomConfigKey()
         provider.setOverride(.int(1), forKey: key1)
@@ -103,7 +112,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func hasOverrideReturnsTrueWhenSet() {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
         provider.setOverride(.bool(true), forKey: key)
 
@@ -115,7 +124,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func hasOverrideReturnsFalseWhenNotSet() {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
 
         // expect
@@ -126,7 +135,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func overridesReturnsFullDictionary() {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key1 = randomConfigKey()
         let key2 = randomConfigKey()
         let content1 = ConfigContent.string("a")
@@ -142,7 +151,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func valueForKeyReturnsValueWhenTypeMatches() throws {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
         let content = ConfigContent.int(42)
         provider.setOverride(content, forKey: key)
@@ -158,7 +167,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func valueForKeyReturnsNilValueWhenTypeMismatches() throws {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
         provider.setOverride(.int(42), forKey: key)
 
@@ -173,7 +182,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func valueForKeyReturnsNilValueWhenKeyNotFound() throws {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
 
         // exercise
@@ -187,7 +196,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func fetchValueDelegatesToValue() async throws {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
         let content = ConfigContent.bool(true)
         provider.setOverride(content, forKey: key)
@@ -203,7 +212,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func snapshotReturnsCurrentState() throws {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
         let content = ConfigContent.double(3.14)
         provider.setOverride(content, forKey: key)
@@ -221,7 +230,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func setOverrideDoesNotNotifyWhenValueUnchanged() async throws {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
         let absoluteKey = AbsoluteConfigKey(key)
         provider.setOverride(.int(1), forKey: key)
@@ -249,7 +258,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func removeOverrideNotifiesValueWatchers() async throws {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
         let absoluteKey = AbsoluteConfigKey(key)
         provider.setOverride(.string("hello"), forKey: key)
@@ -275,7 +284,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func removeOverrideNotifiesSnapshotWatchers() async throws {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
 
         provider.setOverride(.bool(true), forKey: key)
@@ -303,7 +312,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func removeAllOverridesNotifiesValueWatchers() async throws {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
         let absoluteKey = AbsoluteConfigKey(key)
         provider.setOverride(.int(42), forKey: key)
@@ -329,7 +338,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func removeAllOverridesNotifiesSnapshotWatchers() async throws {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key1 = randomConfigKey()
         let key2 = randomConfigKey()
         provider.setOverride(.int(1), forKey: key1)
@@ -358,7 +367,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func watchValueReturnsNilValueWhenTypeMismatches() async throws {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
         let absoluteKey = AbsoluteConfigKey(key)
         provider.setOverride(.int(42), forKey: key)
@@ -383,7 +392,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func watchValueEmitsInitialAndSubsequentChanges() async throws {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
         let absoluteKey = AbsoluteConfigKey(key)
         provider.setOverride(.int(1), forKey: key)
@@ -409,7 +418,7 @@ struct EditorOverrideProviderTests: RandomValueGenerating {
     @Test
     mutating func watchSnapshotEmitsInitialAndSubsequentChanges() async throws {
         // set up
-        let provider = EditorOverrideProvider()
+        let provider = makeTestProvider()
         let key = randomConfigKey()
 
         // exercise
@@ -448,6 +457,12 @@ struct EditorOverrideProviderPersistenceTests: RandomValueGenerating {
     }
 
 
+    /// Creates an editor override provider backed by a test-specific UserDefaults suite.
+    private func makeTestProvider() -> EditorOverrideProvider {
+        EditorOverrideProvider(userDefaults: makeTestUserDefaults())
+    }
+
+
     @Test
     mutating func persistThenLoadRoundTripsOverrides() {
         // set up
@@ -457,14 +472,13 @@ struct EditorOverrideProviderPersistenceTests: RandomValueGenerating {
         let content1 = ConfigContent.string(randomAlphanumericString())
         let content2 = ConfigContent.int(randomInt(in: .min ... .max))
 
-        let provider1 = EditorOverrideProvider()
+        let provider1 = EditorOverrideProvider(userDefaults: userDefaults)
         provider1.setOverride(content1, forKey: key1)
         provider1.setOverride(content2, forKey: key2)
-        provider1.persist(to: userDefaults)
+        provider1.persist()
 
         // exercise
-        let provider2 = EditorOverrideProvider()
-        provider2.load(from: userDefaults)
+        let provider2 = EditorOverrideProvider(userDefaults: userDefaults)
 
         // expect
         #expect(provider2.overrides[key1] == content1)
@@ -476,12 +490,11 @@ struct EditorOverrideProviderPersistenceTests: RandomValueGenerating {
     func persistEmptyOverrides() {
         // set up
         let userDefaults = makeTestUserDefaults()
-        let provider1 = EditorOverrideProvider()
-        provider1.persist(to: userDefaults)
+        let provider1 = EditorOverrideProvider(userDefaults: userDefaults)
+        provider1.persist()
 
         // exercise
-        let provider2 = EditorOverrideProvider()
-        provider2.load(from: userDefaults)
+        let provider2 = EditorOverrideProvider(userDefaults: userDefaults)
 
         // expect
         #expect(provider2.overrides.isEmpty)
@@ -492,28 +505,23 @@ struct EditorOverrideProviderPersistenceTests: RandomValueGenerating {
     mutating func clearPersistenceRemovesStoredData() {
         // set up
         let userDefaults = makeTestUserDefaults()
-        let provider = EditorOverrideProvider()
+        let provider = EditorOverrideProvider(userDefaults: userDefaults)
         provider.setOverride(.bool(true), forKey: randomConfigKey())
-        provider.persist(to: userDefaults)
+        provider.persist()
 
         // exercise
-        provider.clearPersistence(from: userDefaults)
+        provider.clearPersistence()
 
         // expect
-        let reloaded = EditorOverrideProvider()
-        reloaded.load(from: userDefaults)
+        let reloaded = EditorOverrideProvider(userDefaults: userDefaults)
         #expect(reloaded.overrides.isEmpty)
     }
 
 
     @Test
     func loadWithNoStoredDataResultsInEmptyOverrides() {
-        // set up
-        let userDefaults = makeTestUserDefaults()
-
         // exercise
-        let provider = EditorOverrideProvider()
-        provider.load(from: userDefaults)
+        let provider = makeTestProvider()
 
         // expect
         #expect(provider.overrides.isEmpty)
@@ -530,8 +538,7 @@ struct EditorOverrideProviderPersistenceTests: RandomValueGenerating {
         userDefaults.set(corruptData, forKey: "editorOverrides")
 
         // exercise
-        let provider = EditorOverrideProvider()
-        provider.load(from: userDefaults)
+        let provider = EditorOverrideProvider(userDefaults: userDefaults)
 
         // expect
         #expect(provider.overrides.isEmpty)
