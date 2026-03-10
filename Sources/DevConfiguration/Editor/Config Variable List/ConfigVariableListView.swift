@@ -17,15 +17,42 @@ import SwiftUI
 /// variable's detail view.
 ///
 /// The toolbar provides Cancel, Save, and an overflow menu with Undo, Redo, and Clear Editor Overrides actions.
-struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling>: View {
+struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomSection: View>: View {
     @State var viewModel: ViewModel
 
+    /// The title for the custom section at the top of the list.
+    private let customSectionTitle: Text
+
+    /// The custom section content to display at the top of the list.
+    private let customSection: CustomSection
+
     @Environment(\.dismiss) private var dismiss
+
+
+    /// Creates a new list view.
+    ///
+    /// - Parameters:
+    ///   - viewModel: The view model for the list.
+    ///   - customSectionTitle: The title for the custom section.
+    ///   - customSection: A view builder that produces custom content to display in a section at the top of the list.
+    init(viewModel: ViewModel, customSectionTitle: Text, @ViewBuilder customSection: () -> CustomSection) {
+        self._viewModel = State(initialValue: viewModel)
+        self.customSectionTitle = customSectionTitle
+        self.customSection = customSection()
+    }
 
 
     var body: some View {
         NavigationStack {
             List {
+                if CustomSection.self != EmptyView.self {
+                    Section {
+                        customSection
+                    } header: {
+                        customSectionTitle
+                    }
+                }
+
                 Section(localizedStringResource("editorView.variablesSection.header")) {
                     ForEach(viewModel.variables, id: \.key) { item in
                         NavigationLink(value: item.key) {
