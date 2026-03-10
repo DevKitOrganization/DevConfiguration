@@ -26,7 +26,14 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $isPresentingConfigEditor) {
-                ConfigVariableEditor(reader: viewModel.configVariableReader) { variables in
+                ConfigVariableEditor(
+                    reader: viewModel.configVariableReader,
+                    customSectionTitle: "Actions"
+                ) {
+                    Button("Do something", role: .destructive) {
+                        print("Did something!")
+                    }
+                } onSave: { variables in
                     print(variables)
                 }
             }
