@@ -78,6 +78,55 @@ struct ConfigContent_AdditionsTests: RandomValueGenerating {
     }
 
 
+    // MARK: - editableString
+
+    @Test(
+        arguments: [
+            ConfigContent.bool(true),
+            .int(42),
+            .double(3.14),
+            .string("hello"),
+            .bytes([1, 2, 3]),
+        ]
+    )
+    func editableStringMatchesDisplayStringForScalars(content: ConfigContent) {
+        #expect(content.editableString == content.displayString)
+    }
+
+
+    @Test
+    func editableStringReturnsByteChunkArrayAsDisplayString() {
+        let content = ConfigContent.byteChunkArray([[1, 2], [3, 4]])
+        #expect(content.editableString == content.displayString)
+    }
+
+
+    @Test
+    func editableStringReturnsNewlineSeparatedBoolArray() {
+        #expect(ConfigContent.boolArray([true, false, true]).editableString == "true\nfalse\ntrue")
+    }
+
+
+    @Test
+    func editableStringReturnsNewlineSeparatedIntArray() {
+        #expect(ConfigContent.intArray([1, 2, 3]).editableString == "1\n2\n3")
+    }
+
+
+    @Test
+    func editableStringReturnsNewlineSeparatedDoubleArray() {
+        #expect(ConfigContent.doubleArray([1.5, 2.5]).editableString == "1.5\n2.5")
+    }
+
+
+    @Test
+    func editableStringReturnsNewlineSeparatedStringArray() {
+        #expect(ConfigContent.stringArray(["a", "b", "c"]).editableString == "a\nb\nc")
+    }
+
+
+    // MARK: - Codable
+
     @Test
     func decodingUnknownTypeThrows() throws {
         // set up

@@ -38,7 +38,7 @@ final class ContentViewModel {
     let jsonVariable = ConfigVariable(
         key: "complexConfig",
         defaultValue: ComplexConfiguration(field1: "a", field2: 1),
-        content: .json(representation: .data)
+        content: .json(representation: .string())
     ).metadata(\.displayName, "Complex Config")
 
     let intBackedVariable = ConfigVariable(key: "favoriteCardSuit", defaultValue: CardSuit.spades, isSecret: true)
@@ -96,7 +96,7 @@ struct ComplexConfiguration: Codable, Hashable, Sendable {
 }
 
 
-enum Beatle: String, Codable, Hashable, Sendable {
+enum Beatle: String, CaseIterable, Codable, Hashable, Sendable {
     case john = "John"
     case paul = "Paul"
     case george = "George"
@@ -104,7 +104,7 @@ enum Beatle: String, Codable, Hashable, Sendable {
 }
 
 
-enum CardSuit: Int, Codable, Hashable, Sendable {
+enum CardSuit: Int, CaseIterable, Codable, Hashable, Sendable {
     case spades
     case hearts
     case clubs

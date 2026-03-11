@@ -39,5 +39,5 @@ struct VariableListItem: Hashable, Sendable {
     let hasOverride: Bool
 
     /// The editor control to use when editing this variable's value.
-    let editorControl: EditorControl
+    let editorControl: EditorControl?
 }

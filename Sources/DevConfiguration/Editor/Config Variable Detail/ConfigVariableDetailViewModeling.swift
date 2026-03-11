@@ -39,24 +39,32 @@ protocol ConfigVariableDetailViewModeling: Observable {
     var isSecret: Bool { get }
 
     /// The editor control to use for this variable's override.
-    var editorControl: EditorControl { get }
+    var editorControl: EditorControl? { get }
 
     /// Whether the user has enabled an override for this variable.
     var isOverrideEnabled: Bool { get set }
 
-    /// The text value for the override, used with text field and number field controls.
+    /// The text value for the override, used with text field, number field, and text editor controls.
     var overrideText: String { get set }
 
     /// The boolean value for the override, used with toggle controls.
     var overrideBool: Bool { get set }
+
+    /// The selected content for the override, used with picker controls.
+    var overridePickerSelection: ConfigContent { get set }
+
+    /// Whether the current override text is valid for the variable's destination type.
+    ///
+    /// Always `true` when the variable has no validation or when no override is enabled.
+    var isOverrideTextValid: Bool { get }
 
     /// Whether the secret value is currently revealed.
     var isSecretRevealed: Bool { get set }
 
     /// Commits the current override text to the document.
     ///
-    /// Called when the user submits the text field. Parses the text into a ``ConfigContent`` and sets the override
-    /// on the document.
+    /// Called when the user submits the text field or text editor. Parses the text into a ``ConfigContent`` and sets
+    /// the override on the document. Does nothing if the text is invalid.
     func commitOverrideText()
 }
 

@@ -42,9 +42,9 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
     mutating func valueForRawRepresentableStringReturnsProviderValue() {
         // set up
         let key = randomConfigKey()
-        let expectedValue = randomCase(of: MockStringEnum.self)!
-        var defaultValue: MockStringEnum
-        repeat { defaultValue = randomCase(of: MockStringEnum.self)! } while defaultValue == expectedValue
+        let expectedValue = randomNonIterableStringEnum()
+        var defaultValue: MockNonIterableStringEnum
+        repeat { defaultValue = randomNonIterableStringEnum() } while defaultValue == expectedValue
         let variable = ConfigVariable(key: key, defaultValue: defaultValue)
         setProviderValue(.string(expectedValue.rawValue), forKey: key)
 
@@ -60,7 +60,7 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
     mutating func valueForRawRepresentableStringReturnsDefaultWhenKeyNotFound() {
         // set up
         let key = randomConfigKey()
-        let defaultValue = randomCase(of: MockStringEnum.self)!
+        let defaultValue = randomNonIterableStringEnum()
         let variable = ConfigVariable(key: key, defaultValue: defaultValue)
 
         // exercise
@@ -75,9 +75,9 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
     mutating func fetchValueForRawRepresentableStringReturnsProviderValue() async throws {
         // set up
         let key = randomConfigKey()
-        let expectedValue = randomCase(of: MockStringEnum.self)!
-        var defaultValue: MockStringEnum
-        repeat { defaultValue = randomCase(of: MockStringEnum.self)! } while defaultValue == expectedValue
+        let expectedValue = randomNonIterableStringEnum()
+        var defaultValue: MockNonIterableStringEnum
+        repeat { defaultValue = randomNonIterableStringEnum() } while defaultValue == expectedValue
         let variable = ConfigVariable(key: key, defaultValue: defaultValue)
         setProviderValue(.string(expectedValue.rawValue), forKey: key)
 
@@ -93,7 +93,7 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
     mutating func fetchValueForRawRepresentableStringReturnsDefaultWhenKeyNotFound() async throws {
         // set up
         let key = randomConfigKey()
-        let defaultValue = randomCase(of: MockStringEnum.self)!
+        let defaultValue = randomNonIterableStringEnum()
         let variable = ConfigVariable(key: key, defaultValue: defaultValue)
 
         // exercise
@@ -108,11 +108,11 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
     mutating func watchValueForRawRepresentableStringReceivesUpdates() async throws {
         // set up
         let key = randomConfigKey()
-        let initialValue = randomCase(of: MockStringEnum.self)!
-        var differentValue: MockStringEnum
-        repeat { differentValue = randomCase(of: MockStringEnum.self)! } while differentValue == initialValue
+        let initialValue = randomNonIterableStringEnum()
+        var differentValue: MockNonIterableStringEnum
+        repeat { differentValue = randomNonIterableStringEnum() } while differentValue == initialValue
         let updatedValue = differentValue
-        let defaultValue = randomCase(of: MockStringEnum.self)!
+        let defaultValue = randomNonIterableStringEnum()
         let isSecret = randomBool()
         let provider = provider
         let variable = ConfigVariable(key: key, defaultValue: defaultValue)
@@ -140,9 +140,9 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
     mutating func subscriptRawRepresentableStringReturnsProviderValue() {
         // set up
         let key = randomConfigKey()
-        let expectedValue = randomCase(of: MockStringEnum.self)!
-        var defaultValue: MockStringEnum
-        repeat { defaultValue = randomCase(of: MockStringEnum.self)! } while defaultValue == expectedValue
+        let expectedValue = randomNonIterableStringEnum()
+        var defaultValue: MockNonIterableStringEnum
+        repeat { defaultValue = randomNonIterableStringEnum() } while defaultValue == expectedValue
         let variable = ConfigVariable(key: key, defaultValue: defaultValue)
         setProviderValue(.string(expectedValue.rawValue), forKey: key)
 
@@ -226,9 +226,9 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
     mutating func valueForRawRepresentableIntReturnsProviderValue() {
         // set up
         let key = randomConfigKey()
-        let expectedValue = randomCase(of: MockIntEnum.self)!
-        var defaultValue: MockIntEnum
-        repeat { defaultValue = randomCase(of: MockIntEnum.self)! } while defaultValue == expectedValue
+        let expectedValue = randomNonIterableIntEnum()
+        var defaultValue: MockNonIterableIntEnum
+        repeat { defaultValue = randomNonIterableIntEnum() } while defaultValue == expectedValue
         let variable = ConfigVariable(key: key, defaultValue: defaultValue)
         setProviderValue(.int(expectedValue.rawValue), forKey: key)
 
@@ -244,7 +244,7 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
     mutating func valueForRawRepresentableIntReturnsDefaultWhenKeyNotFound() {
         // set up
         let key = randomConfigKey()
-        let defaultValue = randomCase(of: MockIntEnum.self)!
+        let defaultValue = randomNonIterableIntEnum()
         let variable = ConfigVariable(key: key, defaultValue: defaultValue)
 
         // exercise
@@ -259,9 +259,9 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
     mutating func fetchValueForRawRepresentableIntReturnsProviderValue() async throws {
         // set up
         let key = randomConfigKey()
-        let expectedValue = randomCase(of: MockIntEnum.self)!
-        var defaultValue: MockIntEnum
-        repeat { defaultValue = randomCase(of: MockIntEnum.self)! } while defaultValue == expectedValue
+        let expectedValue = randomNonIterableIntEnum()
+        var defaultValue: MockNonIterableIntEnum
+        repeat { defaultValue = randomNonIterableIntEnum() } while defaultValue == expectedValue
         let variable = ConfigVariable(key: key, defaultValue: defaultValue)
         setProviderValue(.int(expectedValue.rawValue), forKey: key)
 
@@ -277,7 +277,7 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
     mutating func fetchValueForRawRepresentableIntReturnsDefaultWhenKeyNotFound() async throws {
         // set up
         let key = randomConfigKey()
-        let defaultValue = randomCase(of: MockIntEnum.self)!
+        let defaultValue = randomNonIterableIntEnum()
         let variable = ConfigVariable(key: key, defaultValue: defaultValue)
 
         // exercise
@@ -292,11 +292,11 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
     mutating func watchValueForRawRepresentableIntReceivesUpdates() async throws {
         // set up
         let key = randomConfigKey()
-        let initialValue = randomCase(of: MockIntEnum.self)!
-        var differentValue: MockIntEnum
-        repeat { differentValue = randomCase(of: MockIntEnum.self)! } while differentValue == initialValue
+        let initialValue = randomNonIterableIntEnum()
+        var differentValue: MockNonIterableIntEnum
+        repeat { differentValue = randomNonIterableIntEnum() } while differentValue == initialValue
         let updatedValue = differentValue
-        let defaultValue = randomCase(of: MockIntEnum.self)!
+        let defaultValue = randomNonIterableIntEnum()
         let isSecret = randomBool()
         let provider = provider
         let variable = ConfigVariable(key: key, defaultValue: defaultValue)
@@ -324,9 +324,9 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
     mutating func subscriptRawRepresentableIntReturnsProviderValue() {
         // set up
         let key = randomConfigKey()
-        let expectedValue = randomCase(of: MockIntEnum.self)!
-        var defaultValue: MockIntEnum
-        repeat { defaultValue = randomCase(of: MockIntEnum.self)! } while defaultValue == expectedValue
+        let expectedValue = randomNonIterableIntEnum()
+        var defaultValue: MockNonIterableIntEnum
+        repeat { defaultValue = randomNonIterableIntEnum() } while defaultValue == expectedValue
         let variable = ConfigVariable(key: key, defaultValue: defaultValue)
         setProviderValue(.int(expectedValue.rawValue), forKey: key)
 

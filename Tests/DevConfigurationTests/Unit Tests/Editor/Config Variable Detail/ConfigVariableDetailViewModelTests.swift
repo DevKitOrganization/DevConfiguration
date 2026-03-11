@@ -377,4 +377,204 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
         // expect no override is set
         #expect(!document.hasOverride(forKey: variable.key))
     }
+
+
+    @Test
+    mutating func commitOverrideTextDoesNothingWhenValidateFails() {
+        // set up with a parse that succeeds but a validate that always fails
+        let variable = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            editorControl: .textField,
+            parse: { .string($0) },
+            validate: { _ in false }
+        )
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document, registeredVariable: variable)
+
+        viewModel.overrideText = randomAlphanumericString()
+
+        // exercise
+        viewModel.commitOverrideText()
+
+        // expect no override is set
+        #expect(!document.hasOverride(forKey: variable.key))
+    }
+
+
+    @Test
+    mutating func commitOverrideTextSetsOverrideWhenValidateSucceeds() {
+        // set up with both parse and validate succeeding
+        let variable = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            editorControl: .textField,
+            parse: { .string($0) },
+            validate: { _ in true }
+        )
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document, registeredVariable: variable)
+
+        let inputText = randomAlphanumericString()
+        viewModel.overrideText = inputText
+
+        // exercise
+        viewModel.commitOverrideText()
+
+        // expect the parsed content is set as an override
+        #expect(document.override(forKey: variable.key) == .string(inputText))
+    }
+
+
+    // MARK: - isOverrideTextValid
+
+    @Test
+    mutating func isOverrideTextValidReturnsTrueWhenParseIsNil() {
+        // set up with no parse function
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document, registeredVariable: variable)
+
+        // exercise and expect
+        #expect(viewModel.isOverrideTextValid)
+    }
+
+
+    @Test
+    mutating func isOverrideTextValidReturnsTrueWhenParseSucceedsAndValidateIsNil() {
+        // set up with parse that succeeds and no validate
+        let variable = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            editorControl: .textField,
+            parse: { .string($0) }
+        )
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document, registeredVariable: variable)
+
+        viewModel.overrideText = randomAlphanumericString()
+
+        // exercise and expect
+        #expect(viewModel.isOverrideTextValid)
+    }
+
+
+    @Test
+    mutating func isOverrideTextValidReturnsTrueWhenParseAndValidateSucceed() {
+        // set up with both parse and validate succeeding
+        let variable = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            editorControl: .textField,
+            parse: { .string($0) },
+            validate: { _ in true }
+        )
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document, registeredVariable: variable)
+
+        viewModel.overrideText = randomAlphanumericString()
+
+        // exercise and expect
+        #expect(viewModel.isOverrideTextValid)
+    }
+
+
+    @Test
+    mutating func isOverrideTextValidReturnsFalseWhenParseFails() {
+        // set up with parse that always fails
+        let variable = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            editorControl: .textField,
+            parse: { _ in nil }
+        )
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document, registeredVariable: variable)
+
+        viewModel.overrideText = randomAlphanumericString()
+
+        // exercise and expect
+        #expect(!viewModel.isOverrideTextValid)
+    }
+
+
+    @Test
+    mutating func isOverrideTextValidReturnsFalseWhenParseSucceedsButValidateFails() {
+        // set up with parse succeeding but validate failing
+        let variable = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            editorControl: .textField,
+            parse: { .string($0) },
+            validate: { _ in false }
+        )
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document, registeredVariable: variable)
+
+        viewModel.overrideText = randomAlphanumericString()
+
+        // exercise and expect
+        #expect(!viewModel.isOverrideTextValid)
+    }
+
+
+    // MARK: - overridePickerSelection
+
+    @Test
+    mutating func overridePickerSelectionReturnsOverrideWhenSet() {
+        // set up with an override
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+
+        let overrideContent = ConfigContent.string(randomAlphanumericString())
+        document.setOverride(overrideContent, forKey: variable.key)
+
+        let viewModel = makeViewModel(document: document, registeredVariable: variable)
+
+        // exercise and expect
+        #expect(viewModel.overridePickerSelection == overrideContent)
+    }
+
+
+    @Test
+    mutating func overridePickerSelectionReturnsDefaultContentWhenNoOverride() {
+        // set up with no override
+        let defaultContent = ConfigContent.string(randomAlphanumericString())
+        let variable = randomRegisteredVariable(defaultContent: defaultContent)
+        let document = makeDocument(registeredVariables: [variable])
+
+        let viewModel = makeViewModel(document: document, registeredVariable: variable)
+
+        // exercise and expect
+        #expect(viewModel.overridePickerSelection == defaultContent)
+    }
+
+
+    @Test
+    mutating func settingOverridePickerSelectionSetsDocumentOverride() {
+        // set up
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document, registeredVariable: variable)
+
+        let newContent = ConfigContent.string(randomAlphanumericString())
+
+        // exercise
+        viewModel.overridePickerSelection = newContent
+
+        // expect the document has the new override
+        #expect(document.override(forKey: variable.key) == newContent)
+    }
+
+
+    // MARK: - editableString
+
+    @Test
+    mutating func initUsesEditableStringForOverrideTextWithArrayContent() {
+        // set up with an array override to verify editableString (newline-separated) is used
+        let arrayContent = ConfigContent.stringArray(["one", "two", "three"])
+        let variable = randomRegisteredVariable(defaultContent: arrayContent)
+        let document = makeDocument(registeredVariables: [variable])
+        document.setOverride(arrayContent, forKey: variable.key)
+
+        // exercise
+        let viewModel = makeViewModel(document: document, registeredVariable: variable)
+
+        // expect override text uses editableString (newline-separated), not displayString
+        #expect(viewModel.overrideText == "one\ntwo\nthree")
+    }
 }

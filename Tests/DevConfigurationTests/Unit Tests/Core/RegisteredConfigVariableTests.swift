@@ -29,7 +29,8 @@ struct RegisteredConfigVariableTests: RandomValueGenerating {
             metadata: metadata,
             destinationTypeName: randomAlphanumericString(),
             editorControl: .none,
-            parse: nil
+            parse: nil,
+            validate: nil
         )
 
         // expect
@@ -72,7 +73,8 @@ struct RegisteredConfigVariableTests: RandomValueGenerating {
             metadata: ConfigVariableMetadata(),
             destinationTypeName: input,
             editorControl: .none,
-            parse: nil
+            parse: nil,
+            validate: nil
         )
 
         // expect
@@ -90,7 +92,8 @@ struct RegisteredConfigVariableTests: RandomValueGenerating {
             metadata: ConfigVariableMetadata(),
             destinationTypeName: randomAlphanumericString(),
             editorControl: .none,
-            parse: nil
+            parse: nil,
+            validate: nil
         )
 
         // expect

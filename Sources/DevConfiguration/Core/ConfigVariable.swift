@@ -281,6 +281,28 @@ extension ConfigVariable {
 
 
 extension ConfigVariable {
+    /// Creates a `RawRepresentable<String> & CaseIterable` configuration variable.
+    ///
+    /// Content is set to ``ConfigVariableContent/rawRepresentableCaseIterableString()`` automatically. Uses a picker
+    /// control populated with all cases instead of a free-text field.
+    ///
+    /// - Parameters:
+    ///   - key: The configuration key.
+    ///   - defaultValue: The default value to use when variable resolution fails.
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: Value, isSecret: Bool = false)
+    where Value: RawRepresentable & CaseIterable & Sendable, Value.RawValue == String {
+        self.init(
+            key: key,
+            defaultValue: defaultValue,
+            content: .rawRepresentableCaseIterableString(),
+            isSecret: isSecret
+        )
+    }
+}
+
+
+extension ConfigVariable {
     /// Creates a `[RawRepresentable<String>]` configuration variable.
     ///
     /// Content is set to ``ConfigVariableContent/rawRepresentableStringArray()`` automatically.
@@ -344,6 +366,23 @@ extension ConfigVariable {
     public init(key: ConfigKey, defaultValue: Value, isSecret: Bool = false)
     where Value: RawRepresentable & Sendable, Value.RawValue == Int {
         self.init(key: key, defaultValue: defaultValue, content: .rawRepresentableInt(), isSecret: isSecret)
+    }
+}
+
+
+extension ConfigVariable {
+    /// Creates a `RawRepresentable<Int> & CaseIterable` configuration variable.
+    ///
+    /// Content is set to ``ConfigVariableContent/rawRepresentableCaseIterableInt()`` automatically. Uses a picker
+    /// control populated with all cases instead of a free-text number field.
+    ///
+    /// - Parameters:
+    ///   - key: The configuration key.
+    ///   - defaultValue: The default value to use when variable resolution fails.
+    ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
+    public init(key: ConfigKey, defaultValue: Value, isSecret: Bool = false)
+    where Value: RawRepresentable & CaseIterable & Sendable, Value.RawValue == Int {
+        self.init(key: key, defaultValue: defaultValue, content: .rawRepresentableCaseIterableInt(), isSecret: isSecret)
     }
 }
 

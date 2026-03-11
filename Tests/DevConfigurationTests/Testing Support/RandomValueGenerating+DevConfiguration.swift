@@ -113,7 +113,8 @@ extension RandomValueGenerating {
         metadata: ConfigVariableMetadata? = nil,
         destinationTypeName: String? = nil,
         editorControl: EditorControl? = nil,
-        parse: (@Sendable (_ input: String) -> ConfigContent?)? = nil
+        parse: (@Sendable (_ input: String) -> ConfigContent?)? = nil,
+        validate: (@Sendable (_ content: ConfigContent) -> Bool)? = nil
     ) -> RegisteredConfigVariable {
         RegisteredConfigVariable(
             key: key ?? randomConfigKey(),
@@ -122,7 +123,8 @@ extension RandomValueGenerating {
             metadata: metadata ?? ConfigVariableMetadata(),
             destinationTypeName: destinationTypeName ?? randomAlphanumericString(),
             editorControl: editorControl ?? .none,
-            parse: parse
+            parse: parse,
+            validate: validate
         )
     }
 
@@ -134,6 +136,16 @@ extension RandomValueGenerating {
         let providerName = providerName ?? randomAlphanumericString()
         let result = result ?? .success(.init(encodedKey: randomAlphanumericString(), value: randomConfigValue()))
         return AccessEvent.ProviderResult(providerName: providerName, result: result)
+    }
+
+
+    mutating func randomNonIterableIntEnum() -> MockNonIterableIntEnum {
+        randomElement(in: [MockNonIterableIntEnum.a, .b])!
+    }
+
+
+    mutating func randomNonIterableStringEnum() -> MockNonIterableStringEnum {
+        randomElement(in: [MockNonIterableStringEnum.a, .b])!
     }
 
 

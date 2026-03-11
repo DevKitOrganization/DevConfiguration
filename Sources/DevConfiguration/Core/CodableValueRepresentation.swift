@@ -47,6 +47,16 @@ public struct CodableValueRepresentation: Sendable {
         CodableValueRepresentation(kind: .data)
     }
 
+    /// Whether this representation supports text-based editing in the editor UI.
+    ///
+    /// String-backed representations can be edited as text, while data-backed representations cannot.
+    var supportsTextEditing: Bool {
+        switch kind {
+        case .string: true
+        case .data: false
+        }
+    }
+
 
     /// Reads raw data synchronously from the reader based on this representation.
     ///
@@ -125,6 +135,30 @@ public struct CodableValueRepresentation: Sendable {
             return .string(string)
         case .data:
             return .bytes(Array(data))
+        }
+    }
+
+
+    /// Extracts raw `Data` from a ``ConfigContent`` based on this representation.
+    ///
+    /// This is the reverse of ``encodeToContent(_:)``. For string-backed representations, this extracts the string and
+    /// converts it to `Data` using the representation's encoding. For data-backed representations, this extracts the
+    /// byte array and wraps it in `Data`.
+    ///
+    /// - Parameter content: The content to extract data from.
+    /// - Returns: The raw data, or `nil` if the content doesn't match this representation's expected case.
+    func data(from content: ConfigContent) -> Data? {
+        switch kind {
+        case .string(let encoding):
+            guard case .string(let string) = content else {
+                return nil
+            }
+            return string.data(using: encoding)
+        case .data:
+            guard case .bytes(let bytes) = content else {
+                return nil
+            }
+            return Data(bytes)
         }
     }
 

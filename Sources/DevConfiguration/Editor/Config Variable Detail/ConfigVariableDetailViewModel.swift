@@ -29,7 +29,7 @@ final class ConfigVariableDetailViewModel: ConfigVariableDetailViewModeling {
     let variableTypeName: String
     let metadataEntries: [ConfigVariableMetadata.DisplayText]
     let isSecret: Bool
-    let editorControl: EditorControl
+    let editorControl: EditorControl?
 
     var overrideText = ""
     var isSecretRevealed = false
@@ -52,9 +52,9 @@ final class ConfigVariableDetailViewModel: ConfigVariableDetailViewModeling {
         self.editorControl = registeredVariable.editorControl
 
         if let content = document.override(forKey: registeredVariable.key) {
-            self.overrideText = content.displayString
+            self.overrideText = content.editableString
         } else if let resolved = document.resolvedValue(forKey: registeredVariable.key) {
-            self.overrideText = resolved.content.displayString
+            self.overrideText = resolved.content.editableString
         }
     }
 
@@ -95,13 +95,43 @@ final class ConfigVariableDetailViewModel: ConfigVariableDetailViewModeling {
     }
 
 
+    var overridePickerSelection: ConfigContent {
+        get {
+            document.override(forKey: key) ?? registeredVariable.defaultContent
+        }
+        set {
+            document.setOverride(newValue, forKey: key)
+        }
+    }
+
+
+    var isOverrideTextValid: Bool {
+        guard let parse = registeredVariable.parse else {
+            return true
+        }
+
+        guard let content = parse(overrideText) else {
+            return false
+        }
+
+        guard let validate = registeredVariable.validate else {
+            return true
+        }
+
+        return validate(content)
+    }
+
+
     func commitOverrideText() {
         guard let parse = registeredVariable.parse else {
             return
         }
 
-        let text = overrideText
-        guard let content = parse(text) else {
+        guard let content = parse(overrideText) else {
+            return
+        }
+
+        if let validate = registeredVariable.validate, !validate(content) {
             return
         }
 
@@ -120,7 +150,7 @@ final class ConfigVariableDetailViewModel: ConfigVariableDetailViewModeling {
             content = registeredVariable.defaultContent
         }
 
-        overrideText = content.displayString
+        overrideText = content.editableString
         document.setOverride(content, forKey: key)
     }
 }
