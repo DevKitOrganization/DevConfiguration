@@ -45,13 +45,18 @@ public struct RegisteredConfigVariable: Sendable {
     }
 
     /// The editor control to use when editing this variable's value in the editor UI.
-    public let editorControl: EditorControl
+    public let editorControl: EditorControl?
 
     /// Parses a raw string from the editor UI into a ``ConfigContent`` value.
     ///
     /// Returns `nil` if the string cannot be parsed. When this property itself is `nil`, the variable does not support
     /// editing.
     let parse: (@Sendable (_ input: String) -> ConfigContent?)?
+
+    /// Validates that a ``ConfigContent`` value can be decoded into a valid instance of the variable's destination type.
+    ///
+    /// Returns `true` if the content is valid. When `nil`, a successful parse is considered sufficient validation.
+    let validate: (@Sendable (_ content: ConfigContent) -> Bool)?
 
 
     /// Creates a new registered config variable.
@@ -64,14 +69,16 @@ public struct RegisteredConfigVariable: Sendable {
     ///   - destinationTypeName: The name of the variable's Swift value type.
     ///   - editorControl: The editor control to use for this variable.
     ///   - parse: A function that parses a raw string into a ``ConfigContent`` value.
+    ///   - validate: A function that validates a ``ConfigContent`` value against the destination type.
     init(
         key: ConfigKey,
         defaultContent: ConfigContent,
         isSecret: Bool,
         metadata: ConfigVariableMetadata,
         destinationTypeName: String,
-        editorControl: EditorControl,
-        parse: (@Sendable (_ input: String) -> ConfigContent?)?
+        editorControl: EditorControl?,
+        parse: (@Sendable (_ input: String) -> ConfigContent?)?,
+        validate: (@Sendable (_ content: ConfigContent) -> Bool)?
     ) {
         self.key = key
         self.defaultContent = defaultContent
@@ -80,6 +87,7 @@ public struct RegisteredConfigVariable: Sendable {
         self.destinationTypeName = Self.normalizedTypeName(destinationTypeName)
         self.editorControl = editorControl
         self.parse = parse
+        self.validate = validate
     }
 
 

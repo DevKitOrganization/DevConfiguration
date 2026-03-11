@@ -71,6 +71,16 @@
         }
       }
     },
+    "detailView.overrideSection.applyButton" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apply"
+          }
+        }
+      }
+    },
     "detailView.overrideSection.editorOverrideLabel" : {
       "localizations" : {
         "en" : {
@@ -102,6 +112,16 @@
       }
     },
     "detailView.overrideSection.valueLabel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Value"
+          }
+        }
+      }
+    },
+    "detailView.overrideSection.valuePicker" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {

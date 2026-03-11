@@ -177,7 +177,8 @@ extension ConfigVariableReader {
                 metadata: variable.metadata,
                 destinationTypeName: String(describing: Value.self),
                 editorControl: variable.content.editorControl,
-                parse: variable.content.parse
+                parse: variable.content.parse,
+                validate: variable.content.validate
             )
         }
     }

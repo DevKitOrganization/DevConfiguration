@@ -16,6 +16,7 @@ import SwiftUI
 /// It is generic on its view model protocol, allowing tests to inject mock view models.
 struct ConfigVariableDetailView<ViewModel: ConfigVariableDetailViewModeling>: View {
     @State var viewModel: ViewModel
+    @FocusState private var isTextEditorFocused: Bool
 
 
     var body: some View {
@@ -55,7 +56,7 @@ extension ConfigVariableDetailView {
 
     @ViewBuilder
     private var overrideSection: some View {
-        if viewModel.editorControl != .none {
+        if viewModel.editorControl != nil {
             Section(localizedStringResource("detailView.overrideSection.header")) {
                 LabeledContent(localizedStringResource("detailView.overrideSection.editorOverrideLabel")) {
                     if viewModel.isOverrideEnabled {
@@ -90,30 +91,74 @@ extension ConfigVariableDetailView {
 
     @ViewBuilder
     private var overrideControl: some View {
-        LabeledContent(localizedStringResource("detailView.overrideSection.valueLabel")) {
-            if viewModel.editorControl == .toggle {
-                HStack {
-                    Spacer().layoutPriority(0)
-                    Picker(
-                        localizedStringResource("detailView.overrideSection.valuePicker"),
-                        selection: $viewModel.overrideBool
-                    ) {
-                        Text(localized: "detailView.overridenSection.valuePickerFalse").tag(false)
-                        Text(localized: "detailView.overridenSection.valuePickerTrue").tag(true)
+        if let editorControl = viewModel.editorControl {
+            switch editorControl.kind {
+            case .toggle:
+                LabeledContent(localizedStringResource("detailView.overrideSection.valueLabel")) {
+                    HStack {
+                        Spacer().layoutPriority(0)
+                        Picker(
+                            localizedStringResource("detailView.overrideSection.valuePicker"),
+                            selection: $viewModel.overrideBool
+                        ) {
+                            Text(localized: "detailView.overridenSection.valuePickerFalse").tag(false)
+                            Text(localized: "detailView.overridenSection.valuePickerTrue").tag(true)
+                        }
+                        .pickerStyle(.segmented)
                     }
-                    .pickerStyle(.segmented)
                 }
-            } else {
-                TextField(
-                    localizedStringResource("detailView.overrideSection.valueTextField"),
-                    text: $viewModel.overrideText
-                )
-                .onSubmit { viewModel.commitOverrideText() }
-                .textFieldStyle(.roundedBorder)
-                .multilineTextAlignment(.trailing)
-                #if os(iOS) || os(visionOS)
-                .keyboardType(keyboardType)
-                #endif
+            case .picker(options: let pickerOptions):
+                Picker(
+                    localizedStringResource("detailView.overrideSection.valuePicker"),
+                    selection: $viewModel.overridePickerSelection
+                ) {
+                    ForEach(pickerOptions, id: \.content) { option in
+                        Text(option.label).tag(option.content)
+                    }
+                }
+            case .textEditor:
+                VStack(alignment: .leading) {
+                    Text(localizedStringResource("detailView.overrideSection.valueLabel"))
+                    TextEditor(text: $viewModel.overrideText)
+                        .focused($isTextEditorFocused)
+                        .font(.caption.monospaced())
+                        .frame(minHeight: 100)
+                        .border(viewModel.isOverrideTextValid ? Color.clear : Color.red)
+                        .autocorrectionDisabled()
+
+                        #if os(iOS) || os(visionOS)
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.asciiCapable)
+                        #endif
+
+                    HStack {
+                        Spacer()
+                        Button(localizedStringResource("detailView.overrideSection.applyButton")) {
+                            viewModel.commitOverrideText()
+                            isTextEditorFocused = false
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(!viewModel.isOverrideTextValid)
+                    }
+                }
+            case .textField, .numberField, .decimalField:
+                LabeledContent(localizedStringResource("detailView.overrideSection.valueLabel")) {
+                    TextField(
+                        localizedStringResource("detailView.overrideSection.valueTextField"),
+                        text: $viewModel.overrideText
+                    )
+                    .onSubmit { viewModel.commitOverrideText() }
+                    .textFieldStyle(.plain)
+                    .multilineTextAlignment(.trailing)
+                    .padding(6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(viewModel.isOverrideTextValid ? Color.separator : Color.red)
+                    )
+                    #if os(iOS) || os(visionOS)
+                    .keyboardType(keyboardType)
+                    #endif
+                }
             }
         }
     }
@@ -178,3 +223,14 @@ extension ConfigVariableDetailView {
 }
 
 #endif
+
+
+extension Color {
+    static var separator: Color {
+        #if canImport(UIKit)
+        Color(UIColor.separator)
+        #elseif canImport(AppKit)
+        Color(NSColor.separatorColor)
+        #endif
+    }
+}

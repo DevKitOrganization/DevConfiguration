@@ -67,6 +67,98 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
     }
 
 
+    @Test
+    mutating func registerExpressibleByConfigStringVariableUsesCorrectContent() throws {
+        // set up
+        let reader = ConfigVariableReader(namedProviders: [.init(InMemoryProvider(values: [:]))], eventBus: EventBus())
+        let key = randomConfigKey()
+        let variable = ConfigVariable(key: key, defaultValue: MockConfigStringValue(configString: "test")!)
+
+        // exercise
+        reader.register(variable)
+
+        // expect
+        let registered = try #require(reader.registeredVariables[key])
+        #expect(registered.defaultContent == .string("test"))
+        #expect(registered.editorControl == .textField)
+        #expect(registered.validate != nil)
+    }
+
+
+    @Test
+    mutating func registerExpressibleByConfigIntVariableUsesCorrectContent() throws {
+        // set up
+        let reader = ConfigVariableReader(namedProviders: [.init(InMemoryProvider(values: [:]))], eventBus: EventBus())
+        let key = randomConfigKey()
+        let variable = ConfigVariable(key: key, defaultValue: MockConfigIntValue(configInt: 42)!)
+
+        // exercise
+        reader.register(variable)
+
+        // expect
+        let registered = try #require(reader.registeredVariables[key])
+        #expect(registered.defaultContent == .int(42))
+        #expect(registered.editorControl == .numberField)
+        #expect(registered.validate != nil)
+    }
+
+
+    @Test
+    mutating func registerCaseIterableStringVariableUsesPickerControl() throws {
+        // set up
+        let reader = ConfigVariableReader(namedProviders: [.init(InMemoryProvider(values: [:]))], eventBus: EventBus())
+        let key = randomConfigKey()
+        let variable = ConfigVariable(key: key, defaultValue: MockStringEnum.alpha)
+
+        // exercise
+        reader.register(variable)
+
+        // expect
+        let registered = try #require(reader.registeredVariables[key])
+        #expect(registered.defaultContent == .string("alpha"))
+        #expect(registered.editorControl?.pickerOptions != nil)
+        #expect(registered.parse == nil)
+        #expect(registered.validate == nil)
+    }
+
+
+    @Test
+    mutating func registerCaseIterableIntVariableUsesPickerControl() throws {
+        // set up
+        let reader = ConfigVariableReader(namedProviders: [.init(InMemoryProvider(values: [:]))], eventBus: EventBus())
+        let key = randomConfigKey()
+        let variable = ConfigVariable(key: key, defaultValue: MockIntEnum.one)
+
+        // exercise
+        reader.register(variable)
+
+        // expect
+        let registered = try #require(reader.registeredVariables[key])
+        #expect(registered.defaultContent == .int(1))
+        #expect(registered.editorControl?.pickerOptions != nil)
+        #expect(registered.parse == nil)
+        #expect(registered.validate == nil)
+    }
+
+
+    @Test
+    mutating func registerCapturesValidateForRawRepresentableStringVariable() throws {
+        // set up
+        let reader = ConfigVariableReader(namedProviders: [.init(InMemoryProvider(values: [:]))], eventBus: EventBus())
+        let key = randomConfigKey()
+        let variable = ConfigVariable(key: key, defaultValue: MockNonIterableStringEnum.a)
+
+        // exercise
+        reader.register(variable)
+
+        // expect validate is non-nil and works correctly
+        let registered = try #require(reader.registeredVariables[key])
+        let validate = try #require(registered.validate)
+        #expect(validate(.string("a")))
+        #expect(!validate(.string("invalid")))
+    }
+
+
     #if os(macOS)
     @Test
     func registerDuplicateKeyHalts() async {
@@ -105,7 +197,8 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
                         )
                     },
                     editorControl: .none,
-                    parse: nil
+                    parse: nil,
+                    validate: nil
                 )
             )
 

@@ -66,13 +66,20 @@ public struct ConfigVariableContent<Value>: Sendable where Value: Sendable {
     let encode: @Sendable (_ value: Value) throws -> ConfigContent
 
     /// The editor control to use when editing this variable's value in the editor UI.
-    public let editorControl: EditorControl
+    public let editorControl: EditorControl?
 
     /// Parses a raw string from the editor UI into a ``ConfigContent`` value.
     ///
     /// Returns `nil` if the string cannot be parsed into a valid value for this content type. When `nil` itself, the
     /// content type does not support editing.
     let parse: (@Sendable (_ input: String) -> ConfigContent?)?
+
+    /// Validates that a ``ConfigContent`` value can be decoded into a valid instance of the variable's destination type.
+    ///
+    /// For primitive types where a successful parse guarantees a valid value, this is `nil`. For types like
+    /// `RawRepresentable` enums or `Codable` values, this checks that the content actually maps to a valid instance of
+    /// the destination type.
+    let validate: (@Sendable (_ content: ConfigContent) -> Bool)?
 }
 
 
@@ -109,7 +116,8 @@ extension ConfigVariableContent where Value == Bool {
             },
             encode: { .bool($0) },
             editorControl: .toggle,
-            parse: { Bool($0).map { .bool($0) } }
+            parse: { Bool($0).map { .bool($0) } },
+            validate: nil
         )
     }
 }
@@ -145,8 +153,19 @@ extension ConfigVariableContent where Value == [Bool] {
                 }
             },
             encode: { .boolArray($0) },
-            editorControl: .none,
-            parse: nil
+            editorControl: .textEditor,
+            parse: { input in
+                let lines = input.nonEmptyTrimmedLines
+                var values: [Bool] = []
+                for line in lines {
+                    guard let value = Bool(line) else {
+                        return nil
+                    }
+                    values.append(value)
+                }
+                return .boolArray(values)
+            },
+            validate: nil
         )
     }
 }
@@ -183,7 +202,8 @@ extension ConfigVariableContent where Value == Float64 {
             },
             encode: { .double($0) },
             editorControl: .decimalField,
-            parse: { Double($0).map { .double($0) } }
+            parse: { (try? Float64($0, format: .number, lenient: false)).map { .double($0) } },
+            validate: nil
         )
     }
 }
@@ -219,8 +239,19 @@ extension ConfigVariableContent where Value == [Float64] {
                 }
             },
             encode: { .doubleArray($0) },
-            editorControl: .none,
-            parse: nil
+            editorControl: .textEditor,
+            parse: { input in
+                let lines = input.nonEmptyTrimmedLines
+                var values: [Float64] = []
+                for line in lines {
+                    guard let value = try? Float64(line, format: .number) else {
+                        return nil
+                    }
+                    values.append(value)
+                }
+                return .doubleArray(values)
+            },
+            validate: nil
         )
     }
 }
@@ -257,7 +288,16 @@ extension ConfigVariableContent where Value == Int {
             },
             encode: { .int($0) },
             editorControl: .numberField,
-            parse: { Int($0).map { .int($0) } }
+            parse: {
+                guard
+                    let value = try? Float64($0, format: .number),
+                    let int = Int(exactly: value)
+                else {
+                    return nil
+                }
+                return .int(int)
+            },
+            validate: nil
         )
     }
 }
@@ -293,8 +333,22 @@ extension ConfigVariableContent where Value == [Int] {
                 }
             },
             encode: { .intArray($0) },
-            editorControl: .none,
-            parse: nil
+            editorControl: .textEditor,
+            parse: { input in
+                let lines = input.nonEmptyTrimmedLines
+                var values: [Int] = []
+                for line in lines {
+                    guard
+                        let parsed = try? Float64(line, format: .number),
+                        let value = Int(exactly: parsed)
+                    else {
+                        return nil
+                    }
+                    values.append(value)
+                }
+                return .intArray(values)
+            },
+            validate: nil
         )
     }
 }
@@ -331,7 +385,8 @@ extension ConfigVariableContent where Value == String {
             },
             encode: { .string($0) },
             editorControl: .textField,
-            parse: { .string($0) }
+            parse: { .string($0) },
+            validate: nil
         )
     }
 }
@@ -367,8 +422,9 @@ extension ConfigVariableContent where Value == [String] {
                 }
             },
             encode: { .stringArray($0) },
-            editorControl: .none,
-            parse: nil
+            editorControl: .textEditor,
+            parse: { .stringArray($0.nonEmptyTrimmedLines) },
+            validate: nil
         )
     }
 }
@@ -404,8 +460,9 @@ extension ConfigVariableContent where Value == [UInt8] {
                 }
             },
             encode: { .bytes($0) },
-            editorControl: .none,
-            parse: nil
+            editorControl: nil,
+            parse: nil,
+            validate: nil
         )
     }
 }
@@ -447,8 +504,9 @@ extension ConfigVariableContent where Value == [[UInt8]] {
                 }
             },
             encode: { .byteChunkArray($0) },
-            editorControl: .none,
-            parse: nil
+            editorControl: nil,
+            parse: nil,
+            validate: nil
         )
     }
 }
@@ -497,7 +555,68 @@ extension ConfigVariableContent {
             },
             encode: { .string($0.rawValue) },
             editorControl: .textField,
-            parse: { .string($0) }
+            parse: { .string($0) },
+            validate: { content in
+                guard case .string(let rawValue) = content else {
+                    return false
+                }
+                return Value(rawValue: rawValue) != nil
+            }
+        )
+    }
+
+
+    /// Content for `RawRepresentable<String> & CaseIterable` values.
+    ///
+    /// Uses a picker control populated with all cases instead of a free-text field.
+    public static func rawRepresentableCaseIterableString() -> ConfigVariableContent
+    where Value: RawRepresentable & CaseIterable & Sendable, Value.RawValue == String {
+        ConfigVariableContent(
+            read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
+                reader.string(
+                    forKey: key,
+                    as: Value.self,
+                    isSecret: isSecret,
+                    default: defaultValue,
+                    fileID: fileID,
+                    line: line
+                )
+            },
+            fetch: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
+                try await reader.fetchString(
+                    forKey: key,
+                    as: Value.self,
+                    isSecret: isSecret,
+                    default: defaultValue,
+                    fileID: fileID,
+                    line: line
+                )
+            },
+            startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
+                try await reader.watchString(
+                    forKey: key,
+                    as: Value.self,
+                    isSecret: isSecret,
+                    default: defaultValue,
+                    fileID: fileID,
+                    line: line
+                ) { updates in
+                    for await value in updates {
+                        continuation.yield(value)
+                    }
+                }
+            },
+            encode: { .string($0.rawValue) },
+            editorControl: .picker(
+                options: Value.allCases.map {
+                    .init(
+                        label: $0.rawValue,
+                        content: .string($0.rawValue)
+                    )
+                }
+            ),
+            parse: nil,
+            validate: nil
         )
     }
 
@@ -541,8 +660,14 @@ extension ConfigVariableContent {
                 }
             },
             encode: { .stringArray($0.map(\.rawValue)) },
-            editorControl: .none,
-            parse: nil
+            editorControl: .textEditor,
+            parse: { .stringArray($0.nonEmptyTrimmedLines) },
+            validate: { content in
+                guard case .stringArray(let strings) = content else {
+                    return false
+                }
+                return strings.allSatisfy { Element(rawValue: $0) != nil }
+            }
         )
     }
 
@@ -586,7 +711,13 @@ extension ConfigVariableContent {
             },
             encode: { .string($0.description) },
             editorControl: .textField,
-            parse: { .string($0) }
+            parse: { .string($0) },
+            validate: { content in
+                guard case .string(let string) = content else {
+                    return false
+                }
+                return Value(configString: string) != nil
+            }
         )
     }
 
@@ -630,8 +761,14 @@ extension ConfigVariableContent {
                 }
             },
             encode: { .stringArray($0.map(\.description)) },
-            editorControl: .none,
-            parse: nil
+            editorControl: .textEditor,
+            parse: { .stringArray($0.nonEmptyTrimmedLines) },
+            validate: { content in
+                guard case .stringArray(let strings) = content else {
+                    return false
+                }
+                return strings.allSatisfy { Element(configString: $0) != nil }
+            }
         )
     }
 }
@@ -680,7 +817,76 @@ extension ConfigVariableContent {
             },
             encode: { .int($0.rawValue) },
             editorControl: .numberField,
-            parse: { Int($0).map { .int($0) } }
+            parse: {
+                guard
+                    let value = try? Float64($0, format: .number),
+                    let int = Int(exactly: value)
+                else {
+                    return nil
+                }
+                return .int(int)
+            },
+            validate: { content in
+                guard case .int(let rawValue) = content else {
+                    return false
+                }
+                return Value(rawValue: rawValue) != nil
+            }
+        )
+    }
+
+
+    /// Content for `RawRepresentable<Int> & CaseIterable` values.
+    ///
+    /// Uses a picker control populated with all cases instead of a free-text number field.
+    public static func rawRepresentableCaseIterableInt() -> ConfigVariableContent
+    where Value: RawRepresentable & CaseIterable & Sendable, Value.RawValue == Int {
+        ConfigVariableContent(
+            read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
+                reader.int(
+                    forKey: key,
+                    as: Value.self,
+                    isSecret: isSecret,
+                    default: defaultValue,
+                    fileID: fileID,
+                    line: line
+                )
+            },
+            fetch: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
+                try await reader.fetchInt(
+                    forKey: key,
+                    as: Value.self,
+                    isSecret: isSecret,
+                    default: defaultValue,
+                    fileID: fileID,
+                    line: line
+                )
+            },
+            startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
+                try await reader.watchInt(
+                    forKey: key,
+                    as: Value.self,
+                    isSecret: isSecret,
+                    default: defaultValue,
+                    fileID: fileID,
+                    line: line
+                ) { updates in
+                    for await value in updates {
+                        continuation.yield(value)
+                    }
+                }
+            },
+            encode: { .int($0.rawValue) },
+            editorControl: .picker(
+                options: Value.allCases.map { (value) in
+                    .init(
+                        label: "\(String(describing: value)) (\(value.rawValue))",
+                        content: .int(value.rawValue)
+                    )
+                }
+            ),
+            parse: nil,
+            validate: nil
         )
     }
 
@@ -724,8 +930,27 @@ extension ConfigVariableContent {
                 }
             },
             encode: { .intArray($0.map(\.rawValue)) },
-            editorControl: .none,
-            parse: nil
+            editorControl: .textEditor,
+            parse: { input in
+                let lines = input.nonEmptyTrimmedLines
+                var values: [Int] = []
+                for line in lines {
+                    guard
+                        let parsed = try? Float64(line, format: .number),
+                        let value = Int(exactly: parsed)
+                    else {
+                        return nil
+                    }
+                    values.append(value)
+                }
+                return .intArray(values)
+            },
+            validate: { content in
+                guard case .intArray(let ints) = content else {
+                    return false
+                }
+                return ints.allSatisfy { Element(rawValue: $0) != nil }
+            }
         )
     }
 
@@ -769,7 +994,21 @@ extension ConfigVariableContent {
             },
             encode: { .int($0.configInt) },
             editorControl: .numberField,
-            parse: { Int($0).map { .int($0) } }
+            parse: {
+                guard
+                    let value = try? Float64($0, format: .number),
+                    let int = Int(exactly: value)
+                else {
+                    return nil
+                }
+                return .int(int)
+            },
+            validate: { content in
+                guard case .int(let int) = content else {
+                    return false
+                }
+                return Value(configInt: int) != nil
+            }
         )
     }
 
@@ -813,8 +1052,27 @@ extension ConfigVariableContent {
                 }
             },
             encode: { .intArray($0.map(\.configInt)) },
-            editorControl: .none,
-            parse: nil
+            editorControl: .textEditor,
+            parse: { input in
+                let lines = input.nonEmptyTrimmedLines
+                var values: [Int] = []
+                for line in lines {
+                    guard
+                        let parsed = try? Float64(line, format: .number),
+                        let value = Int(exactly: parsed)
+                    else {
+                        return nil
+                    }
+                    values.append(value)
+                }
+                return .intArray(values)
+            },
+            validate: { content in
+                guard case .intArray(let ints) = content else {
+                    return false
+                }
+                return ints.allSatisfy { Element(configInt: $0) != nil }
+            }
         )
     }
 }
@@ -834,10 +1092,12 @@ extension ConfigVariableContent {
         decoder: JSONDecoder? = nil,
         encoder: JSONEncoder? = nil
     ) -> ConfigVariableContent where Value: Codable {
-        codable(
+        return codable(
             representation: representation,
             decoder: decoder as (any TopLevelDecoder<Data> & Sendable)?,
-            encoder: encoder as (any TopLevelEncoder<Data> & Sendable)?
+            encoder: encoder as (any TopLevelEncoder<Data> & Sendable)?,
+            editorControl: representation.supportsTextEditing ? .textEditor : nil,
+            parse: representation.supportsTextEditing ? { @Sendable in ConfigContent.string($0) } : nil
         )
     }
 
@@ -856,7 +1116,9 @@ extension ConfigVariableContent {
         codable(
             representation: representation,
             decoder: decoder as (any TopLevelDecoder<Data> & Sendable)?,
-            encoder: encoder as (any TopLevelEncoder<Data> & Sendable)?
+            encoder: encoder as (any TopLevelEncoder<Data> & Sendable)?,
+            editorControl: nil,
+            parse: nil
         )
     }
 
@@ -865,7 +1127,9 @@ extension ConfigVariableContent {
     private static func codable(
         representation: CodableValueRepresentation,
         decoder: (any TopLevelDecoder<Data> & Sendable)?,
-        encoder: (any TopLevelEncoder<Data> & Sendable)?
+        encoder: (any TopLevelEncoder<Data> & Sendable)?,
+        editorControl: EditorControl?,
+        parse: (@Sendable (_ input: String) -> ConfigContent?)?
     ) -> ConfigVariableContent where Value: Codable {
         ConfigVariableContent(
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
@@ -950,12 +1214,28 @@ extension ConfigVariableContent {
                 }
             },
             encode: { (value) in
-                let resolvedEncoder = encoder ?? JSONEncoder()
+                let resolvedEncoder = encoder ?? JSONEncoder.sortedKeys
                 let data = try resolvedEncoder.encode(value)
                 return try representation.encodeToContent(data)
             },
-            editorControl: .none,
-            parse: nil
+            editorControl: editorControl,
+            parse: parse,
+            validate: { content in
+                let resolvedDecoder = decoder ?? JSONDecoder()
+                guard let data = representation.data(from: content) else {
+                    return false
+                }
+                return (try? resolvedDecoder.decode(Value.self, from: data)) != nil
+            }
         )
+    }
+}
+
+
+extension JSONEncoder {
+    static var sortedKeys: JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        return encoder
     }
 }

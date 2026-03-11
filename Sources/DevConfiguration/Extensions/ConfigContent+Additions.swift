@@ -86,6 +86,32 @@ extension ConfigContent {
 }
 
 
+// MARK: - Editable String
+
+extension ConfigContent {
+    /// A string representation suitable for editing in a text field or text editor.
+    ///
+    /// For scalar values, this is the same as ``displayString``. For array values, elements are separated by newlines
+    /// instead of list formatting, making them suitable for a text editor where each line is one element.
+    var editableString: String {
+        switch self {
+        case .bool, .int, .double, .string, .bytes:
+            displayString
+        case .boolArray(let value):
+            value.map { String($0) }.joined(separator: "\n")
+        case .intArray(let value):
+            value.map { String($0) }.joined(separator: "\n")
+        case .doubleArray(let value):
+            value.map { String($0) }.joined(separator: "\n")
+        case .stringArray(let value):
+            value.joined(separator: "\n")
+        case .byteChunkArray:
+            displayString
+        }
+    }
+}
+
+
 // MARK: - Codable
 
 extension ConfigContent: @retroactive Codable {

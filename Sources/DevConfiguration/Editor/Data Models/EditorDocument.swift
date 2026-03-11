@@ -218,7 +218,9 @@ extension EditorDocument {
     /// - Parameter key: The configuration key to resolve.
     /// - Returns: The resolved value, or `nil` if no value is found.
     func resolvedValue(forKey key: ConfigKey) -> ResolvedValue? {
-        guard let registeredVariable = registeredVariables[key] else { return nil }
+        guard let registeredVariable = registeredVariables[key] else {
+            return nil
+        }
         let expectedType = registeredVariable.defaultContent.configType
 
         // Check working copy first
@@ -253,7 +255,9 @@ extension EditorDocument {
     /// - Parameter key: The configuration key to query.
     /// - Returns: An array of ``ProviderValue`` instances for providers that have a value for the key.
     func providerValues(forKey key: ConfigKey) -> [ProviderValue] {
-        guard let registeredVariable = registeredVariables[key] else { return [] }
+        guard let registeredVariable = registeredVariables[key] else {
+            return []
+        }
         let expectedType = registeredVariable.defaultContent.configType
         let resolved = resolvedValue(forKey: key)
 
@@ -318,7 +322,9 @@ extension EditorDocument {
     ///   - key: The configuration key to override.
     func setOverride(_ content: ConfigContent, forKey key: ConfigKey) {
         let oldContent = workingCopy[key]
-        guard oldContent != content else { return }
+        guard oldContent != content else {
+            return
+        }
 
         workingCopy[key] = content
 
