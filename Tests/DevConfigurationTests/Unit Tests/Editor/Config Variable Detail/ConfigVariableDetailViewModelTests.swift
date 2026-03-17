@@ -60,6 +60,8 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
         // set up
         var metadata = ConfigVariableMetadata()
         metadata.displayName = randomAlphanumericString()
+        metadata.requiresRelaunch = randomBool()
+        metadata.isEditable = randomBool()
         let destinationTypeName = randomAlphanumericString()
         let isSecret = randomBool()
 
@@ -76,13 +78,16 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
         let viewModel = makeViewModel(document: document, registeredVariable: variable)
 
         // expect all constant properties are set from the registered variable
+        let expectedMetadataEntries = metadata.displayTextEntries
+            .sorted { $0.key.localizedStandardCompare($1.key) == .orderedAscending }
+
         #expect(viewModel.key == variable.key)
         #expect(viewModel.displayName == metadata.displayName)
         #expect(viewModel.contentTypeName == variable.contentTypeName)
         #expect(viewModel.variableTypeName == variable.destinationTypeName)
-        #expect(viewModel.metadataEntries == metadata.displayTextEntries)
+        #expect(viewModel.metadataEntries == expectedMetadataEntries)
         #expect(viewModel.isSecret == isSecret)
-        #expect(viewModel.editorControl == .textField)
+        #expect(viewModel.editorControl == (metadata.isEditable ? .textField : nil))
     }
 
 
