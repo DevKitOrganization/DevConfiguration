@@ -361,6 +361,16 @@
         }
       }
     },
+    "isEditableMetadata.keyDisplayText" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Is Editable"
+          }
+        }
+      }
+    },
     "requiresRelaunchMetadata.keyDisplayText" : {
       "localizations" : {
         "en" : {
