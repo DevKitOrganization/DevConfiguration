@@ -30,6 +30,7 @@ final class ContentViewModel {
         .metadata(\.displayName, "Float Array Example")
     let intArrayVariable = ConfigVariable(key: "int_array", defaultValue: [1, 2, 4, 8, 16, 32])
         .metadata(\.displayName, "Int Array Example")
+        .metadata(\.isEditable, false)
     let stringArrayVariable = ConfigVariable(
         key: "string_array",
         defaultValue: ["Thom", "Jonny", "Ed", "Colin", "Phil"]

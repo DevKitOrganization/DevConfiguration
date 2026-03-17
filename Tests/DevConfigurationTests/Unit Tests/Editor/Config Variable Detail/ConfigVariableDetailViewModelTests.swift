@@ -87,6 +87,27 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
 
 
     @Test
+    mutating func initSetsEditorControlToNilWhenNotEditable() {
+        // set up with isEditable = false
+        var metadata = ConfigVariableMetadata()
+        metadata.isEditable = false
+
+        let variable = randomRegisteredVariable(
+            metadata: metadata,
+            editorControl: .textField
+        )
+
+        let document = makeDocument(registeredVariables: [variable])
+
+        // exercise
+        let viewModel = makeViewModel(document: document, registeredVariable: variable)
+
+        // expect editorControl is nil because the variable is not editable
+        #expect(viewModel.editorControl == nil)
+    }
+
+
+    @Test
     mutating func initUsesKeyDescriptionWhenDisplayNameIsNil() {
         // set up with no display name metadata
         let variable = randomRegisteredVariable()

@@ -49,7 +49,7 @@ final class ConfigVariableDetailViewModel: ConfigVariableDetailViewModeling {
         self.variableTypeName = registeredVariable.destinationTypeName
         self.metadataEntries = registeredVariable.metadata.displayTextEntries
         self.isSecret = registeredVariable.isSecret
-        self.editorControl = registeredVariable.editorControl
+        self.editorControl = registeredVariable.isEditable ? registeredVariable.editorControl : nil
 
         if let content = document.override(forKey: registeredVariable.key) {
             self.overrideText = content.editableString
