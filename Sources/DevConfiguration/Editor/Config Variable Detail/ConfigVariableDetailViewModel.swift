@@ -48,6 +48,7 @@ final class ConfigVariableDetailViewModel: ConfigVariableDetailViewModeling {
         self.contentTypeName = registeredVariable.contentTypeName
         self.variableTypeName = registeredVariable.destinationTypeName
         self.metadataEntries = registeredVariable.metadata.displayTextEntries
+            .sorted { $0.key.localizedStandardCompare($1.key) == .orderedAscending }
         self.isSecret = registeredVariable.isSecret
         self.editorControl = registeredVariable.isEditable ? registeredVariable.editorControl : nil
 

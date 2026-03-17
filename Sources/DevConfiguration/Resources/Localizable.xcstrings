@@ -1,22 +1,22 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "detailView.headerSection.key" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Key"
-          }
-        }
-      }
-    },
     "detailView.headerSection.contentType" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Content Type"
+          }
+        }
+      }
+    },
+    "detailView.headerSection.key" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Key"
           }
         }
       }
@@ -366,7 +366,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Is Editable"
+            "value" : "Editable"
           }
         }
       }
