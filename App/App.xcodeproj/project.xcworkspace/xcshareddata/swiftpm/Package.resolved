@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/DevKitOrganization/DevFoundation.git",
       "state" : {
-        "revision" : "1764b4f2978c039eb0da4c55902c807709df3604",
-        "version" : "1.8.0"
+        "revision" : "958583a3550aafd2d8b4115e542afbdebc1617d7",
+        "version" : "1.8.1"
       }
     },
     {

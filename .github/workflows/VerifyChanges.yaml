@@ -50,6 +50,7 @@ jobs:
     env:
       DEV_BUILDS: DevBuilds/Sources
       OTHER_XCBEAUTIFY_FLAGS: --renderer github-actions
+      OTHER_XCODE_FLAGS: -skipMacroValidation
       XCCOV_PRETTY_VERSION: 1.2.0
       XCODE_SCHEME: DevConfiguration
       XCODE_DESTINATION: ${{ matrix.xcode_destination }}

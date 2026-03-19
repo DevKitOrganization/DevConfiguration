@@ -98,7 +98,7 @@ public struct RegisteredConfigVariable: Sendable {
     ///
     /// - Parameter keyPath: A keypath to a property on `ConfigVariableMetadata`.
     /// - Returns: The value of the metadata property.
-    subscript<MetadataValue>(
+    public subscript<MetadataValue>(
         dynamicMember keyPath: KeyPath<ConfigVariableMetadata, MetadataValue>
     ) -> MetadataValue {
         metadata[keyPath: keyPath]

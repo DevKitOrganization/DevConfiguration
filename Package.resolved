@@ -1,13 +1,13 @@
 {
-  "originHash" : "ea344d91ca081a8d76646289b8dc1fab4bf021986aeb4261afa9052259b26704",
+  "originHash" : "bbbdb7212fb727d5c834927ac895df8ab4963c48c8553e7f6618b36673f23701",
   "pins" : [
     {
       "identity" : "devfoundation",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/DevKitOrganization/DevFoundation.git",
       "state" : {
-        "revision" : "946a8bed082a2f657b7f1f215097f2bbb4e47fab",
-        "version" : "1.7.0"
+        "revision" : "958583a3550aafd2d8b4115e542afbdebc1617d7",
+        "version" : "1.8.1"
       }
     },
     {
@@ -71,6 +71,15 @@
       "state" : {
         "revision" : "1de37290c0ab3c5a96028e0f02911b672fd42348",
         "version" : "2.9.1"
+      }
+    },
+    {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-syntax",
+      "state" : {
+        "revision" : "4799286537280063c85a32f09884cfbca301b1a1",
+        "version" : "602.0.0"
       }
     },
     {
