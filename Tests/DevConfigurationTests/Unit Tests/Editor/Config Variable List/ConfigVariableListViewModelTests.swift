@@ -5,6 +5,7 @@
 //  Created by Prachi Gauriar on 3/9/2026.
 //
 
+#if os(iOS)
 import Configuration
 import DevTesting
 import Foundation
@@ -446,3 +447,4 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
         #expect(detailViewModel.key == variable.key)
     }
 }
+#endif
