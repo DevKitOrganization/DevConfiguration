@@ -17,7 +17,7 @@ func localizedStringResource(_ keyAndValue: String.LocalizationValue) -> Localiz
 }
 
 
-#if canImport(SwiftUI)
+#if os(iOS)
 import SwiftUI
 
 extension Text {

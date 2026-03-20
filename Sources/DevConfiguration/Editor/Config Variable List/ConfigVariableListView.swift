@@ -5,7 +5,7 @@
 //  Created by Prachi Gauriar on 3/8/2026.
 //
 
-#if canImport(SwiftUI)
+#if os(iOS)
 
 import Configuration
 import SwiftUI
@@ -62,9 +62,7 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomS
                 }
             }
             .navigationTitle(localizedStringResource("editorView.navigationTitle"))
-            #if os(iOS) || os(watchOS)
             .navigationBarTitleDisplayMode(.inline)
-            #endif
             .navigationDestination(for: ConfigKey.self) { key in
                 ConfigVariableDetailView(viewModel: viewModel.makeDetailViewModel(for: key))
             }

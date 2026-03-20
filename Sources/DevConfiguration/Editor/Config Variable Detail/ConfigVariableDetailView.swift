@@ -5,7 +5,7 @@
 //  Created by Prachi Gauriar on 3/8/2026.
 //
 
-#if canImport(SwiftUI)
+#if os(iOS)
 
 import Configuration
 import SwiftUI
@@ -125,11 +125,8 @@ extension ConfigVariableDetailView {
                         .frame(minHeight: 100)
                         .border(viewModel.isOverrideTextValid ? Color.clear : Color.red)
                         .autocorrectionDisabled()
-
-                        #if os(iOS) || os(visionOS)
-                    .textInputAutocapitalization(.never)
-                    .keyboardType(.asciiCapable)
-                        #endif
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.asciiCapable)
 
                     HStack {
                         Spacer()
@@ -155,16 +152,13 @@ extension ConfigVariableDetailView {
                         RoundedRectangle(cornerRadius: 6)
                             .stroke(viewModel.isOverrideTextValid ? Color.separator : Color.red)
                     )
-                    #if os(iOS) || os(visionOS)
                     .keyboardType(keyboardType)
-                    #endif
                 }
             }
         }
     }
 
 
-    #if os(iOS) || os(visionOS)
     private var keyboardType: UIKeyboardType {
         if viewModel.editorControl == .numberField {
             .numberPad
@@ -174,7 +168,6 @@ extension ConfigVariableDetailView {
             .default
         }
     }
-    #endif
 
 
     private var providerValuesSection: some View {
@@ -222,15 +215,11 @@ extension ConfigVariableDetailView {
     }
 }
 
-#endif
-
 
 extension Color {
     static var separator: Color {
-        #if canImport(UIKit)
         Color(UIColor.separator)
-        #elseif canImport(AppKit)
-        Color(NSColor.separatorColor)
-        #endif
     }
 }
+
+#endif
