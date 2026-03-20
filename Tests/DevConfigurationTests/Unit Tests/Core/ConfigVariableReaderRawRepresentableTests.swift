@@ -31,7 +31,7 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
     private mutating func setProviderValue(_ content: ConfigContent, forKey key: ConfigKey) {
         provider.setValue(
             .init(content, isSecret: randomBool()),
-            forKey: .init(key)
+            forKey: .init(key),
         )
     }
 
@@ -127,7 +127,7 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
 
             provider.setValue(
                 .init(.string(updatedValue.rawValue), isSecret: isSecret),
-                forKey: .init(key)
+                forKey: .init(key),
             )
 
             let value2 = await iterator.next()
@@ -211,7 +211,7 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
 
             provider.setValue(
                 .init(.stringArray(updatedValue.map(\.rawValue)), isSecret: isSecret),
-                forKey: .init(key)
+                forKey: .init(key),
             )
 
             let value2 = await iterator.next()
@@ -311,7 +311,7 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
 
             provider.setValue(
                 .init(.int(updatedValue.rawValue), isSecret: isSecret),
-                forKey: .init(key)
+                forKey: .init(key),
             )
 
             let value2 = await iterator.next()
@@ -395,7 +395,7 @@ struct ConfigVariableReaderRawRepresentableTests: RandomValueGenerating {
 
             provider.setValue(
                 .init(.intArray(updatedValue.map(\.rawValue)), isSecret: isSecret),
-                forKey: .init(key)
+                forKey: .init(key),
             )
 
             let value2 = await iterator.next()

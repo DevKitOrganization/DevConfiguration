@@ -17,7 +17,7 @@ repository.
 
   - **Lint**: `Scripts/lint` (uses `swift format lint --recursive --strict`)
   - **Format**: `Scripts/format` 
-  - **Setup git hooks**: `Scripts/install-git-hooks` (auto-formats on commit)
+  - **Setup git hooks**: `Scripts/install-git-hooks` (lints on push)
 
 ### GitHub Actions
 
@@ -25,9 +25,9 @@ The repository uses GitHub Actions for CI/CD with the workflow in
 `.github/workflows/VerifyChanges.yaml`. The workflow:
 
   - Lints code on PRs using `swift format`
-  - Builds and tests on macOS only (other platforms disabled due to GitHub Actions stability)
+  - Builds and tests on iOS, macOS, tvOS, and watchOS
   - Generates code coverage reports using xccovPretty
-  - Requires Xcode 26.0.1 and macOS 26 runners
+  - Requires Xcode 26.3 and macOS 26 runners
 
 
 ## Architecture Overview

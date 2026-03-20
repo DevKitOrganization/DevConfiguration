@@ -31,7 +31,7 @@ struct ConfigVariableReaderCodableTests: RandomValueGenerating {
     private mutating func setProviderValue(_ content: ConfigContent, forKey key: ConfigKey) {
         provider.setValue(
             .init(content, isSecret: randomBool()),
-            forKey: .init(key)
+            forKey: .init(key),
         )
     }
 
@@ -172,7 +172,7 @@ struct ConfigVariableReaderCodableTests: RandomValueGenerating {
 
             provider.setValue(
                 .init(.string(updatedJSON), isSecret: isSecret),
-                forKey: .init(key)
+                forKey: .init(key),
             )
 
             let value2 = await iterator.next()
@@ -208,7 +208,7 @@ struct ConfigVariableReaderCodableTests: RandomValueGenerating {
         let key = randomConfigKey()
         let defaultValue = MockCodableConfig(
             variant: randomAlphanumericString(),
-            count: randomInt(in: 1 ... 100)
+            count: randomInt(in: 1 ... 100),
         )
         let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
         setProviderValue(.string("not valid json"), forKey: key)
@@ -230,7 +230,7 @@ struct ConfigVariableReaderCodableTests: RandomValueGenerating {
         let key = randomConfigKey()
         let defaultValue = MockCodableConfig(
             variant: randomAlphanumericString(),
-            count: randomInt(in: 1 ... 100)
+            count: randomInt(in: 1 ... 100),
         )
         let variable = ConfigVariable(key: key, defaultValue: defaultValue, content: .json())
         setProviderValue(.string("not valid json"), forKey: key)
@@ -256,11 +256,11 @@ struct ConfigVariableReaderCodableTests: RandomValueGenerating {
         let key = randomConfigKey()
         let defaultValue = MockCodableConfig(
             variant: randomAlphanumericString(),
-            count: randomInt(in: 1 ... 100)
+            count: randomInt(in: 1 ... 100),
         )
         let validValue = MockCodableConfig(
             variant: randomAlphanumericString(),
-            count: randomInt(in: 1 ... 100)
+            count: randomInt(in: 1 ... 100),
         )
         let isSecret = randomBool()
         let provider = provider
@@ -277,7 +277,7 @@ struct ConfigVariableReaderCodableTests: RandomValueGenerating {
 
             provider.setValue(
                 .init(.string(validJSON), isSecret: isSecret),
-                forKey: .init(key)
+                forKey: .init(key),
             )
 
             let value2 = await iterator.next()
@@ -292,11 +292,11 @@ struct ConfigVariableReaderCodableTests: RandomValueGenerating {
         let key = randomConfigKey()
         let defaultValue = MockCodableConfig(
             variant: randomAlphanumericString(),
-            count: randomInt(in: 1 ... 100)
+            count: randomInt(in: 1 ... 100),
         )
         let validValue = MockCodableConfig(
             variant: randomAlphanumericString(),
-            count: randomInt(in: 1 ... 100)
+            count: randomInt(in: 1 ... 100),
         )
         let isSecret = randomBool()
         let provider = provider
@@ -312,7 +312,7 @@ struct ConfigVariableReaderCodableTests: RandomValueGenerating {
 
             provider.setValue(
                 .init(.string(validJSON), isSecret: isSecret),
-                forKey: .init(key)
+                forKey: .init(key),
             )
 
             let value2 = await iterator.next()
@@ -329,16 +329,16 @@ struct ConfigVariableReaderCodableTests: RandomValueGenerating {
         let key = randomConfigKey()
         let expectedValue = MockCodableConfig(
             variant: randomAlphanumericString(),
-            count: randomInt(in: 1 ... 100)
+            count: randomInt(in: 1 ... 100),
         )
         let defaultValue = MockCodableConfig(
             variant: randomAlphanumericString(),
-            count: randomInt(in: 1 ... 100)
+            count: randomInt(in: 1 ... 100),
         )
         let variable = ConfigVariable(
             key: key,
             defaultValue: defaultValue,
-            content: .propertyList(decoder: PropertyListDecoder())
+            content: .propertyList(decoder: PropertyListDecoder()),
         )
         let plistData = try! PropertyListEncoder().encode(expectedValue)
         setProviderValue(.bytes(Array(plistData)), forKey: key)
@@ -357,16 +357,16 @@ struct ConfigVariableReaderCodableTests: RandomValueGenerating {
         let key = randomConfigKey()
         let expectedValue = MockCodableConfig(
             variant: randomAlphanumericString(),
-            count: randomInt(in: 1 ... 100)
+            count: randomInt(in: 1 ... 100),
         )
         let defaultValue = MockCodableConfig(
             variant: randomAlphanumericString(),
-            count: randomInt(in: 1 ... 100)
+            count: randomInt(in: 1 ... 100),
         )
         let variable = ConfigVariable(
             key: key,
             defaultValue: defaultValue,
-            content: .propertyList(decoder: PropertyListDecoder())
+            content: .propertyList(decoder: PropertyListDecoder()),
         )
         let plistData = try! PropertyListEncoder().encode(expectedValue)
         setProviderValue(.bytes(Array(plistData)), forKey: key)
@@ -385,22 +385,22 @@ struct ConfigVariableReaderCodableTests: RandomValueGenerating {
         let key = randomConfigKey()
         let initialValue = MockCodableConfig(
             variant: randomAlphanumericString(),
-            count: randomInt(in: 1 ... 100)
+            count: randomInt(in: 1 ... 100),
         )
         let updatedValue = MockCodableConfig(
             variant: randomAlphanumericString(),
-            count: randomInt(in: 1 ... 100)
+            count: randomInt(in: 1 ... 100),
         )
         let defaultValue = MockCodableConfig(
             variant: randomAlphanumericString(),
-            count: randomInt(in: 1 ... 100)
+            count: randomInt(in: 1 ... 100),
         )
         let isSecret = randomBool()
         let provider = provider
         let variable = ConfigVariable(
             key: key,
             defaultValue: defaultValue,
-            content: .propertyList(decoder: PropertyListDecoder())
+            content: .propertyList(decoder: PropertyListDecoder()),
         )
         let encoder = PropertyListEncoder()
         let initialPlist = try! encoder.encode(initialValue)
@@ -416,7 +416,7 @@ struct ConfigVariableReaderCodableTests: RandomValueGenerating {
 
             provider.setValue(
                 .init(.bytes(Array(updatedPlist)), isSecret: isSecret),
-                forKey: .init(key)
+                forKey: .init(key),
             )
 
             let value2 = await iterator.next()

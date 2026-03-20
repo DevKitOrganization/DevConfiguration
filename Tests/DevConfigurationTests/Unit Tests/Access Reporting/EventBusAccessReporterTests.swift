@@ -54,7 +54,7 @@ struct EventBusAccessReporterTests: RandomValueGenerating {
         let accessEvent = randomAccessEvent(
             key: key,
             result: .success(configValue),
-            providerResults: providerResults
+            providerResults: providerResults,
         )
 
         // set up a stream to receive the posted event
@@ -87,7 +87,7 @@ struct EventBusAccessReporterTests: RandomValueGenerating {
         let key = randomAbsoluteConfigKey()
         let accessEvent = randomAccessEvent(
             key: key,
-            result: .success(nil)
+            result: .success(nil),
         )
 
         // set up a stream to receive the posted event
@@ -120,7 +120,7 @@ struct EventBusAccessReporterTests: RandomValueGenerating {
         let error = randomError()
         let accessEvent = randomAccessEvent(
             key: key,
-            result: .failure(error)
+            result: .failure(error),
         )
 
         // set up a stream to receive the posted event

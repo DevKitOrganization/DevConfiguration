@@ -165,7 +165,7 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
         await #expect(processExitsWith: .failure) {
             let reader = ConfigVariableReader(
                 namedProviders: [.init(InMemoryProvider(values: [:]))],
-                eventBus: EventBus()
+                eventBus: EventBus(),
             )
             let variable1 = ConfigVariable(key: "duplicate.key", defaultValue: 1)
             let variable2 = ConfigVariable(key: "duplicate.key", defaultValue: 2)
@@ -181,7 +181,7 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
         await #expect(processExitsWith: .failure) {
             let reader = ConfigVariableReader(
                 namedProviders: [.init(InMemoryProvider(values: [:]))],
-                eventBus: EventBus()
+                eventBus: EventBus(),
             )
             let variable = ConfigVariable(
                 key: "encode.failure",
@@ -193,13 +193,13 @@ struct ConfigVariableReaderRegistrationTests: RandomValueGenerating {
                     encode: { _ in
                         throw EncodingError.invalidValue(
                             "",
-                            .init(codingPath: [], debugDescription: "")
+                            .init(codingPath: [], debugDescription: ""),
                         )
                     },
                     editorControl: .none,
                     parse: nil,
-                    validate: nil
-                )
+                    validate: nil,
+                ),
             )
 
             reader.register(variable)

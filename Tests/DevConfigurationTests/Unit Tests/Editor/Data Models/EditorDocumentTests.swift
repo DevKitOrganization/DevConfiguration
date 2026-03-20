@@ -34,14 +34,14 @@ struct EditorDocumentTests: RandomValueGenerating {
     mutating func makeDocument(
         editorOverrideProvider: EditorOverrideProvider? = nil,
         namedProviders: [NamedConfigProvider] = [],
-        registeredVariables: [RegisteredConfigVariable]? = nil
+        registeredVariables: [RegisteredConfigVariable]? = nil,
     ) -> EditorDocument {
         EditorDocument(
             editorOverrideProvider: editorOverrideProvider ?? self.editorOverrideProvider,
             workingCopyDisplayName: workingCopyDisplayName,
             namedProviders: namedProviders,
             registeredVariables: registeredVariables ?? [randomRegisteredVariable()],
-            undoManager: undoManager
+            undoManager: undoManager,
         )
     }
 
@@ -87,7 +87,7 @@ struct EditorDocumentTests: RandomValueGenerating {
         // exercise
         let document = makeDocument(
             namedProviders: [.init(provider, displayName: displayName)],
-            registeredVariables: [variable]
+            registeredVariables: [variable],
         )
 
         // expect first snapshot has correct display name, index, and value
@@ -109,7 +109,7 @@ struct EditorDocumentTests: RandomValueGenerating {
         // exercise
         let document = makeDocument(
             namedProviders: [.init(provider, displayName: randomAlphanumericString())],
-            registeredVariables: [variable]
+            registeredVariables: [variable],
         )
 
         // expect last snapshot is "Default" with index = namedProviders.count and default values
@@ -154,7 +154,7 @@ struct EditorDocumentTests: RandomValueGenerating {
 
         let document = makeDocument(
             namedProviders: [.init(provider, displayName: randomAlphanumericString())],
-            registeredVariables: [variable]
+            registeredVariables: [variable],
         )
 
         let overrideContent = ConfigContent.string(randomAlphanumericString())
@@ -186,7 +186,7 @@ struct EditorDocumentTests: RandomValueGenerating {
 
         let document = makeDocument(
             namedProviders: [.init(provider, displayName: providerDisplayName)],
-            registeredVariables: [variable]
+            registeredVariables: [variable],
         )
 
         // set a mismatched type in the working copy
@@ -251,7 +251,7 @@ struct EditorDocumentTests: RandomValueGenerating {
 
         let document = makeDocument(
             namedProviders: [.init(provider, displayName: providerDisplayName)],
-            registeredVariables: [variable]
+            registeredVariables: [variable],
         )
 
         let overrideContent = ConfigContent.string(randomAlphanumericString())
@@ -267,21 +267,21 @@ struct EditorDocumentTests: RandomValueGenerating {
                 providerIndex: nil,
                 isActive: true,
                 valueString: overrideContent.displayString,
-                contentTypeMatches: true
+                contentTypeMatches: true,
             ),
             ProviderValue(
                 providerName: providerDisplayName,
                 providerIndex: 0,
                 isActive: false,
                 valueString: providerContent.displayString,
-                contentTypeMatches: true
+                contentTypeMatches: true,
             ),
             ProviderValue(
                 providerName: localizedString("editor.defaultProviderName"),
                 providerIndex: 1,
                 isActive: false,
                 valueString: defaultContent.displayString,
-                contentTypeMatches: true
+                contentTypeMatches: true,
             ),
         ]
         #expect(values == expected)
@@ -304,7 +304,7 @@ struct EditorDocumentTests: RandomValueGenerating {
 
         let document = makeDocument(
             namedProviders: [.init(provider, displayName: providerDisplayName)],
-            registeredVariables: [variable]
+            registeredVariables: [variable],
         )
 
         let overrideContent = ConfigContent.string(randomAlphanumericString())
@@ -320,21 +320,21 @@ struct EditorDocumentTests: RandomValueGenerating {
                 providerIndex: nil,
                 isActive: true,
                 valueString: overrideContent.displayString,
-                contentTypeMatches: true
+                contentTypeMatches: true,
             ),
             ProviderValue(
                 providerName: providerDisplayName,
                 providerIndex: 0,
                 isActive: false,
                 valueString: mismatchedContent.displayString,
-                contentTypeMatches: false
+                contentTypeMatches: false,
             ),
             ProviderValue(
                 providerName: localizedString("editor.defaultProviderName"),
                 providerIndex: 1,
                 isActive: false,
                 valueString: defaultContent.displayString,
-                contentTypeMatches: true
+                contentTypeMatches: true,
             ),
         ]
         #expect(values == expected)

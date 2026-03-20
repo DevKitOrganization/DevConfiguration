@@ -41,7 +41,7 @@ struct ConfigVariableReaderTests: RandomValueGenerating {
         let variable = ConfigVariable<Bool>(key: key, defaultValue: !expectedValue)
         provider.setValue(
             .init(.bool(expectedValue), isSecret: randomBool()),
-            forKey: .init(variable.key)
+            forKey: .init(variable.key),
         )
 
         let (eventStream, continuation) = AsyncStream<ConfigVariableAccessSucceededEvent>.makeStream()

@@ -30,7 +30,7 @@ struct RegisteredConfigVariableTests: RandomValueGenerating {
             destinationTypeName: randomAlphanumericString(),
             editorControl: .none,
             parse: nil,
-            validate: nil
+            validate: nil,
         )
 
         // expect
@@ -63,7 +63,7 @@ struct RegisteredConfigVariableTests: RandomValueGenerating {
     )
     mutating func initNormalizesDestinationTypeName(
         input: String,
-        expected: String
+        expected: String,
     ) {
         // set up
         let variable = RegisteredConfigVariable(
@@ -74,7 +74,7 @@ struct RegisteredConfigVariableTests: RandomValueGenerating {
             destinationTypeName: input,
             editorControl: .none,
             parse: nil,
-            validate: nil
+            validate: nil,
         )
 
         // expect
@@ -93,7 +93,7 @@ struct RegisteredConfigVariableTests: RandomValueGenerating {
             destinationTypeName: randomAlphanumericString(),
             editorControl: .none,
             parse: nil,
-            validate: nil
+            validate: nil,
         )
 
         // expect

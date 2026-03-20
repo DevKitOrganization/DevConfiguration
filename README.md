@@ -23,7 +23,7 @@ SwiftUI views do not currently have automated tests.
 
 To set up the development environment:
 
-  1. Run `Scripts/install-git-hooks` to install pre-commit hooks that automatically check
+  1. Run `Scripts/install-git-hooks` to install pre-push hooks that automatically check
      code formatting.
   2. Use `Scripts/lint` to manually check code formatting at any time.
   3. Use `Scripts/format` to automatically format code.

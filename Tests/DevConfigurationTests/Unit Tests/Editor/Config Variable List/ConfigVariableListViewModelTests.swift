@@ -36,14 +36,14 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
 
     mutating func makeDocument(
         namedProviders: [NamedConfigProvider] = [],
-        registeredVariables: [RegisteredConfigVariable]? = nil
+        registeredVariables: [RegisteredConfigVariable]? = nil,
     ) -> EditorDocument {
         EditorDocument(
             editorOverrideProvider: editorOverrideProvider,
             workingCopyDisplayName: workingCopyDisplayName,
             namedProviders: namedProviders,
             registeredVariables: registeredVariables ?? [randomRegisteredVariable()],
-            undoManager: undoManager
+            undoManager: undoManager,
         )
     }
 
@@ -84,7 +84,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
                 providerIndex: 0,
                 isSecret: variable1.isSecret,
                 hasOverride: false,
-                editorControl: variable1.editorControl
+                editorControl: variable1.editorControl,
             ),
             VariableListItem(
                 key: variable2.key,
@@ -94,7 +94,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
                 providerIndex: 0,
                 isSecret: variable2.isSecret,
                 hasOverride: false,
-                editorControl: variable2.editorControl
+                editorControl: variable2.editorControl,
             ),
         ]
         #expect(items == expected)
@@ -123,7 +123,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
                 providerIndex: 0,
                 isSecret: variable.isSecret,
                 hasOverride: false,
-                editorControl: variable.editorControl
+                editorControl: variable.editorControl,
             )
         ]
         #expect(items == expected)
@@ -137,14 +137,14 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
         metadata1.displayName = "ServerURL"
         let variable1 = randomRegisteredVariable(
             defaultContent: .string(randomAlphanumericString()),
-            metadata: metadata1
+            metadata: metadata1,
         )
 
         var metadata2 = ConfigVariableMetadata()
         metadata2.displayName = "Timeout"
         let variable2 = randomRegisteredVariable(
             defaultContent: .int(randomInt(in: .min ... .max)),
-            metadata: metadata2
+            metadata: metadata2,
         )
 
         let document = makeDocument(registeredVariables: [variable1, variable2])
@@ -169,7 +169,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
         let variable = randomRegisteredVariable(
             key: key,
             defaultContent: .string(randomAlphanumericString()),
-            metadata: metadata
+            metadata: metadata,
         )
 
         let document = makeDocument(registeredVariables: [variable])
@@ -209,21 +209,21 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
         metadataC.displayName = "Charlie"
         let variableC = randomRegisteredVariable(
             defaultContent: .string(randomAlphanumericString()),
-            metadata: metadataC
+            metadata: metadataC,
         )
 
         var metadataA = ConfigVariableMetadata()
         metadataA.displayName = "Alpha"
         let variableA = randomRegisteredVariable(
             defaultContent: .string(randomAlphanumericString()),
-            metadata: metadataA
+            metadata: metadataA,
         )
 
         var metadataB = ConfigVariableMetadata()
         metadataB.displayName = "Bravo"
         let variableB = randomRegisteredVariable(
             defaultContent: .string(randomAlphanumericString()),
-            metadata: metadataB
+            metadata: metadataB,
         )
 
         // register in non-sorted order

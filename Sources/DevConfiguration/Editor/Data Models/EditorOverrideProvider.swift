@@ -282,7 +282,7 @@ extension EditorOverrideProvider {
     private func addValueContinuation(
         _ continuation: AsyncStream<ConfigValue?>.Continuation,
         id: UUID,
-        forKey key: ConfigKey
+        forKey key: ConfigKey,
     ) {
         mutableState.withLock { state in
             state.valueWatchers[key, default: [:]][id] = continuation
@@ -305,7 +305,7 @@ extension EditorOverrideProvider {
     /// The continuation is immediately yielded the current snapshot.
     private func addSnapshotContinuation(
         _ continuation: AsyncStream<Snapshot>.Continuation,
-        id: UUID
+        id: UUID,
     ) {
         mutableState.withLock { state in
             state.snapshotWatchers[id] = continuation

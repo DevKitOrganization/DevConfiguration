@@ -28,7 +28,7 @@ struct ContentView: View {
             .sheet(isPresented: $isPresentingConfigEditor) {
                 ConfigVariableEditor(
                     reader: viewModel.configVariableReader,
-                    customSectionTitle: "Actions"
+                    customSectionTitle: "Actions",
                 ) {
                     Button("Do something", role: .destructive) {
                         print("Did something!")

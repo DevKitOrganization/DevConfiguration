@@ -35,7 +35,7 @@ public struct EventBusAccessReporter: AccessReporter {
                 ConfigVariableAccessSucceededEvent(
                     key: event.metadata.key,
                     value: configValue,
-                    providerName: event.providerResults.first?.providerName
+                    providerName: event.providerResults.first?.providerName,
                 )
             )
 
@@ -43,7 +43,7 @@ public struct EventBusAccessReporter: AccessReporter {
             eventBus.post(
                 ConfigVariableAccessFailedEvent(
                     key: event.metadata.key,
-                    error: MissingValueError()
+                    error: MissingValueError(),
                 )
             )
 
@@ -51,7 +51,7 @@ public struct EventBusAccessReporter: AccessReporter {
             eventBus.post(
                 ConfigVariableAccessFailedEvent(
                     key: event.metadata.key,
-                    error: error
+                    error: error,
                 )
             )
         }

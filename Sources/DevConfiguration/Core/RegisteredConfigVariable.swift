@@ -78,7 +78,7 @@ public struct RegisteredConfigVariable: Sendable {
         destinationTypeName: String,
         editorControl: EditorControl?,
         parse: (@Sendable (_ input: String) -> ConfigContent?)?,
-        validate: (@Sendable (_ content: ConfigContent) -> Bool)?
+        validate: (@Sendable (_ content: ConfigContent) -> Bool)?,
     ) {
         self.key = key
         self.defaultContent = defaultContent
@@ -159,7 +159,7 @@ public struct RegisteredConfigVariable: Sendable {
     /// Finds the index of the closing `>` that matches the opening `<` whose content starts at `startIndex`.
     private static func findMatchingClosingAngleBracket(
         in string: String,
-        from startIndex: String.Index
+        from startIndex: String.Index,
     ) -> String.Index? {
         var depth = 1
         var index = startIndex

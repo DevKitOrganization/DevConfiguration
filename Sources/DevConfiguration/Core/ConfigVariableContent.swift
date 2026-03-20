@@ -98,7 +98,7 @@ extension ConfigVariableContent where Value == Bool {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -107,7 +107,7 @@ extension ConfigVariableContent where Value == Bool {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -117,7 +117,7 @@ extension ConfigVariableContent where Value == Bool {
             encode: { .bool($0) },
             editorControl: .toggle,
             parse: { Bool($0).map { .bool($0) } },
-            validate: nil
+            validate: nil,
         )
     }
 }
@@ -136,7 +136,7 @@ extension ConfigVariableContent where Value == [Bool] {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -145,7 +145,7 @@ extension ConfigVariableContent where Value == [Bool] {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -165,7 +165,7 @@ extension ConfigVariableContent where Value == [Bool] {
                 }
                 return .boolArray(values)
             },
-            validate: nil
+            validate: nil,
         )
     }
 }
@@ -184,7 +184,7 @@ extension ConfigVariableContent where Value == Float64 {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -193,7 +193,7 @@ extension ConfigVariableContent where Value == Float64 {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -203,7 +203,7 @@ extension ConfigVariableContent where Value == Float64 {
             encode: { .double($0) },
             editorControl: .decimalField,
             parse: { (try? Float64($0, format: .number, lenient: false)).map { .double($0) } },
-            validate: nil
+            validate: nil,
         )
     }
 }
@@ -222,7 +222,7 @@ extension ConfigVariableContent where Value == [Float64] {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -231,7 +231,7 @@ extension ConfigVariableContent where Value == [Float64] {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -251,7 +251,7 @@ extension ConfigVariableContent where Value == [Float64] {
                 }
                 return .doubleArray(values)
             },
-            validate: nil
+            validate: nil,
         )
     }
 }
@@ -270,7 +270,7 @@ extension ConfigVariableContent where Value == Int {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -279,7 +279,7 @@ extension ConfigVariableContent where Value == Int {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -297,7 +297,7 @@ extension ConfigVariableContent where Value == Int {
                 }
                 return .int(int)
             },
-            validate: nil
+            validate: nil,
         )
     }
 }
@@ -316,7 +316,7 @@ extension ConfigVariableContent where Value == [Int] {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -325,7 +325,7 @@ extension ConfigVariableContent where Value == [Int] {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -348,7 +348,7 @@ extension ConfigVariableContent where Value == [Int] {
                 }
                 return .intArray(values)
             },
-            validate: nil
+            validate: nil,
         )
     }
 }
@@ -367,7 +367,7 @@ extension ConfigVariableContent where Value == String {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -376,7 +376,7 @@ extension ConfigVariableContent where Value == String {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -386,7 +386,7 @@ extension ConfigVariableContent where Value == String {
             encode: { .string($0) },
             editorControl: .textField,
             parse: { .string($0) },
-            validate: nil
+            validate: nil,
         )
     }
 }
@@ -405,7 +405,7 @@ extension ConfigVariableContent where Value == [String] {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -414,7 +414,7 @@ extension ConfigVariableContent where Value == [String] {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -424,7 +424,7 @@ extension ConfigVariableContent where Value == [String] {
             encode: { .stringArray($0) },
             editorControl: .textEditor,
             parse: { .stringArray($0.nonEmptyTrimmedLines) },
-            validate: nil
+            validate: nil,
         )
     }
 }
@@ -443,7 +443,7 @@ extension ConfigVariableContent where Value == [UInt8] {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -452,7 +452,7 @@ extension ConfigVariableContent where Value == [UInt8] {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -462,7 +462,7 @@ extension ConfigVariableContent where Value == [UInt8] {
             encode: { .bytes($0) },
             editorControl: nil,
             parse: nil,
-            validate: nil
+            validate: nil,
         )
     }
 }
@@ -478,7 +478,7 @@ extension ConfigVariableContent where Value == [[UInt8]] {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             fetch: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
@@ -487,7 +487,7 @@ extension ConfigVariableContent where Value == [[UInt8]] {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -496,7 +496,7 @@ extension ConfigVariableContent where Value == [[UInt8]] {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -506,7 +506,7 @@ extension ConfigVariableContent where Value == [[UInt8]] {
             encode: { .byteChunkArray($0) },
             editorControl: nil,
             parse: nil,
-            validate: nil
+            validate: nil,
         )
     }
 }
@@ -526,7 +526,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             fetch: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
@@ -536,7 +536,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -546,7 +546,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -561,7 +561,7 @@ extension ConfigVariableContent {
                     return false
                 }
                 return Value(rawValue: rawValue) != nil
-            }
+            },
         )
     }
 
@@ -579,7 +579,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             fetch: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
@@ -589,7 +589,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -599,7 +599,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -611,12 +611,12 @@ extension ConfigVariableContent {
                 options: Value.allCases.map {
                     .init(
                         label: $0.rawValue,
-                        content: .string($0.rawValue)
+                        content: .string($0.rawValue),
                     )
                 }
             ),
             parse: nil,
-            validate: nil
+            validate: nil,
         )
     }
 
@@ -632,7 +632,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             fetch: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
@@ -642,7 +642,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -652,7 +652,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -667,7 +667,7 @@ extension ConfigVariableContent {
                     return false
                 }
                 return strings.allSatisfy { Element(rawValue: $0) != nil }
-            }
+            },
         )
     }
 
@@ -682,7 +682,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             fetch: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
@@ -692,7 +692,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -702,7 +702,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -717,7 +717,7 @@ extension ConfigVariableContent {
                     return false
                 }
                 return Value(configString: string) != nil
-            }
+            },
         )
     }
 
@@ -733,7 +733,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             fetch: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
@@ -743,7 +743,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -753,7 +753,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -768,7 +768,7 @@ extension ConfigVariableContent {
                     return false
                 }
                 return strings.allSatisfy { Element(configString: $0) != nil }
-            }
+            },
         )
     }
 }
@@ -788,7 +788,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             fetch: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
@@ -798,7 +798,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -808,7 +808,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -831,7 +831,7 @@ extension ConfigVariableContent {
                     return false
                 }
                 return Value(rawValue: rawValue) != nil
-            }
+            },
         )
     }
 
@@ -849,7 +849,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             fetch: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
@@ -859,7 +859,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -869,7 +869,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -881,12 +881,12 @@ extension ConfigVariableContent {
                 options: Value.allCases.map { (value) in
                     .init(
                         label: "\(String(describing: value)) (\(value.rawValue))",
-                        content: .int(value.rawValue)
+                        content: .int(value.rawValue),
                     )
                 }
             ),
             parse: nil,
-            validate: nil
+            validate: nil,
         )
     }
 
@@ -902,7 +902,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             fetch: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
@@ -912,7 +912,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -922,7 +922,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -950,7 +950,7 @@ extension ConfigVariableContent {
                     return false
                 }
                 return ints.allSatisfy { Element(rawValue: $0) != nil }
-            }
+            },
         )
     }
 
@@ -965,7 +965,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             fetch: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
@@ -975,7 +975,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -985,7 +985,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -1008,7 +1008,7 @@ extension ConfigVariableContent {
                     return false
                 }
                 return Value(configInt: int) != nil
-            }
+            },
         )
     }
 
@@ -1024,7 +1024,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             fetch: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
@@ -1034,7 +1034,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 )
             },
             startWatching: { (reader, key, isSecret, defaultValue, eventBus, fileID, line, continuation) in
@@ -1044,7 +1044,7 @@ extension ConfigVariableContent {
                     isSecret: isSecret,
                     default: defaultValue,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { updates in
                     for await value in updates {
                         continuation.yield(value)
@@ -1072,7 +1072,7 @@ extension ConfigVariableContent {
                     return false
                 }
                 return ints.allSatisfy { Element(configInt: $0) != nil }
-            }
+            },
         )
     }
 }
@@ -1090,14 +1090,14 @@ extension ConfigVariableContent {
     public static func json(
         representation: CodableValueRepresentation = .string(),
         decoder: JSONDecoder? = nil,
-        encoder: JSONEncoder? = nil
+        encoder: JSONEncoder? = nil,
     ) -> ConfigVariableContent where Value: Codable {
         return codable(
             representation: representation,
             decoder: decoder as (any TopLevelDecoder<Data> & Sendable)?,
             encoder: encoder as (any TopLevelEncoder<Data> & Sendable)?,
             editorControl: representation.supportsTextEditing ? .textEditor : nil,
-            parse: representation.supportsTextEditing ? { @Sendable in ConfigContent.string($0) } : nil
+            parse: representation.supportsTextEditing ? { @Sendable in ConfigContent.string($0) } : nil,
         )
     }
 
@@ -1111,14 +1111,14 @@ extension ConfigVariableContent {
     public static func propertyList(
         representation: CodableValueRepresentation = .data,
         decoder: PropertyListDecoder? = nil,
-        encoder: PropertyListEncoder? = nil
+        encoder: PropertyListEncoder? = nil,
     ) -> ConfigVariableContent where Value: Codable {
         codable(
             representation: representation,
             decoder: decoder as (any TopLevelDecoder<Data> & Sendable)?,
             encoder: encoder as (any TopLevelEncoder<Data> & Sendable)?,
             editorControl: nil,
-            parse: nil
+            parse: nil,
         )
     }
 
@@ -1129,7 +1129,7 @@ extension ConfigVariableContent {
         decoder: (any TopLevelDecoder<Data> & Sendable)?,
         encoder: (any TopLevelEncoder<Data> & Sendable)?,
         editorControl: EditorControl?,
-        parse: (@Sendable (_ input: String) -> ConfigContent?)?
+        parse: (@Sendable (_ input: String) -> ConfigContent?)?,
     ) -> ConfigVariableContent where Value: Codable {
         ConfigVariableContent(
             read: { (reader, key, isSecret, defaultValue, eventBus, fileID, line) in
@@ -1139,7 +1139,7 @@ extension ConfigVariableContent {
                         forKey: key,
                         isSecret: isSecret,
                         fileID: fileID,
-                        line: line
+                        line: line,
                     )
                 else {
                     return defaultValue
@@ -1153,7 +1153,7 @@ extension ConfigVariableContent {
                         ConfigVariableDecodingFailedEvent(
                             key: AbsoluteConfigKey(key),
                             targetType: Value.self,
-                            error: error
+                            error: error,
                         )
                     )
                     return defaultValue
@@ -1166,7 +1166,7 @@ extension ConfigVariableContent {
                         forKey: key,
                         isSecret: isSecret,
                         fileID: fileID,
-                        line: line
+                        line: line,
                     )
                 else {
                     return defaultValue
@@ -1180,7 +1180,7 @@ extension ConfigVariableContent {
                         ConfigVariableDecodingFailedEvent(
                             key: AbsoluteConfigKey(key),
                             targetType: Value.self,
-                            error: error
+                            error: error,
                         )
                     )
                     return defaultValue
@@ -1194,7 +1194,7 @@ extension ConfigVariableContent {
                     forKey: key,
                     isSecret: isSecret,
                     fileID: fileID,
-                    line: line
+                    line: line,
                 ) { data in
                     if let data {
                         do {
@@ -1205,7 +1205,7 @@ extension ConfigVariableContent {
                                 ConfigVariableDecodingFailedEvent(
                                     key: AbsoluteConfigKey(key),
                                     targetType: Value.self,
-                                    error: error
+                                    error: error,
                                 )
                             )
                         }
@@ -1226,7 +1226,7 @@ extension ConfigVariableContent {
                     return false
                 }
                 return (try? resolvedDecoder.decode(Value.self, from: data)) != nil
-            }
+            },
         )
     }
 }
