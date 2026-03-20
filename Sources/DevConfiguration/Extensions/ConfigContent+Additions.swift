@@ -157,7 +157,7 @@ extension ConfigContent: @retroactive Codable {
             throw DecodingError.dataCorruptedError(
                 forKey: .type,
                 in: container,
-                debugDescription: "Unknown config type: \(typeString)"
+                debugDescription: "Unknown config type: \(typeString)",
             )
         }
 

@@ -86,13 +86,13 @@ public final class ConfigVariableReader: Sendable {
     public convenience init(
         namedProviders: [NamedConfigProvider],
         eventBus: EventBus,
-        isEditorEnabled: Bool = false
+        isEditorEnabled: Bool = false,
     ) {
         self.init(
             namedProviders: namedProviders,
             accessReporter: EventBusAccessReporter(eventBus: eventBus),
             eventBus: eventBus,
-            isEditorEnabled: isEditorEnabled
+            isEditorEnabled: isEditorEnabled,
         )
     }
 
@@ -110,7 +110,7 @@ public final class ConfigVariableReader: Sendable {
         namedProviders: [NamedConfigProvider],
         accessReporter: any AccessReporter,
         eventBus: EventBus,
-        isEditorEnabled: Bool = false
+        isEditorEnabled: Bool = false,
     ) {
         var editorOverrideProvider: EditorOverrideProvider?
         var namedProviders = namedProviders
@@ -127,7 +127,7 @@ public final class ConfigVariableReader: Sendable {
         self.accessReporter = accessReporter
         self.reader = ConfigReader(
             providers: namedProviders.map(\.provider),
-            accessReporter: accessReporter
+            accessReporter: accessReporter,
         )
         self.namedProviders = namedProviders
         self.eventBus = eventBus
@@ -178,7 +178,7 @@ extension ConfigVariableReader {
                 destinationTypeName: String(describing: Value.self),
                 editorControl: variable.content.editorControl,
                 parse: variable.content.parse,
-                validate: variable.content.validate
+                validate: variable.content.validate,
             )
         }
     }
@@ -198,7 +198,7 @@ extension ConfigVariableReader {
     public func value<Value>(
         for variable: ConfigVariable<Value>,
         fileID: String = #fileID,
-        line: UInt = #line
+        line: UInt = #line,
     ) -> Value {
         variable.content.read(reader, variable.key, variable.isSecret, variable.defaultValue, eventBus, fileID, line)
     }
@@ -214,7 +214,7 @@ extension ConfigVariableReader {
     public subscript<Value>(
         variable: ConfigVariable<Value>,
         fileID fileID: String = #fileID,
-        line line: UInt = #line
+        line line: UInt = #line,
     ) -> Value {
         value(for: variable, fileID: fileID, line: line)
     }
@@ -230,7 +230,7 @@ extension ConfigVariableReader {
     public func fetchValue<Value>(
         for variable: ConfigVariable<Value>,
         fileID: String = #fileID,
-        line: UInt = #line
+        line: UInt = #line,
     ) async throws -> Value {
         try await variable.content.fetch(
             reader,
@@ -239,7 +239,7 @@ extension ConfigVariableReader {
             variable.defaultValue,
             eventBus,
             fileID,
-            line
+            line,
         )
     }
 
@@ -259,7 +259,7 @@ extension ConfigVariableReader {
         for variable: ConfigVariable<Value>,
         fileID: String = #fileID,
         line: UInt = #line,
-        updatesHandler: @Sendable @escaping (AsyncStream<Value>) async throws -> Return
+        updatesHandler: @Sendable @escaping (AsyncStream<Value>) async throws -> Return,
     ) async throws -> Return where Return: Sendable {
         // Capture these locally so that the @Sendable task closures below don’t need to capture `self`.
         let configReader = reader
@@ -285,7 +285,7 @@ extension ConfigVariableReader {
                     eventBus,
                     fileID,
                     line,
-                    continuation
+                    continuation,
                 )
                 return nil
             }

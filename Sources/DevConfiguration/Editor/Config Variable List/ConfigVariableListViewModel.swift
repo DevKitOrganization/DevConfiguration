@@ -54,7 +54,7 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
                 providerIndex: resolved?.providerIndex,
                 isSecret: variable.isSecret,
                 hasOverride: document.hasOverride(forKey: variable.key),
-                editorControl: variable.editorControl
+                editorControl: variable.editorControl,
             )
         }
 

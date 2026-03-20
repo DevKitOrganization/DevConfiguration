@@ -33,21 +33,21 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
 
     mutating func makeDocument(
         namedProviders: [NamedConfigProvider] = [],
-        registeredVariables: [RegisteredConfigVariable]
+        registeredVariables: [RegisteredConfigVariable],
     ) -> EditorDocument {
         EditorDocument(
             editorOverrideProvider: editorOverrideProvider,
             workingCopyDisplayName: workingCopyDisplayName,
             namedProviders: namedProviders,
             registeredVariables: registeredVariables,
-            undoManager: undoManager
+            undoManager: undoManager,
         )
     }
 
 
     mutating func makeViewModel(
         document: EditorDocument,
-        registeredVariable: RegisteredConfigVariable
+        registeredVariable: RegisteredConfigVariable,
     ) -> ConfigVariableDetailViewModel {
         ConfigVariableDetailViewModel(document: document, registeredVariable: registeredVariable)
     }
@@ -69,7 +69,7 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
             isSecret: isSecret,
             metadata: metadata,
             destinationTypeName: destinationTypeName,
-            editorControl: .textField
+            editorControl: .textField,
         )
 
         let document = makeDocument(registeredVariables: [variable])
@@ -99,7 +99,7 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
 
         let variable = randomRegisteredVariable(
             metadata: metadata,
-            editorControl: .textField
+            editorControl: .textField,
         )
 
         let document = makeDocument(registeredVariables: [variable])
@@ -177,7 +177,7 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
 
         let document = makeDocument(
             namedProviders: [.init(provider, displayName: providerDisplayName)],
-            registeredVariables: [variable]
+            registeredVariables: [variable],
         )
         let viewModel = makeViewModel(document: document, registeredVariable: variable)
 
@@ -233,7 +233,7 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
 
         let document = makeDocument(
             namedProviders: [.init(provider, displayName: randomAlphanumericString())],
-            registeredVariables: [variable]
+            registeredVariables: [variable],
         )
         let viewModel = makeViewModel(document: document, registeredVariable: variable)
 
@@ -351,7 +351,7 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
         let variable = randomRegisteredVariable(
             defaultContent: .string(randomAlphanumericString()),
             editorControl: .textField,
-            parse: { .string($0) }
+            parse: { .string($0) },
         )
         let document = makeDocument(registeredVariables: [variable])
         let viewModel = makeViewModel(document: document, registeredVariable: variable)
@@ -390,7 +390,7 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
         let variable = randomRegisteredVariable(
             defaultContent: .string(randomAlphanumericString()),
             editorControl: .textField,
-            parse: { _ in nil }
+            parse: { _ in nil },
         )
         let document = makeDocument(registeredVariables: [variable])
         let viewModel = makeViewModel(document: document, registeredVariable: variable)
@@ -412,7 +412,7 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
             defaultContent: .string(randomAlphanumericString()),
             editorControl: .textField,
             parse: { .string($0) },
-            validate: { _ in false }
+            validate: { _ in false },
         )
         let document = makeDocument(registeredVariables: [variable])
         let viewModel = makeViewModel(document: document, registeredVariable: variable)
@@ -434,7 +434,7 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
             defaultContent: .string(randomAlphanumericString()),
             editorControl: .textField,
             parse: { .string($0) },
-            validate: { _ in true }
+            validate: { _ in true },
         )
         let document = makeDocument(registeredVariables: [variable])
         let viewModel = makeViewModel(document: document, registeredVariable: variable)
@@ -470,7 +470,7 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
         let variable = randomRegisteredVariable(
             defaultContent: .string(randomAlphanumericString()),
             editorControl: .textField,
-            parse: { .string($0) }
+            parse: { .string($0) },
         )
         let document = makeDocument(registeredVariables: [variable])
         let viewModel = makeViewModel(document: document, registeredVariable: variable)
@@ -489,7 +489,7 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
             defaultContent: .string(randomAlphanumericString()),
             editorControl: .textField,
             parse: { .string($0) },
-            validate: { _ in true }
+            validate: { _ in true },
         )
         let document = makeDocument(registeredVariables: [variable])
         let viewModel = makeViewModel(document: document, registeredVariable: variable)
@@ -507,7 +507,7 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
         let variable = randomRegisteredVariable(
             defaultContent: .string(randomAlphanumericString()),
             editorControl: .textField,
-            parse: { _ in nil }
+            parse: { _ in nil },
         )
         let document = makeDocument(registeredVariables: [variable])
         let viewModel = makeViewModel(document: document, registeredVariable: variable)
@@ -526,7 +526,7 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
             defaultContent: .string(randomAlphanumericString()),
             editorControl: .textField,
             parse: { .string($0) },
-            validate: { _ in false }
+            validate: { _ in false },
         )
         let document = makeDocument(registeredVariables: [variable])
         let viewModel = makeViewModel(document: document, registeredVariable: variable)

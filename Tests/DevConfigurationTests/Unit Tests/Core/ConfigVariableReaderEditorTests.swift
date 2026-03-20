@@ -21,7 +21,7 @@ struct ConfigVariableReaderEditorTests: RandomValueGenerating {
         // set up
         let reader = ConfigVariableReader(
             namedProviders: [.init(InMemoryProvider(values: [:]))],
-            eventBus: EventBus()
+            eventBus: EventBus(),
         )
 
         // expect
@@ -35,7 +35,7 @@ struct ConfigVariableReaderEditorTests: RandomValueGenerating {
         let reader = ConfigVariableReader(
             namedProviders: [.init(InMemoryProvider(values: [:]))],
             eventBus: EventBus(),
-            isEditorEnabled: false
+            isEditorEnabled: false,
         )
 
         // expect
@@ -60,7 +60,7 @@ struct ConfigVariableReaderEditorTests: RandomValueGenerating {
         let reader = ConfigVariableReader(
             namedProviders: [.init(otherProvider)],
             eventBus: EventBus(),
-            isEditorEnabled: true
+            isEditorEnabled: true,
         )
 
         // expect
@@ -84,13 +84,13 @@ struct ConfigVariableReaderEditorTests: RandomValueGenerating {
         let reader = ConfigVariableReader(
             namedProviders: [.init(otherProvider)],
             eventBus: EventBus(),
-            isEditorEnabled: true
+            isEditorEnabled: true,
         )
 
         let variable = ConfigVariable(
             key: key,
             defaultValue: randomAlphanumericString(),
-            isSecret: false
+            isSecret: false,
         )
 
         // Verify the provider value is returned before any override

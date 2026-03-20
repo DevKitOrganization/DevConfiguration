@@ -31,7 +31,7 @@ struct ConfigVariableReaderScalarTests: RandomValueGenerating {
     private mutating func setProviderValue(_ content: ConfigContent, forKey key: ConfigKey) {
         provider.setValue(
             .init(content, isSecret: randomBool()),
-            forKey: .init(key)
+            forKey: .init(key),
         )
     }
 
@@ -123,7 +123,7 @@ struct ConfigVariableReaderScalarTests: RandomValueGenerating {
 
             provider.setValue(
                 .init(.bool(updatedValue), isSecret: isSecret),
-                forKey: .init(key)
+                forKey: .init(key),
             )
 
             let value2 = await iterator.next()
@@ -206,7 +206,7 @@ struct ConfigVariableReaderScalarTests: RandomValueGenerating {
 
             provider.setValue(
                 .init(.int(updatedValue), isSecret: isSecret),
-                forKey: .init(key)
+                forKey: .init(key),
             )
 
             let value2 = await iterator.next()
@@ -272,7 +272,7 @@ struct ConfigVariableReaderScalarTests: RandomValueGenerating {
 
             provider.setValue(
                 .init(.double(updatedValue), isSecret: isSecret),
-                forKey: .init(key)
+                forKey: .init(key),
             )
 
             let value2 = await iterator.next()
@@ -368,7 +368,7 @@ struct ConfigVariableReaderScalarTests: RandomValueGenerating {
 
             provider.setValue(
                 .init(.string(updatedValue), isSecret: isSecret),
-                forKey: .init(key)
+                forKey: .init(key),
             )
 
             let value2 = await iterator.next()
@@ -451,7 +451,7 @@ struct ConfigVariableReaderScalarTests: RandomValueGenerating {
 
             provider.setValue(
                 .init(.bytes(updatedValue), isSecret: isSecret),
-                forKey: .init(key)
+                forKey: .init(key),
             )
 
             let value2 = await iterator.next()

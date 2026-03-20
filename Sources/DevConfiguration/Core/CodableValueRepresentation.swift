@@ -75,7 +75,7 @@ public struct CodableValueRepresentation: Sendable {
         forKey key: ConfigKey,
         isSecret: Bool,
         fileID: String,
-        line: UInt
+        line: UInt,
     ) -> Data? {
         switch kind {
         case .string(let encoding):
@@ -104,7 +104,7 @@ public struct CodableValueRepresentation: Sendable {
         forKey key: ConfigKey,
         isSecret: Bool,
         fileID: String,
-        line: UInt
+        line: UInt,
     ) async throws -> Data? {
         switch kind {
         case .string(let encoding):
@@ -181,7 +181,7 @@ public struct CodableValueRepresentation: Sendable {
         isSecret: Bool,
         fileID: String,
         line: UInt,
-        onUpdate: @Sendable (Data?) -> Void
+        onUpdate: @Sendable (Data?) -> Void,
     ) async throws {
         switch kind {
         case .string(let encoding):

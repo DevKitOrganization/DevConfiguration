@@ -88,7 +88,7 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomS
             }
             .alert(
                 localizedStringResource("editorView.clearAlert.title"),
-                isPresented: $viewModel.isShowingClearAlert
+                isPresented: $viewModel.isShowingClearAlert,
             ) {
                 Button(localizedStringResource("editorView.clearAlert.clearButton"), role: .destructive) {
                     viewModel.confirmClearAllOverrides()
@@ -176,7 +176,7 @@ extension ConfigVariableListView {
                 HStack(alignment: .firstTextBaseline) {
                     ProviderBadge(
                         providerName: item.providerName,
-                        color: providerColor(at: item.providerIndex)
+                        color: providerColor(at: item.providerIndex),
                     )
                     Spacer()
                     Text(item.isSecret ? "••••••••" : item.currentValue)

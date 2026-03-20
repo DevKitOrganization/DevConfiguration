@@ -99,7 +99,7 @@ extension ConfigVariableDetailView {
                         Spacer().layoutPriority(0)
                         Picker(
                             localizedStringResource("detailView.overrideSection.valuePicker"),
-                            selection: $viewModel.overrideBool
+                            selection: $viewModel.overrideBool,
                         ) {
                             Text(localized: "detailView.overridenSection.valuePickerFalse").tag(false)
                             Text(localized: "detailView.overridenSection.valuePickerTrue").tag(true)
@@ -110,7 +110,7 @@ extension ConfigVariableDetailView {
             case .picker(options: let pickerOptions):
                 Picker(
                     localizedStringResource("detailView.overrideSection.valuePicker"),
-                    selection: $viewModel.overridePickerSelection
+                    selection: $viewModel.overridePickerSelection,
                 ) {
                     ForEach(pickerOptions, id: \.content) { option in
                         Text(option.label).tag(option.content)
@@ -145,7 +145,7 @@ extension ConfigVariableDetailView {
                 LabeledContent(localizedStringResource("detailView.overrideSection.valueLabel")) {
                     TextField(
                         localizedStringResource("detailView.overrideSection.valueTextField"),
-                        text: $viewModel.overrideText
+                        text: $viewModel.overrideText,
                     )
                     .onSubmit { viewModel.commitOverrideText() }
                     .textFieldStyle(.plain)
@@ -193,7 +193,7 @@ extension ConfigVariableDetailView {
                         ProviderBadge(
                             providerName: providerValue.providerName,
                             color: providerColor(at: providerValue.providerIndex),
-                            isActive: providerValue.isActive
+                            isActive: providerValue.isActive,
                         )
                         .strikethrough(!providerValue.contentTypeMatches)
                     }

@@ -1,17 +1,16 @@
 # Test Mock Documentation
 
-This document outlines the patterns and conventions for writing test mocks in the DevConfiguration
-codebase.
+This document outlines the patterns and conventions for writing test mocks in Swift.
 
-Its helpful to read the [Dependency Injection guide](Documentation/DependencyInjection.md) before
-reading this guide, as it introduces core principles for how we think about dependency injection.
+Its helpful to read the [Dependency Injection guide](DependencyInjection.md) before reading this
+guide, as it introduces core principles for how we think about dependency injection.
 
 
 ## Overview
 
-The codebase uses a consistent approach to mocking based on the DevTesting package’s `Stub` and
-`ThrowingStub` types. All mocks follow standardized patterns that make them predictable, testable,
-and maintainable.
+We use a consistent approach to mocking based on the DevTesting package's `Stub` and `ThrowingStub`
+types. All mocks follow standardized patterns that make them predictable, testable, and
+maintainable.
 
 
 ## When to Mock vs. Use Types Directly
@@ -20,7 +19,7 @@ Create mock protocols when
 
   - The type has **non-deterministic behavior** (network calls, file I/O, time-dependent operations)
   - You need to **control or observe the behavior** in tests
-  - The type’s behavior **varies across environments**
+  - The type's behavior **varies across environments**
 
 Use types directly when
 
@@ -28,7 +27,7 @@ Use types directly when
   - Testing with the real implementation provides **sufficient coverage**
   - Creating abstractions adds **complexity without testing benefits**
 
-It’s worth pointing out that the following foundational types should be used directly.
+It's worth pointing out that the following foundational types should be used directly.
 
   - **`NotificationCenter`**: Posting and observing notifications is predictable
   - **`UserDefaults`**: Simple key-value storage with consistent behavior
@@ -40,7 +39,7 @@ It’s worth pointing out that the following foundational types should be used d
 
 ### 1. Stub-Based Architecture
 
-All mocks use `DevTesting`’s `Stub<Input, Output>` or `ThrowingStub<Input, Output, Error>` types
+All mocks use `DevTesting`'s `Stub<Input, Output>` or `ThrowingStub<Input, Output, Error>` types
 for function and property implementations:
 
     import DevTesting
@@ -225,34 +224,34 @@ This applies to ANY mock (Observable or not) whose stubs are accessed by backgro
 #### Why This is Required:
 
 When a type spawns internal `Task`s during initialization, those tasks may access properties or
-methods on injected dependencies. If those dependencies are mocks with force-unwrapped stubs, and
+functions on injected dependencies. If those dependencies are mocks with force-unwrapped stubs, and
 the stubs haven't been initialized, the app will crash when the internal task tries to access them.
 
 **Example crash scenario:**
 
     // Any mock type (Observable or not)
     @MainActor
-    final class MockUser: User {
-        nonisolated(unsafe) var allSavesMembershipStub: Stub<String, Membership>!
-        var allSavesMembership: Membership {
-            allSavesMembershipStub(id)  // ❌ Crashes if stub is nil
+    final class MockDataSource: DataSource {
+        nonisolated(unsafe) var currentItemsStub: Stub<String, [Item]>!
+        var currentItems: [Item] {
+            currentItemsStub(id)    // Crashes if stub is nil
         }
     }
 
     // Type spawns internal task during init
-    init(user: any User) {
-        self.user = user
+    init(dataSource: any DataSource) {
+        self.dataSource = dataSource
         Task {
-            // This accesses user.allSavesMembership, triggering the stub
-            let membership = user.allSavesMembership
+            // This accesses dataSource.currentItems, triggering the stub
+            let items = dataSource.currentItems
         }
     }
 
     // Test doesn't initialize the stub
     @Test
     func myTest() {
-        let mockUser = MockUser()  // ❌ allSavesMembershipStub is nil
-        let viewModel = MyViewModel(user: mockUser)  // ❌ Crashes in internal task
+        let mockDataSource = MockDataSource()    // currentItemsStub is nil
+        let processor = ItemProcessor(dataSource: mockDataSource)    // Crashes in internal task
     }
 
 #### Solution Pattern: Initialize in Test Setup
@@ -260,30 +259,31 @@ the stubs haven't been initialized, the app will crash when the internal task tr
 Initialize all stubs that internal tasks will access:
 
     @MainActor
-    struct MyViewModelTests: RandomValueGenerating {
-        var mockUser = MockUser()
+    struct ItemProcessorTests: RandomValueGenerating {
+        var mockDataSource = MockDataSource()
 
         init() {
             // CRITICAL: Initialize ALL stubs that the type's internal tasks will access
             // Even if this particular test doesn't verify these stubs, they must be non-nil
-            mockUser.fetchAllSavesIfNeededStub = ThrowingStub(defaultError: nil)
-            mockUser.allSavesMembershipStub = Stub(defaultReturnValue: .unknown)
+            mockDataSource.fetchItemsStub = ThrowingStub(defaultError: nil)
+            mockDataSource.currentItemsStub = Stub(defaultReturnValue: [])
         }
 
         @Test
         mutating func myTest() async throws {
-            // Create type that spawns internal tasks using mockUser
-            let viewModel = MyViewModel(user: mockUser, ...)
+            // Create type that spawns internal tasks using mockDataSource
+            let processor = ItemProcessor(dataSource: mockDataSource)
             // ... test logic ...
         }
     }
 
 #### How to Identify Required Stubs:
 
-1. Look for `Task { }` blocks in the type's initializer
-2. Trace what properties/methods those tasks access on dependencies
-3. Initialize stubs for all accessed properties/methods in test `init()`
-4. Run tests - crashes will identify any missed stubs
+  1. Look for `Task { }` blocks in the type's initializer
+  2. Trace what properties/functions those tasks access on dependencies
+  3. Initialize stubs for all accessed properties/functions in test `init()`
+  4. Run tests — crashes will identify any missed stubs
+
 
 ### 3. Prologue and Epilogue Closures for Execution Control
 
@@ -294,18 +294,18 @@ epilogue closures that execute before and after the stub.
 
 Prologues execute before the stub is called:
 
-    final class MockAnalyticsClient: AnalyticsClient {
-        nonisolated(unsafe) var sendEventsPrologue: (() async throws -> Void)?
-        nonisolated(unsafe) var sendEventsStub: ThrowingStub<
-            [Event],
+    final class MockNetworkClient: NetworkClient {
+        nonisolated(unsafe) var sendRequestPrologue: (() async throws -> Void)?
+        nonisolated(unsafe) var sendRequestStub: ThrowingStub<
+            URLRequest,
             Response,
             any Error
         >!
 
 
-        func sendEvents(_ events: [Event]) async throws -> Response {
-            try await sendEventsPrologue?()
-            return try sendEventsStub(events)
+        func sendRequest(_ request: URLRequest) async throws -> Response {
+            try await sendRequestPrologue?()
+            return try sendRequestStub(request)
         }
     }
 
@@ -313,12 +313,12 @@ Prologues execute before the stub is called:
 
 Epilogues execute after the stub is called. Run the epilogue in a `Task` within a `defer` block:
 
-    final class MockTelemetryEventLogger: TelemetryEventLogging {
+    final class MockEventLogger: EventLogging {
         nonisolated(unsafe) var logEventStub: Stub<Any, Void>!
         nonisolated(unsafe) var logEventEpilogue: (() async throws -> Void)?
 
 
-        func logEvent(_ event: some TelemetryEvent) {
+        func logEvent(_ event: some Event) {
             defer {
                 if let epilogue = logEventEpilogue {
                     Task { try? await epilogue() }
@@ -346,10 +346,10 @@ Epilogues execute after the stub is called. Run the epilogue in a `Task` within 
 #### Example: Blocking with AsyncStream
 
     let (signalStream, signaler) = AsyncStream<Void>.makeStream()
-    mockClient.sendEventsPrologue = {
+    mockClient.sendRequestPrologue = {
         await signalStream.first(where: { _ in true })
     }
-    mockClient.sendEventsStub = ThrowingStub(defaultResult: .success(.init()))
+    mockClient.sendRequestStub = ThrowingStub(defaultReturnValue: .init())
 
     // Start operation that calls the mock
     instance.performAction()
@@ -362,11 +362,11 @@ Epilogues execute after the stub is called. Run the epilogue in a `Task` within 
 
 #### Example: Signaling Completion with Epilogue
 
-    let telemetryLogger = MockTelemetryEventLogger()
-    telemetryLogger.logEventStub = Stub()
+    let eventLogger = MockEventLogger()
+    eventLogger.logEventStub = Stub()
 
     let (signalStream, signaler) = AsyncStream<Void>.makeStream()
-    telemetryLogger.logEventEpilogue = {
+    eventLogger.logEventEpilogue = {
         signaler.yield()
     }
 
@@ -377,11 +377,11 @@ Epilogues execute after the stub is called. Run the epilogue in a `Task` within 
     await signalStream.first { _ in true }
 
     // Verify the mock was called
-    #expect(telemetryLogger.logEventStub.calls.count == 1)
+    #expect(eventLogger.logEventStub.calls.count == 1)
 
 #### Example: Adding Delays
 
-    mockClient.sendEventsPrologue = {
+    mockClient.sendRequestPrologue = {
         try await Task.sleep(for: .milliseconds(100))
     }
 
@@ -391,7 +391,7 @@ Epilogues execute after the stub is called. Run the epilogue in a `Task` within 
   - Enables testing at different execution phases (before/after stub)
   - More precise than arbitrary `Task.sleep()` delays in tests
   - Eliminates race conditions from timing-based coordination
-  - Optional - tests can ignore if timing control isn't needed
+  - Optional — tests can ignore if timing control isn't needed
 
 
 ### 4. Protocol Imports with @testable
@@ -465,7 +465,7 @@ Import protocols under test with `@testable` when accessing internal details:
 
   1. **Always configure stubs**: Force-unwrapped stubs will crash if not configured
   2. **Use argument structures**: Simplifies complex parameter verification
-  3. **Leverage DevTesting**: Use the package’s call tracking and verification capabilities
+  3. **Leverage DevTesting**: Use the package's call tracking and verification capabilities
   4. **Keep mocks simple**: Avoid complex logic in mock implementations
   5. **Group related mocks**: Place mocks in appropriate Testing Support directories
   6. **Follow naming conventions**: Consistent naming improves maintainability
@@ -478,6 +478,6 @@ All mocks use `nonisolated(unsafe)` markings for Swift 6 compatibility. This ass
 
   - Tests run on a single thread or properly synchronize access
   - Stub configuration happens during test setup before concurrent access
-  - Mock usage patterns don’t require additional synchronization
+  - Mock usage patterns don't require additional synchronization
 
 When mocking concurrent code, consider additional synchronization mechanisms if needed.

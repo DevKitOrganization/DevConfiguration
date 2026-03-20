@@ -20,7 +20,7 @@ extension RandomValueGenerating {
     mutating func randomAccessEvent(
         key: AbsoluteConfigKey? = nil,
         result: Result<ConfigValue?, any Error>? = nil,
-        providerResults: [AccessEvent.ProviderResult]? = nil
+        providerResults: [AccessEvent.ProviderResult]? = nil,
     ) -> AccessEvent {
         return AccessEvent(
             metadata: AccessEvent.Metadata(
@@ -29,12 +29,12 @@ extension RandomValueGenerating {
                 valueType: .string,
                 sourceLocation: AccessEvent.Metadata.SourceLocation(
                     fileID: randomAlphanumericString(),
-                    line: random(UInt.self, in: .min ... .max)
+                    line: random(UInt.self, in: .min ... .max),
                 ),
-                accessTimestamp: randomDate()
+                accessTimestamp: randomDate(),
             ),
             providerResults: providerResults ?? [randomProviderResult()],
-            result: result ?? .success(randomConfigValue())
+            result: result ?? .success(randomConfigValue()),
         )
     }
 
@@ -114,7 +114,7 @@ extension RandomValueGenerating {
         destinationTypeName: String? = nil,
         editorControl: EditorControl? = nil,
         parse: (@Sendable (_ input: String) -> ConfigContent?)? = nil,
-        validate: (@Sendable (_ content: ConfigContent) -> Bool)? = nil
+        validate: (@Sendable (_ content: ConfigContent) -> Bool)? = nil,
     ) -> RegisteredConfigVariable {
         RegisteredConfigVariable(
             key: key ?? randomConfigKey(),
@@ -124,14 +124,14 @@ extension RandomValueGenerating {
             destinationTypeName: destinationTypeName ?? randomAlphanumericString(),
             editorControl: editorControl ?? .none,
             parse: parse,
-            validate: validate
+            validate: validate,
         )
     }
 
 
     mutating func randomProviderResult(
         providerName: String? = nil,
-        result: Result<LookupResult, any Error>? = nil
+        result: Result<LookupResult, any Error>? = nil,
     ) -> AccessEvent.ProviderResult {
         let providerName = providerName ?? randomAlphanumericString()
         let result = result ?? .success(.init(encodedKey: randomAlphanumericString(), value: randomConfigValue()))

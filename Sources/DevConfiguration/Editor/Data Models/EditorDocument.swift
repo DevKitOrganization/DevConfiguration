@@ -78,7 +78,7 @@ final class EditorDocument {
         workingCopyDisplayName: String,
         namedProviders: [NamedConfigProvider],
         registeredVariables: [RegisteredConfigVariable],
-        undoManager: UndoManager
+        undoManager: UndoManager,
     ) {
         self.editorOverrideProvider = editorOverrideProvider
         self.workingCopyDisplayName = workingCopyDisplayName
@@ -107,7 +107,7 @@ final class EditorDocument {
                 ProviderEditorSnapshot(
                     displayName: namedProvider.displayName,
                     index: index,
-                    values: values
+                    values: values,
                 )
             )
         }
@@ -123,7 +123,7 @@ final class EditorDocument {
             ProviderEditorSnapshot(
                 displayName: localizedString("editor.defaultProviderName"),
                 index: defaultIndex,
-                values: defaultValues
+                values: defaultValues,
             )
         )
 
@@ -151,7 +151,7 @@ extension EditorDocument {
     /// Starts watching providers for snapshot changes.
     private func startWatching(
         namedProviders: [NamedConfigProvider],
-        registeredVariables: [RegisteredConfigVariable]
+        registeredVariables: [RegisteredConfigVariable],
     ) {
         guard !namedProviders.isEmpty else {
             return
@@ -177,7 +177,7 @@ extension EditorDocument {
                                     for variable in registeredVariables {
                                         if let content = snapshot.configContent(
                                             forKey: variable.key,
-                                            preferredType: variable.defaultContent.configType
+                                            preferredType: variable.defaultContent.configType,
                                         ) {
                                             values[variable.key] = content
                                         }
@@ -228,7 +228,7 @@ extension EditorDocument {
             return ResolvedValue(
                 content: content,
                 providerDisplayName: workingCopyDisplayName,
-                providerIndex: nil
+                providerIndex: nil,
             )
         }
 
@@ -238,7 +238,7 @@ extension EditorDocument {
                 return ResolvedValue(
                     content: content,
                     providerDisplayName: snapshot.displayName,
-                    providerIndex: snapshot.index
+                    providerIndex: snapshot.index,
                 )
             }
         }
@@ -272,7 +272,7 @@ extension EditorDocument {
                     providerIndex: nil,
                     isActive: isActive,
                     valueString: content.displayString,
-                    contentTypeMatches: content.configType == expectedType
+                    contentTypeMatches: content.configType == expectedType,
                 )
             )
         }
@@ -287,7 +287,7 @@ extension EditorDocument {
                         providerIndex: snapshot.index,
                         isActive: isActive,
                         valueString: content.displayString,
-                        contentTypeMatches: content.configType == expectedType
+                        contentTypeMatches: content.configType == expectedType,
                     )
                 )
             }

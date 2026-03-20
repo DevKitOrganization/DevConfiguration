@@ -14,6 +14,7 @@
     "lineBreakBetweenDeclarationAttributes": false,
     "lineLength": 120,
     "maximumBlankLines": 2,
+    "multilineTrailingCommaBehavior": "alwaysUsed",
     "multiElementCollectionTrailingCommas": true,
     "noAssignmentInExpressions": {
         "allowedFunctions": []
@@ -58,14 +59,14 @@
         "ReplaceForEachWithForLoop": true,
         "ReturnVoidInsteadOfEmptyTuple": true,
         "TypeNamesShouldBeCapitalized": true,
-        "UseEarlyExits": true,
+        "UseEarlyExits": false,
         "UseExplicitNilCheckInConditions": true,
         "UseLetInEveryBoundCaseVariable": true,
         "UseShorthandTypeNames": true,
         "UseSingleLinePropertyGetter": true,
         "UseSynthesizedInitializer": true,
         "UseTripleSlashForDocumentationComments": true,
-        "UseWhereClausesInForLoops": true,
+        "UseWhereClausesInForLoops": false,
         "ValidateDocumentationComments": false
     },
     "spacesAroundRangeFormationOperators": true,

@@ -33,13 +33,13 @@ final class ContentViewModel {
         .metadata(\.isEditable, false)
     let stringArrayVariable = ConfigVariable(
         key: "string_array",
-        defaultValue: ["Thom", "Jonny", "Ed", "Colin", "Phil"]
+        defaultValue: ["Thom", "Jonny", "Ed", "Colin", "Phil"],
     ).metadata(\.displayName, "String Array Example")
 
     let jsonVariable = ConfigVariable(
         key: "complexConfig",
         defaultValue: ComplexConfiguration(field1: "a", field2: 1),
-        content: .json(representation: .string())
+        content: .json(representation: .string()),
     ).metadata(\.displayName, "Complex Config")
 
     let intBackedVariable = ConfigVariable(key: "favoriteCardSuit", defaultValue: CardSuit.spades, isSecret: true)
@@ -56,7 +56,7 @@ final class ContentViewModel {
                 NamedConfigProvider(inMemoryProvider, displayName: "In-Memory"),
             ],
             eventBus: eventBus,
-            isEditorEnabled: true
+            isEditorEnabled: true,
         )
 
         configVariableReader.register(boolVariable)

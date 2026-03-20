@@ -55,13 +55,13 @@ public struct ConfigVariableEditor<CustomSection: View>: View {
         reader: ConfigVariableReader,
         customSectionTitle: LocalizedStringKey,
         @ViewBuilder customSection: () -> CustomSection,
-        onSave: @escaping ([RegisteredConfigVariable]) -> Void
+        onSave: @escaping ([RegisteredConfigVariable]) -> Void,
     ) {
         self.init(
             reader: reader,
             customSectionTitle: Text(customSectionTitle),
             customSection: customSection,
-            onSave: onSave
+            onSave: onSave,
         )
     }
 
@@ -78,7 +78,7 @@ public struct ConfigVariableEditor<CustomSection: View>: View {
         reader: ConfigVariableReader,
         customSectionTitle: Text,
         @ViewBuilder customSection: () -> CustomSection,
-        onSave: @escaping ([RegisteredConfigVariable]) -> Void
+        onSave: @escaping ([RegisteredConfigVariable]) -> Void,
     ) {
         self.customSectionTitle = customSectionTitle
         self.customSection = customSection()
@@ -91,7 +91,7 @@ public struct ConfigVariableEditor<CustomSection: View>: View {
             ConfigVariableListView(
                 viewModel: viewModel,
                 customSectionTitle: customSectionTitle,
-                customSection: { customSection }
+                customSection: { customSection },
             )
         }
     }
@@ -99,7 +99,7 @@ public struct ConfigVariableEditor<CustomSection: View>: View {
 
     private static func makeViewModel(
         reader: ConfigVariableReader,
-        onSave: @escaping ([RegisteredConfigVariable]) -> Void
+        onSave: @escaping ([RegisteredConfigVariable]) -> Void,
     ) -> State<ConfigVariableListViewModel?> {
         guard let editorOverrideProvider = reader.editorOverrideProvider else {
             return State(initialValue: nil)
@@ -114,7 +114,7 @@ public struct ConfigVariableEditor<CustomSection: View>: View {
             workingCopyDisplayName: localizedString("editorOverrideProvider.name"),
             namedProviders: namedProviders,
             registeredVariables: Array(reader.registeredVariables.values),
-            undoManager: UndoManager()
+            undoManager: UndoManager(),
         )
 
         return State(initialValue: ConfigVariableListViewModel(document: document, onSave: onSave))
@@ -131,7 +131,7 @@ extension ConfigVariableEditor where CustomSection == EmptyView {
     ///   - onSave: A closure called with the registered variables whose overrides changed when the user saves.
     public init(
         reader: ConfigVariableReader,
-        onSave: @escaping ([RegisteredConfigVariable]) -> Void
+        onSave: @escaping ([RegisteredConfigVariable]) -> Void,
     ) {
         self.customSectionTitle = Text(verbatim: "")
         self.customSection = EmptyView()

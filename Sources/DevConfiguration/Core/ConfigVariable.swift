@@ -80,7 +80,7 @@ public struct ConfigVariable<Value>: Sendable where Value: Sendable {
     /// - Returns: A copy of the `ConfigVariable` with the metadata value applied.
     public func metadata<MetadataValue>(
         _ keyPath: WritableKeyPath<ConfigVariableMetadata, MetadataValue>,
-        _ value: MetadataValue
+        _ value: MetadataValue,
     ) -> Self {
         var copy = self
         copy.metadata[keyPath: keyPath] = value
@@ -296,7 +296,7 @@ extension ConfigVariable {
             key: key,
             defaultValue: defaultValue,
             content: .rawRepresentableCaseIterableString(),
-            isSecret: isSecret
+            isSecret: isSecret,
         )
     }
 }
@@ -382,7 +382,12 @@ extension ConfigVariable {
     ///   - isSecret: Whether this variable's value should be treated as secret. Defaults to `false`.
     public init(key: ConfigKey, defaultValue: Value, isSecret: Bool = false)
     where Value: RawRepresentable & CaseIterable & Sendable, Value.RawValue == Int {
-        self.init(key: key, defaultValue: defaultValue, content: .rawRepresentableCaseIterableInt(), isSecret: isSecret)
+        self.init(
+            key: key,
+            defaultValue: defaultValue,
+            content: .rawRepresentableCaseIterableInt(),
+            isSecret: isSecret,
+        )
     }
 }
 
