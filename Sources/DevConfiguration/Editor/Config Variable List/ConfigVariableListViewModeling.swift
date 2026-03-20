@@ -5,7 +5,7 @@
 //  Created by Prachi Gauriar on 3/9/2026.
 //
 
-#if canImport(SwiftUI)
+#if os(iOS)
 
 import Configuration
 import Foundation
