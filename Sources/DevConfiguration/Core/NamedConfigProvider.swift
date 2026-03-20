@@ -10,7 +10,7 @@ import Configuration
 /// A configuration provider paired with a human-readable display name.
 ///
 /// Use `NamedConfigProvider` when adding providers to a ``ConfigVariableReader`` to control how the provider's name
-/// appears in the editor UI. If no display name is specified, the provider's ``ConfigProvider/providerName`` is used.
+/// appears in the editor UI. If no display name is specified, the provider's `providerName` is used.
 ///
 ///     let reader = ConfigVariableReader(
 ///         providers: [

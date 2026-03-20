@@ -16,6 +16,10 @@ configuration management with extensible metadata, a variable management UI, and
 - ``ConfigVariable``
 - ``ConfigVariableReader``
 
+### Editor Interface
+
+- ``ConfigVariableEditor``
+
 ### Variable Metadata
 
 - ``ConfigVariableMetadata``
@@ -32,3 +36,6 @@ configuration management with extensible metadata, a variable management UI, and
 
 - ``ConfigVariableContent``
 - ``CodableValueRepresentation``
+- ``EditorControl``
+- ``NamedConfigProvider``
+- ``RegisteredConfigVariable``

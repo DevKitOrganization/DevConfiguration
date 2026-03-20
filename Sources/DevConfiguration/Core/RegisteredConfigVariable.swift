@@ -11,14 +11,14 @@ import Foundation
 /// A non-generic representation of a registered ``ConfigVariable``.
 ///
 /// `RegisteredConfigVariable` stores the type-erased information from a ``ConfigVariable`` so that registered variables
-/// can be stored in homogeneous collections. It captures the variable's key, its default value as a ``ConfigContent``,
-/// its secrecy setting, and any attached metadata.
+/// can be stored in homogeneous collections. It captures the variable's key, its default value as a
+/// ``Configuration/ConfigContent``, its secrecy setting, and any attached metadata.
 @dynamicMemberLookup
 public struct RegisteredConfigVariable: Sendable {
     /// The configuration key used to look up this variable's value.
     public let key: ConfigKey
 
-    /// The variable's default value represented as a ``ConfigContent``.
+    /// The variable's default value represented as a ``Configuration/ConfigContent``.
     public let defaultContent: ConfigContent
 
     /// Whether this variable's value should be treated as secret.
@@ -31,9 +31,9 @@ public struct RegisteredConfigVariable: Sendable {
     ///
     /// This is captured at registration time via `String(describing: Value.self)` and may differ from the content type
     /// name when the variable uses a type that maps to a primitive content type (e.g., an `Int`-backed enum stored as
-    /// ``ConfigContent/int(_:)``). Standard generic types are normalized to use Swift shorthand syntax (e.g.,
+    /// `ConfigContent.int(_:)`). Standard generic types are normalized to use Swift shorthand syntax, e.g.,
     /// `Array<Int>` becomes `[Int]`, `Optional<String>` becomes `String?`, and `Dictionary<String, Int>` becomes
-    /// `[String: Int]`).
+    /// `[String: Int]`.
     public let destinationTypeName: String
 
     /// A human-readable name for this variable's content type (e.g., `"Bool"`, `"[Int]"`).
