@@ -43,14 +43,26 @@ protocol ConfigVariableListViewModeling: Observable {
 
     /// Requests dismissal of the editor.
     ///
-    /// If the working copy has unsaved changes, this presents the save alert. Otherwise, it calls the dismiss closure
-    /// immediately.
+    /// If the working copy has unsaved changes, this presents the save alert. Otherwise, it dismisses without saving.
     ///
-    /// - Parameter dismiss: A closure that dismisses the editor view.
+    /// - Parameter dismiss: A closure that dismisses the editor view using the environment's dismiss action.
     func requestDismiss(_ dismiss: () -> Void)
 
-    /// Saves the working copy to the editor override provider.
-    func save()
+    /// Saves the working copy and dismisses the editor.
+    ///
+    /// This saves the document and calls the consumer's dismiss closure with the changed variables. If no consumer
+    /// dismiss closure was provided, it calls the provided `dismiss` closure instead.
+    ///
+    /// - Parameter dismiss: A closure that dismisses the editor view using the environment's dismiss action.
+    func saveAndDismiss(_ dismiss: () -> Void)
+
+    /// Dismisses the editor without saving.
+    ///
+    /// This calls the consumer's dismiss closure with an empty array. If no consumer dismiss closure was provided, it
+    /// calls the provided `dismiss` closure instead.
+    ///
+    /// - Parameter dismiss: A closure that dismisses the editor view using the environment's dismiss action.
+    func dismissWithoutSaving(_ dismiss: () -> Void)
 
     /// Requests clearing all overrides by presenting the clear confirmation alert.
     func requestClearAllOverrides()

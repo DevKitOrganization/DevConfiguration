@@ -12,13 +12,14 @@ import SwiftUI
 /// A SwiftUI view that presents the configuration variable editor.
 ///
 /// `ConfigVariableEditor` is initialized with a ``ConfigVariableReader`` that has editor support enabled and an
-/// `onSave` closure that receives the registered variables whose overrides changed.
+/// optional `dismiss` closure that receives the registered variables whose overrides changed.
 ///
-/// The consumer is responsible for presentation (sheet, full-screen cover, navigation push, etc.).
+/// The consumer is responsible for presentation (sheet, full-screen cover, navigation push, etc.). If no `dismiss`
+/// closure is provided, the editor uses the environment's dismiss action.
 ///
 ///     .sheet(isPresented: $isEditorPresented) {
 ///         ConfigVariableEditor(reader: reader) { changedVariables in
-///             // Handle changed variables
+///             // Handle changed variables and dismiss
 ///         }
 ///     }
 ///
@@ -29,8 +30,8 @@ import SwiftUI
 ///         customSectionTitle: "Actions"
 ///     ) {
 ///         Button("Reset All") { … }
-///     } onSave: { changedVariables in
-///         // Handle changed variables
+///     } dismiss: { changedVariables in
+///         // Handle changed variables and dismiss
 ///     }
 public struct ConfigVariableEditor<CustomSection: View>: View {
     /// The list view model created from the reader.
@@ -50,18 +51,20 @@ public struct ConfigVariableEditor<CustomSection: View>: View {
     ///     `true`, the view is empty.
     ///   - customSectionTitle: The title for the custom section.
     ///   - customSection: A view builder that produces custom content to display in a section at the top of the list.
-    ///   - onSave: A closure called with the registered variables whose overrides changed when the user saves.
+    ///   - dismiss: An optional closure called when the editor is dismissed. It receives the registered variables whose
+    ///     overrides changed, or an empty array if dismissed without saving. If `nil`, the environment's dismiss action
+    ///     is used.
     public init(
         reader: ConfigVariableReader,
         customSectionTitle: LocalizedStringKey,
         @ViewBuilder customSection: () -> CustomSection,
-        onSave: @escaping ([RegisteredConfigVariable]) -> Void,
+        dismiss: (([RegisteredConfigVariable]) -> Void)? = nil,
     ) {
         self.init(
             reader: reader,
             customSectionTitle: Text(customSectionTitle),
             customSection: customSection,
-            onSave: onSave,
+            dismiss: dismiss,
         )
     }
 
@@ -73,16 +76,18 @@ public struct ConfigVariableEditor<CustomSection: View>: View {
     ///     `true`, the view is empty.
     ///   - customSectionTitle: A `Text` view to use as the title for the custom section.
     ///   - customSection: A view builder that produces custom content to display in a section at the top of the list.
-    ///   - onSave: A closure called with the registered variables whose overrides changed when the user saves.
+    ///   - dismiss: An optional closure called when the editor is dismissed. It receives the registered variables whose
+    ///     overrides changed, or an empty array if dismissed without saving. If `nil`, the environment's dismiss action
+    ///     is used.
     public init(
         reader: ConfigVariableReader,
         customSectionTitle: Text,
         @ViewBuilder customSection: () -> CustomSection,
-        onSave: @escaping ([RegisteredConfigVariable]) -> Void,
+        dismiss: (([RegisteredConfigVariable]) -> Void)? = nil,
     ) {
         self.customSectionTitle = customSectionTitle
         self.customSection = customSection()
-        self._viewModel = Self.makeViewModel(reader: reader, onSave: onSave)
+        self._viewModel = Self.makeViewModel(reader: reader, dismiss: dismiss)
     }
 
 
@@ -99,7 +104,7 @@ public struct ConfigVariableEditor<CustomSection: View>: View {
 
     private static func makeViewModel(
         reader: ConfigVariableReader,
-        onSave: @escaping ([RegisteredConfigVariable]) -> Void,
+        dismiss: (([RegisteredConfigVariable]) -> Void)?,
     ) -> State<ConfigVariableListViewModel?> {
         guard let editorOverrideProvider = reader.editorOverrideProvider else {
             return State(initialValue: nil)
@@ -117,7 +122,7 @@ public struct ConfigVariableEditor<CustomSection: View>: View {
             undoManager: UndoManager(),
         )
 
-        return State(initialValue: ConfigVariableListViewModel(document: document, onSave: onSave))
+        return State(initialValue: ConfigVariableListViewModel(document: document, dismiss: dismiss))
     }
 }
 
@@ -128,14 +133,16 @@ extension ConfigVariableEditor where CustomSection == EmptyView {
     /// - Parameters:
     ///   - reader: The configuration variable reader. If the reader was not created with `isEditorEnabled` set to
     ///     `true`, the view is empty.
-    ///   - onSave: A closure called with the registered variables whose overrides changed when the user saves.
+    ///   - dismiss: An optional closure called when the editor is dismissed. It receives the registered variables whose
+    ///     overrides changed, or an empty array if dismissed without saving. If `nil`, the environment's dismiss action
+    ///     is used.
     public init(
         reader: ConfigVariableReader,
-        onSave: @escaping ([RegisteredConfigVariable]) -> Void,
+        dismiss: (([RegisteredConfigVariable]) -> Void)? = nil,
     ) {
         self.customSectionTitle = Text(verbatim: "")
         self.customSection = EmptyView()
-        self._viewModel = Self.makeViewModel(reader: reader, onSave: onSave)
+        self._viewModel = Self.makeViewModel(reader: reader, dismiss: dismiss)
     }
 }
 

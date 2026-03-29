@@ -21,7 +21,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
     var workingCopyDisplayName: String!
     let undoManager = UndoManager()
 
-    nonisolated(unsafe) var onSaveStub: Stub<[RegisteredConfigVariable], Void>!
+    nonisolated(unsafe) var dismissStub: Stub<[RegisteredConfigVariable], Void>!
 
 
     init() {
@@ -29,7 +29,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
         userDefaults.removeObject(forKey: "editorOverrides")
         editorOverrideProvider = EditorOverrideProvider(userDefaults: userDefaults)
         workingCopyDisplayName = randomAlphanumericString()
-        onSaveStub = Stub()
+        dismissStub = Stub()
     }
 
 
@@ -50,7 +50,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
 
 
     func makeViewModel(document: EditorDocument) -> ConfigVariableListViewModel {
-        ConfigVariableListViewModel(document: document, onSave: { self.onSaveStub($0) })
+        ConfigVariableListViewModel(document: document, dismiss: { self.dismissStub($0) })
     }
 
 
@@ -303,14 +303,29 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
     // MARK: - requestDismiss
 
     @Test
-    mutating func requestDismissCallsDismissWhenClean() async {
+    mutating func requestDismissCallsDismissClosureWhenClean() {
         // set up with no overrides
         let document = makeDocument()
         let viewModel = makeViewModel(document: document)
 
         // exercise
-        await confirmation { dismissed in
-            viewModel.requestDismiss { dismissed() }
+        viewModel.requestDismiss {}
+
+        // expect the dismiss closure was called with an empty array and save alert is not showing
+        #expect(dismissStub.callArguments.map { $0.map(\.key) } == [[]])
+        #expect(!viewModel.isShowingSaveAlert)
+    }
+
+
+    @Test
+    mutating func requestDismissCallsFallbackWhenCleanAndNoDismissClosure() async {
+        // set up with no overrides and no dismiss closure
+        let document = makeDocument()
+        let viewModel = ConfigVariableListViewModel(document: document, dismiss: nil)
+
+        // exercise
+        await confirmation { fallbackDismissed in
+            viewModel.requestDismiss { fallbackDismissed() }
         }
 
         // expect save alert is not showing
@@ -335,10 +350,10 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
     }
 
 
-    // MARK: - save
+    // MARK: - saveAndDismiss
 
     @Test
-    mutating func saveCallsOnSaveWithChangedVariables() throws {
+    mutating func saveAndDismissCallsDismissClosureWithChangedVariables() async throws {
         // set up with an override
         let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
         let document = makeDocument(registeredVariables: [variable])
@@ -347,12 +362,60 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
         document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
 
         // exercise
-        viewModel.save()
+        viewModel.saveAndDismiss {}
 
-        // expect onSave was called with the changed variable and document is no longer dirty
-        let savedVariables = try #require(onSaveStub.callArguments.first)
-        #expect(savedVariables.map(\.key) == [variable.key])
+        // expect dismiss closure was called with the changed variable and document is no longer dirty
+        let dismissedVariables = try #require(dismissStub.callArguments.first)
+        #expect(dismissedVariables.map(\.key) == [variable.key])
         #expect(!viewModel.isDirty)
+    }
+
+
+    @Test
+    mutating func saveAndDismissCallsFallbackWhenNoDismissClosure() async {
+        // set up with an override and no dismiss closure
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = ConfigVariableListViewModel(document: document, dismiss: nil)
+
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
+
+        // exercise
+        await confirmation { fallbackDismissed in
+            viewModel.saveAndDismiss { fallbackDismissed() }
+        }
+
+        // expect document is no longer dirty
+        #expect(!viewModel.isDirty)
+    }
+
+
+    // MARK: - dismissWithoutSaving
+
+    @Test
+    mutating func dismissWithoutSavingCallsDismissClosureWithEmptyArray() {
+        // set up
+        let document = makeDocument()
+        let viewModel = makeViewModel(document: document)
+
+        // exercise
+        viewModel.dismissWithoutSaving {}
+
+        // expect dismiss closure was called with an empty array
+        #expect(dismissStub.callArguments.map { $0.map(\.key) } == [[]])
+    }
+
+
+    @Test
+    mutating func dismissWithoutSavingCallsFallbackWhenNoDismissClosure() async {
+        // set up with no dismiss closure
+        let document = makeDocument()
+        let viewModel = ConfigVariableListViewModel(document: document, dismiss: nil)
+
+        // exercise
+        await confirmation { fallbackDismissed in
+            viewModel.dismissWithoutSaving { fallbackDismissed() }
+        }
     }
 
 

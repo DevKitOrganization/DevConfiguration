@@ -20,8 +20,11 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
     /// The document that owns the variable data.
     private let document: EditorDocument
 
-    /// The closure to call with the changed variables when the user saves.
-    private let onSave: ([RegisteredConfigVariable]) -> Void
+    /// An optional closure to call when the editor is dismissed.
+    ///
+    /// It receives the registered variables whose overrides changed, or an empty array if the user dismissed without
+    /// saving.
+    private let dismiss: (([RegisteredConfigVariable]) -> Void)?
 
     var searchText = ""
     var isShowingSaveAlert = false
@@ -32,10 +35,12 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
     ///
     /// - Parameters:
     ///   - document: The editor document.
-    ///   - onSave: A closure called with the registered variables whose overrides changed when the user saves.
-    init(document: EditorDocument, onSave: @escaping ([RegisteredConfigVariable]) -> Void) {
+    ///   - dismiss: An optional closure called when the editor is dismissed. It receives the registered variables whose
+    ///     overrides changed, or an empty array if the user dismissed without saving. If `nil`, the view's environment
+    ///     dismiss action is used instead.
+    init(document: EditorDocument, dismiss: (([RegisteredConfigVariable]) -> Void)?) {
         self.document = document
-        self.onSave = onSave
+        self.dismiss = dismiss
     }
 
 
@@ -95,15 +100,30 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
         if isDirty {
             isShowingSaveAlert = true
         } else {
+            dismissWithoutSaving(dismiss)
+        }
+    }
+
+
+    func saveAndDismiss(_ dismiss: () -> Void) {
+        let changedKeys = document.changedKeys
+        document.save()
+        let changedVariables = changedKeys.compactMap { document.registeredVariables[$0] }
+
+        if let dismiss = self.dismiss {
+            dismiss(changedVariables)
+        } else {
             dismiss()
         }
     }
 
 
-    func save() {
-        let changedKeys = document.changedKeys
-        document.save()
-        onSave(changedKeys.compactMap { document.registeredVariables[$0] })
+    func dismissWithoutSaving(_ dismiss: () -> Void) {
+        if let dismiss = self.dismiss {
+            dismiss([])
+        } else {
+            dismiss()
+        }
     }
 
 

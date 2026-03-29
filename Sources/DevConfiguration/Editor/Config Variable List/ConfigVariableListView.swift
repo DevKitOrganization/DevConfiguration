@@ -71,13 +71,12 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomS
             .toolbar { toolbarContent }
             .alert(localizedStringResource("editorView.saveAlert.title"), isPresented: $viewModel.isShowingSaveAlert) {
                 Button(localizedStringResource("editorView.saveAlert.saveButton")) {
-                    viewModel.save()
-                    dismiss()
+                    viewModel.saveAndDismiss { dismiss() }
                 }
                 .keyboardShortcut(.defaultAction)
 
                 Button(localizedStringResource("editorView.saveAlert.dontSaveButton"), role: .destructive) {
-                    dismiss()
+                    viewModel.dismissWithoutSaving { dismiss() }
                 }
 
                 Button(localizedStringResource("editorView.saveAlert.cancelButton"), role: .cancel) {}
@@ -116,8 +115,7 @@ extension ConfigVariableListView {
 
         ToolbarItem(placement: .confirmationAction) {
             Button {
-                viewModel.save()
-                dismiss()
+                viewModel.saveAndDismiss { dismiss() }
             } label: {
                 Label(localizedStringResource("editorView.saveButton"), systemImage: "checkmark")
             }

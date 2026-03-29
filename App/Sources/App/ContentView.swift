@@ -33,8 +33,9 @@ struct ContentView: View {
                     Button("Do something", role: .destructive) {
                         print("Did something!")
                     }
-                } onSave: { variables in
+                } dismiss: { variables in
                     print(variables)
+                    isPresentingConfigEditor = false
                 }
             }
         }
