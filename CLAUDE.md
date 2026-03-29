@@ -42,7 +42,7 @@ metadata.
     `ConfigVariableContent`, `CodableValueRepresentation`, `RegisteredConfigVariable`,
     and `ConfigVariableSecrecy`
   - **Sources/DevConfiguration/Metadata/**: `ConfigVariableMetadata` and metadata key types
-    (`DisplayNameMetadataKey`, `RequiresRelaunchMetadataKey`)
+    (`DisplayNameMetadataKey`)
   - **Sources/DevConfiguration/Access Reporting/**: EventBus-based access and decoding events
 
 ### Key Documents

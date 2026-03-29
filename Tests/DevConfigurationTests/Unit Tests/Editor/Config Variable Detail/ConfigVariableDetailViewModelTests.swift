@@ -60,7 +60,6 @@ struct ConfigVariableDetailViewModelTests: RandomValueGenerating {
         // set up
         var metadata = ConfigVariableMetadata()
         metadata.displayName = randomAlphanumericString()
-        metadata.requiresRelaunch = randomBool()
         metadata.isEditable = randomBool()
         let destinationTypeName = randomAlphanumericString()
         let isSecret = randomBool()
