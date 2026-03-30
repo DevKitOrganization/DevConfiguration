@@ -5,7 +5,6 @@
 //  Created by Prachi Gauriar on 3/8/26.
 //
 
-import Configuration
 import DevConfiguration
 import DevFoundation
 import Foundation
