@@ -19,15 +19,15 @@ import Foundation
 /// Define custom metadata keys by creating types conforming to ``ConfigVariableMetadataKey`` and extending
 /// `ConfigVariableMetadata` with convenience properties:
 ///
-///     private struct ProjectMetadataKey: ConfigVariableMetadataKey {
+///     private struct ProjectNameMetadataKey: ConfigVariableMetadataKey {
 ///         static let defaultValue: String? = nil
 ///         static let keyDisplayText = "Project"
 ///     }
 ///
 ///     extension ConfigVariableMetadata {
-///         var project: String? {
-///             get { self[ProjectMetadataKey.self] }
-///             set { self[ProjectMetadataKey.self] = newValue }
+///         var projectName: String? {
+///             get { self[ProjectNameMetadataKey.self] }
+///             set { self[ProjectNameMetadataKey.self] = newValue }
 ///         }
 ///     }
 ///
@@ -122,7 +122,7 @@ public struct ConfigVariableMetadata: Hashable, Sendable {
 /// To define a new metadata key, create a private type that conforms to `ConfigVariableMetadataKey` and implement the
 /// required properties:
 ///
-///     private struct projectMetadataKey: ConfigVariableMetadataKey {
+///     private struct ProjectNameMetadataKey: ConfigVariableMetadataKey {
 ///         static let defaultValue: String? = nil
 ///         static let keyDisplayText: String = "Project"
 ///     }
@@ -130,9 +130,9 @@ public struct ConfigVariableMetadata: Hashable, Sendable {
 /// Then extend `ConfigVariableMetadata` with a convenience property to access the value:
 ///
 ///     extension ConfigVariableMetadata {
-///         var project: String? {
-///             get { self[ProjectMetadataKey.self] }
-///             set { self[ProjectMetadataKey.self] = newValue }
+///         var projectName: String? {
+///             get { self[ProjectNameMetadataKey.self] }
+///             set { self[ProjectNameMetadataKey.self] = newValue }
 ///         }
 ///     }
 ///

@@ -17,13 +17,12 @@ import Synchronization
 /// The reader integrates with an access reporter to provide telemetry and observability for all configuration access.
 ///
 /// To use a config variable reader, first define your configuration variables using ``ConfigVariable``. Each variable
-/// specifies its key, type, default value, and secrecy level:
+/// specifies its key, type, and default value:
 ///
 ///     extension ConfigVariable where Value == Bool {
-///         static let darkMode = ConfigVariable(
-///             key: "dark_mode",
-///             defaultValue: false,
-///             secrecy: .auto
+///         static let isDarkModeEnabled = ConfigVariable(
+///             key: "dark_mode_enabled",
+///             defaultValue: false
 ///         )
 ///     }
 ///
@@ -31,12 +30,13 @@ import Synchronization
 ///
 ///     let reader = ConfigVariableReader(
 ///         namedProviders: [
-///             .init(InMemoryProvider(values: ["dark_mode": "true"]), displayName: "In-Memory")
+///             .init(InMemoryProvider(values: ["dark_mode_enabled": "true"]), displayName: "In-Memory"),
+///             .init(EnvironmentVariablesProvider(), displayName: "Environment"),
 ///         ],
 ///         eventBus: eventBus
 ///     )
 ///
-///     let darkMode = reader[.darkMode]  // true
+///     let isDarkModeEnabled = reader[.isDarkModeEnabled]  // true
 ///
 /// The reader never throws. If resolution fails, it returns the variable’s default value and posts a
 /// ``ConfigVariableAccessFailedEvent`` to the event bus.
