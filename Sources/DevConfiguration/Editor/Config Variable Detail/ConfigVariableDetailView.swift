@@ -16,7 +16,7 @@ import SwiftUI
 /// It is generic on its view model protocol, allowing tests to inject mock view models.
 struct ConfigVariableDetailView<ViewModel: ConfigVariableDetailViewModeling>: View {
     @State var viewModel: ViewModel
-    @FocusState private var isTextEditorFocused: Bool
+    @FocusState private var isEditorControlFocused: Bool
 
 
     var body: some View {
@@ -26,7 +26,24 @@ struct ConfigVariableDetailView<ViewModel: ConfigVariableDetailViewModeling>: Vi
             providerValuesSection
             metadataSection
         }
+        .onDisappear {
+            if isEditorControlFocused && viewModel.isOverrideTextValid {
+                viewModel.commitOverrideText()
+            }
+        }
         .navigationTitle(viewModel.displayName)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                if isEditorControlFocused {
+                    Spacer()
+                    Button(role: .confirm) {
+                        viewModel.commitOverrideText()
+                        isEditorControlFocused = false
+                    }
+                    .disabled(!viewModel.isOverrideTextValid)
+                }
+            }
+        }
     }
 }
 
@@ -120,23 +137,13 @@ extension ConfigVariableDetailView {
                 VStack(alignment: .leading) {
                     Text(localizedStringResource("detailView.overrideSection.valueLabel"))
                     TextEditor(text: $viewModel.overrideText)
-                        .focused($isTextEditorFocused)
+                        .focused($isEditorControlFocused)
                         .font(.caption.monospaced())
                         .frame(minHeight: 100)
                         .border(viewModel.isOverrideTextValid ? Color.clear : Color.red)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .keyboardType(.asciiCapable)
-
-                    HStack {
-                        Spacer()
-                        Button(localizedStringResource("detailView.overrideSection.applyButton")) {
-                            viewModel.commitOverrideText()
-                            isTextEditorFocused = false
-                        }
-                        .buttonStyle(.bordered)
-                        .disabled(!viewModel.isOverrideTextValid)
-                    }
                 }
             case .textField, .numberField, .decimalField:
                 LabeledContent(localizedStringResource("detailView.overrideSection.valueLabel")) {
@@ -144,6 +151,7 @@ extension ConfigVariableDetailView {
                         localizedStringResource("detailView.overrideSection.valueTextField"),
                         text: $viewModel.overrideText,
                     )
+                    .focused($isEditorControlFocused)
                     .onSubmit { viewModel.commitOverrideText() }
                     .textFieldStyle(.plain)
                     .multilineTextAlignment(.trailing)
