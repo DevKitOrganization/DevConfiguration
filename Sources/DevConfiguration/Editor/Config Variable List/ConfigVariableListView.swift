@@ -17,14 +17,11 @@ import SwiftUI
 /// variable's detail view.
 ///
 /// The toolbar provides Cancel, Save, and an overflow menu with Undo, Redo, and Clear Editor Overrides actions.
-struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomSection: View>: View {
+struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomContent: View>: View {
     @State var viewModel: ViewModel
 
-    /// The title for the custom section at the top of the list.
-    private let customSectionTitle: Text
-
-    /// The custom section content to display at the top of the list.
-    private let customSection: CustomSection
+    /// The custom content to display at the top of the list.
+    private let customContent: CustomContent
 
     @Environment(\.dismiss) private var dismiss
 
@@ -33,25 +30,17 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomS
     ///
     /// - Parameters:
     ///   - viewModel: The view model for the list.
-    ///   - customSectionTitle: The title for the custom section.
-    ///   - customSection: A view builder that produces custom content to display in a section at the top of the list.
-    init(viewModel: ViewModel, customSectionTitle: Text, @ViewBuilder customSection: () -> CustomSection) {
+    ///   - customContent: A view builder that produces custom content to display in a section at the top of the list.
+    init(viewModel: ViewModel, @ViewBuilder customContent: () -> CustomContent) {
         self._viewModel = State(initialValue: viewModel)
-        self.customSectionTitle = customSectionTitle
-        self.customSection = customSection()
+        self.customContent = customContent()
     }
 
 
     var body: some View {
         NavigationStack {
             List {
-                if CustomSection.self != EmptyView.self {
-                    Section {
-                        customSection
-                    } header: {
-                        customSectionTitle
-                    }
-                }
+                customContent
 
                 Section(localizedStringResource("editorView.variablesSection.header")) {
                     ForEach(viewModel.variables, id: \.key) { item in
