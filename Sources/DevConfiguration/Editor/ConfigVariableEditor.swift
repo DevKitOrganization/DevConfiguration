@@ -33,15 +33,12 @@ import SwiftUI
 ///     } dismiss: { changedVariables in
 ///         // Handle changed variables and dismiss
 ///     }
-public struct ConfigVariableEditor<CustomSection: View>: View {
+public struct ConfigVariableEditor<CustomContent: View>: View {
     /// The list view model created from the reader.
     @State private var viewModel: ConfigVariableListViewModel?
 
-    /// The title for the custom section.
-    private let customSectionTitle: Text
-
     /// The custom section content.
-    private let customSection: CustomSection
+    private let customContent: CustomContent
 
 
     /// Creates a new configuration variable editor with a custom section at the top of the list.
@@ -49,44 +46,16 @@ public struct ConfigVariableEditor<CustomSection: View>: View {
     /// - Parameters:
     ///   - reader: The configuration variable reader. If the reader was not created with `isEditorEnabled` set to
     ///     `true`, the view is empty.
-    ///   - customSectionTitle: The title for the custom section.
-    ///   - customSection: A view builder that produces custom content to display in a section at the top of the list.
+    ///   - customContent: A view builder that produces custom content to display in a section at the top of the list.
     ///   - dismiss: An optional closure called when the editor is dismissed. It receives the registered variables whose
     ///     overrides changed, or an empty array if dismissed without saving. If `nil`, the environment's dismiss action
     ///     is used.
     public init(
         reader: ConfigVariableReader,
-        customSectionTitle: LocalizedStringKey,
-        @ViewBuilder customSection: () -> CustomSection,
+        @ViewBuilder customContent: () -> CustomContent,
         dismiss: (([RegisteredConfigVariable]) -> Void)? = nil,
     ) {
-        self.init(
-            reader: reader,
-            customSectionTitle: Text(customSectionTitle),
-            customSection: customSection,
-            dismiss: dismiss,
-        )
-    }
-
-
-    /// Creates a new configuration variable editor with a custom section at the top of the list.
-    ///
-    /// - Parameters:
-    ///   - reader: The configuration variable reader. If the reader was not created with `isEditorEnabled` set to
-    ///     `true`, the view is empty.
-    ///   - customSectionTitle: A `Text` view to use as the title for the custom section.
-    ///   - customSection: A view builder that produces custom content to display in a section at the top of the list.
-    ///   - dismiss: An optional closure called when the editor is dismissed. It receives the registered variables whose
-    ///     overrides changed, or an empty array if dismissed without saving. If `nil`, the environment's dismiss action
-    ///     is used.
-    public init(
-        reader: ConfigVariableReader,
-        customSectionTitle: Text,
-        @ViewBuilder customSection: () -> CustomSection,
-        dismiss: (([RegisteredConfigVariable]) -> Void)? = nil,
-    ) {
-        self.customSectionTitle = customSectionTitle
-        self.customSection = customSection()
+        self.customContent = customContent()
         self._viewModel = Self.makeViewModel(reader: reader, dismiss: dismiss)
     }
 
@@ -95,8 +64,7 @@ public struct ConfigVariableEditor<CustomSection: View>: View {
         if let viewModel {
             ConfigVariableListView(
                 viewModel: viewModel,
-                customSectionTitle: customSectionTitle,
-                customSection: { customSection },
+                customContent: { customContent },
             )
         }
     }
@@ -127,7 +95,7 @@ public struct ConfigVariableEditor<CustomSection: View>: View {
 }
 
 
-extension ConfigVariableEditor where CustomSection == EmptyView {
+extension ConfigVariableEditor where CustomContent == EmptyView {
     /// Creates a new configuration variable editor.
     ///
     /// - Parameters:
@@ -140,8 +108,7 @@ extension ConfigVariableEditor where CustomSection == EmptyView {
         reader: ConfigVariableReader,
         dismiss: (([RegisteredConfigVariable]) -> Void)? = nil,
     ) {
-        self.customSectionTitle = Text(verbatim: "")
-        self.customSection = EmptyView()
+        self.customContent = EmptyView()
         self._viewModel = Self.makeViewModel(reader: reader, dismiss: dismiss)
     }
 }
