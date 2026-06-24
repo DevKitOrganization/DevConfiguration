@@ -20,7 +20,7 @@ import SwiftUI
 struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomContent: View>: View {
     @State var viewModel: ViewModel
 
-    /// The custom section content to display at the top of the list.
+    /// The custom content to display at the top of the list.
     private let customContent: CustomContent
 
     @Environment(\.dismiss) private var dismiss
@@ -40,9 +40,7 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomC
     var body: some View {
         NavigationStack {
             List {
-                if CustomContent.self != EmptyView.self {
-                    customContent
-                }
+                customContent
 
                 Section(localizedStringResource("editorView.variablesSection.header")) {
                     ForEach(viewModel.variables, id: \.key) { item in

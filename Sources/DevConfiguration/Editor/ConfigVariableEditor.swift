@@ -23,11 +23,10 @@ import SwiftUI
 ///         }
 ///     }
 ///
-/// To add a custom section at the top of the list, provide a section title and content:
+/// You can provide custom content to show at the show of the list:
 ///
 ///     ConfigVariableEditor(
-///         reader: reader,
-///         customSectionTitle: "Actions"
+///         reader: reader
 ///     ) {
 ///         Button("Reset All") { … }
 ///     } dismiss: { changedVariables in
@@ -37,11 +36,11 @@ public struct ConfigVariableEditor<CustomContent: View>: View {
     /// The list view model created from the reader.
     @State private var viewModel: ConfigVariableListViewModel?
 
-    /// The custom section content.
+    /// The custom content.
     private let customContent: CustomContent
 
 
-    /// Creates a new configuration variable editor with a custom section at the top of the list.
+    /// Creates a new configuration variable editor with custom content at the top of the list.
     ///
     /// - Parameters:
     ///   - reader: The configuration variable reader. If the reader was not created with `isEditorEnabled` set to
