@@ -201,6 +201,16 @@
         }
       }
     },
+    "groupMetadata.keyDisplayText" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Group"
+          }
+        }
+      }
+    },
     "editorView.clearAlert.clearButton" : {
       "localizations" : {
         "en" : {
