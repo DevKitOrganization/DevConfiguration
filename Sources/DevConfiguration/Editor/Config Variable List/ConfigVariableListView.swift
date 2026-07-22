@@ -85,7 +85,7 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomC
     @ViewBuilder
     var variablesSection: some View {
         if viewModel.showOverridesOnly {
-            Section(localizedStringResource("editorView.variablesSection.header")) {
+            Section(localizedStringResource("editorView.overridesSection.header")) {
                 ForEach(viewModel.variables, id: \.key) { item in
                     NavigationLink(value: item.key) {
                         VariableRow(item: item)
@@ -104,7 +104,11 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomC
             }
 
             if !viewModel.groupedVariables.remainder.isEmpty {
-                Section {
+                Section(
+                    viewModel.groupedVariables.groupedVariables.isEmpty
+                        ? localizedStringResource("editorView.variablesSection.header")
+                        : localizedStringResource("editorView.remainderSection.header")
+                ) {
                     ForEach(viewModel.groupedVariables.remainder, id: \.key) { item in
                         NavigationLink(value: item.key) {
                             VariableRow(item: item)
@@ -192,6 +196,7 @@ extension ConfigVariableListView {
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.displayName)
                     .font(.subheadline)
+                    .bold()
 
                 Text(item.key.description)
                     .font(.caption.monospaced())
@@ -207,9 +212,8 @@ extension ConfigVariableListView {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
-                .padding(.top, 2)
+                .padding(.top, 6)
             }
-            .padding(.vertical, 2)
         }
     }
 }
