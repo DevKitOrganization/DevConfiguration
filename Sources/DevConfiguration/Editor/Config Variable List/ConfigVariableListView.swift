@@ -42,10 +42,32 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomC
             List {
                 customContent
 
-                Section(localizedStringResource("editorView.variablesSection.header")) {
-                    ForEach(viewModel.variables, id: \.key) { item in
-                        NavigationLink(value: item.key) {
-                            VariableRow(item: item)
+                if viewModel.showOverridesOnly {
+                    Section(localizedStringResource("editorView.variablesSection.header")) {
+                        ForEach(viewModel.variables, id: \.key) { item in
+                            NavigationLink(value: item.key) {
+                                VariableRow(item: item)
+                            }
+                        }
+                    }
+                } else {
+                    ForEach(viewModel.groupedVariables, id: \.group) { section in
+                        if let group = section.group {
+                            Section(group.rawValue) {
+                                ForEach(section.items, id: \.key) { item in
+                                    NavigationLink(value: item.key) {
+                                        VariableRow(item: item)
+                                    }
+                                }
+                            }
+                        } else {
+                            Section {
+                                ForEach(section.items, id: \.key) { item in
+                                    NavigationLink(value: item.key) {
+                                        VariableRow(item: item)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -127,6 +149,16 @@ extension ConfigVariableListView {
                 }
                 .disabled(!viewModel.canRedo)
 
+                Button {
+                    viewModel.showOverridesOnly.toggle()
+                } label: {
+                    Label(
+                        localizedStringResource("editorView.showOverridesOnlyButton"),
+                        systemImage: viewModel.showOverridesOnly ? "checkmark.circle.fill" : "circle",
+                    )
+                }
+                .disabled(!viewModel.hasAnyOverrides)
+
                 Divider()
 
                 Button(role: .destructive) {
@@ -151,9 +183,9 @@ extension ConfigVariableListView {
 
 
         var body: some View {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(item.displayName)
-                    .font(.headline)
+                    .font(.subheadline)
 
                 Text(item.key.description)
                     .font(.caption.monospaced())
@@ -169,7 +201,7 @@ extension ConfigVariableListView {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
-                .padding(.top, 8)
+                .padding(.top, 2)
             }
             .padding(.vertical, 2)
         }
