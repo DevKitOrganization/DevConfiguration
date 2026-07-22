@@ -26,6 +26,18 @@ protocol ConfigVariableListViewModeling: Observable {
     /// The current search text for filtering variables.
     var searchText: String { get set }
 
+    /// Whether the list is filtered to show only variables with overrides.
+    var showOverridesOnly: Bool { get set }
+
+    /// Whether any variable in the document has an active override.
+    var hasAnyOverrides: Bool { get }
+
+    /// The variables grouped by their metadata group.
+    ///
+    /// Each tuple contains a group (or `nil` for ungrouped variables) and the sorted items in that group.
+    /// Groups are sorted alphabetically. The `nil` group appears last.
+    var groupedVariables: [(group: ConfigVariableGroup?, items: [VariableListItem])] { get }
+
     /// Whether the working copy has unsaved changes.
     var isDirty: Bool { get }
 

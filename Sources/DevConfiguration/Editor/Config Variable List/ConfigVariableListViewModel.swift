@@ -29,6 +29,7 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
     var searchText = ""
     var isShowingSaveAlert = false
     var isShowingClearAlert = false
+    var showOverridesOnly = false
 
 
     /// Creates a new list view model.
@@ -59,6 +60,7 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
                 providerIndex: resolved?.providerIndex,
                 isSecret: variable.isSecret,
                 hasOverride: document.hasOverride(forKey: variable.key),
+                group: variable.group,
                 editorControl: variable.editorControl,
             )
         }
@@ -73,7 +75,41 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
             }
         }
 
-        return filtered.sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
+        let sorted = filtered.sorted {
+            $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending
+        }
+
+        if showOverridesOnly {
+            return sorted.filter { $0.hasOverride }
+        }
+
+        return sorted
+    }
+
+
+    var hasAnyOverrides: Bool {
+        document.registeredVariables.values.contains { document.hasOverride(forKey: $0.key) }
+    }
+
+
+    var groupedVariables: [(group: ConfigVariableGroup?, items: [VariableListItem])] {
+        let allItems = variables
+        let grouped = Dictionary(grouping: allItems, by: \.group)
+
+        var result: [(group: ConfigVariableGroup?, items: [VariableListItem])] = []
+
+        let nonNilGroups = grouped.keys.compactMap { $0 }.sorted()
+        for group in nonNilGroups {
+            if let items = grouped[group] {
+                result.append((group: group, items: items))
+            }
+        }
+
+        if let ungrouped = grouped[nil] {
+            result.append((group: nil, items: ungrouped))
+        }
+
+        return result
     }
 
 

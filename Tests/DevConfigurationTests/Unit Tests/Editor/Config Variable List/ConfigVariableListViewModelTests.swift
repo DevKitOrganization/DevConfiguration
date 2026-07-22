@@ -85,6 +85,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
                 providerIndex: 0,
                 isSecret: variable1.isSecret,
                 hasOverride: false,
+                group: nil,
                 editorControl: variable1.editorControl,
             ),
             VariableListItem(
@@ -95,6 +96,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
                 providerIndex: 0,
                 isSecret: variable2.isSecret,
                 hasOverride: false,
+                group: nil,
                 editorControl: variable2.editorControl,
             ),
         ]
@@ -124,6 +126,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
                 providerIndex: 0,
                 isSecret: variable.isSecret,
                 hasOverride: false,
+                group: nil,
                 editorControl: variable.editorControl,
             )
         ]
@@ -237,6 +240,223 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
         // expect items are sorted by display name
         let displayNames = items.map(\.displayName)
         #expect(displayNames == ["Alpha", "Bravo", "Charlie"])
+    }
+
+
+    // MARK: - showOverridesOnly
+
+    @Test
+    mutating func variablesFiltersToOverridesOnly() {
+        // set up with two variables, one with an override
+        var metadata1 = ConfigVariableMetadata()
+        metadata1.displayName = "Alpha"
+        let variable1 = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadata1,
+        )
+
+        var metadata2 = ConfigVariableMetadata()
+        metadata2.displayName = "Beta"
+        let variable2 = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadata2,
+        )
+
+        let document = makeDocument(registeredVariables: [variable1, variable2])
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable1.key)
+
+        let viewModel = makeViewModel(document: document)
+        viewModel.showOverridesOnly = true
+
+        // exercise
+        let items = viewModel.variables
+
+        // expect only the overridden variable is returned
+        #expect(items.count == 1)
+        #expect(items.first?.key == variable1.key)
+    }
+
+
+    @Test
+    mutating func variablesReturnsAllWhenShowOverridesOnlyIsFalse() {
+        // set up with two variables, one with an override
+        let variable1 = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let variable2 = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+
+        let document = makeDocument(registeredVariables: [variable1, variable2])
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable1.key)
+
+        let viewModel = makeViewModel(document: document)
+
+        // exercise
+        let items = viewModel.variables
+
+        // expect both variables are returned
+        #expect(items.count == 2)
+    }
+
+
+    // MARK: - hasAnyOverrides
+
+    @Test
+    mutating func hasAnyOverridesReturnsFalseWhenNoOverrides() {
+        // set up
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+
+        // exercise & expect
+        #expect(!viewModel.hasAnyOverrides)
+    }
+
+
+    @Test
+    mutating func hasAnyOverridesReturnsTrueWhenOverrideExists() {
+        // set up
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
+
+        // exercise & expect
+        #expect(viewModel.hasAnyOverrides)
+    }
+
+
+    // MARK: - groupedVariables
+
+    @Test
+    mutating func groupedVariablesSortsGroupsAlphabetically() {
+        // set up with variables in different groups
+        var metadataB = ConfigVariableMetadata()
+        metadataB.displayName = "Var B"
+        metadataB.group = ConfigVariableGroup("Networking")
+        let variableB = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadataB,
+        )
+
+        var metadataA = ConfigVariableMetadata()
+        metadataA.displayName = "Var A"
+        metadataA.group = ConfigVariableGroup("Auth")
+        let variableA = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadataA,
+        )
+
+        let document = makeDocument(registeredVariables: [variableB, variableA])
+        let viewModel = makeViewModel(document: document)
+
+        // exercise
+        let grouped = viewModel.groupedVariables
+
+        // expect groups sorted alphabetically
+        #expect(grouped.count == 2)
+        #expect(grouped[0].group == ConfigVariableGroup("Auth"))
+        #expect(grouped[1].group == ConfigVariableGroup("Networking"))
+    }
+
+
+    @Test
+    mutating func groupedVariablesPlacesUngroupedLast() {
+        // set up with one grouped and one ungrouped variable
+        var metadataGrouped = ConfigVariableMetadata()
+        metadataGrouped.displayName = "Grouped Var"
+        metadataGrouped.group = ConfigVariableGroup("Alpha")
+        let groupedVariable = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadataGrouped,
+        )
+
+        var metadataUngrouped = ConfigVariableMetadata()
+        metadataUngrouped.displayName = "Ungrouped Var"
+        let ungroupedVariable = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadataUngrouped,
+        )
+
+        let document = makeDocument(registeredVariables: [ungroupedVariable, groupedVariable])
+        let viewModel = makeViewModel(document: document)
+
+        // exercise
+        let grouped = viewModel.groupedVariables
+
+        // expect grouped section first, ungrouped section last
+        #expect(grouped.count == 2)
+        #expect(grouped[0].group == ConfigVariableGroup("Alpha"))
+        #expect(grouped[0].items.count == 1)
+        #expect(grouped[1].group == nil)
+        #expect(grouped[1].items.count == 1)
+    }
+
+
+    @Test
+    mutating func groupedVariablesSortsItemsWithinGroups() {
+        // set up with two variables in the same group, unsorted
+        let group = ConfigVariableGroup("Features")
+
+        var metadataZ = ConfigVariableMetadata()
+        metadataZ.displayName = "Zebra"
+        metadataZ.group = group
+        let variableZ = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadataZ,
+        )
+
+        var metadataA = ConfigVariableMetadata()
+        metadataA.displayName = "Apple"
+        metadataA.group = group
+        let variableA = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadataA,
+        )
+
+        let document = makeDocument(registeredVariables: [variableZ, variableA])
+        let viewModel = makeViewModel(document: document)
+
+        // exercise
+        let grouped = viewModel.groupedVariables
+
+        // expect items sorted by display name within the group
+        #expect(grouped.count == 1)
+        let displayNames = grouped[0].items.map(\.displayName)
+        #expect(displayNames == ["Apple", "Zebra"])
+    }
+
+
+    @Test
+    mutating func groupedVariablesRespectsSearchFilter() {
+        // set up with two variables in a group, only one matching search
+        let group = ConfigVariableGroup("Settings")
+
+        var metadata1 = ConfigVariableMetadata()
+        metadata1.displayName = "ServerURL"
+        metadata1.group = group
+        let variable1 = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadata1,
+        )
+
+        var metadata2 = ConfigVariableMetadata()
+        metadata2.displayName = "Timeout"
+        metadata2.group = group
+        let variable2 = randomRegisteredVariable(
+            defaultContent: .string(randomAlphanumericString()),
+            metadata: metadata2,
+        )
+
+        let document = makeDocument(registeredVariables: [variable1, variable2])
+        let viewModel = makeViewModel(document: document)
+        viewModel.searchText = "Server"
+
+        // exercise
+        let grouped = viewModel.groupedVariables
+
+        // expect only the matching variable appears
+        #expect(grouped.count == 1)
+        #expect(grouped[0].items.count == 1)
+        #expect(grouped[0].items[0].displayName == "ServerURL")
     }
 
 
