@@ -65,7 +65,7 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
             )
         }
 
-        let filtered: [VariableListItem]
+        var filtered: [VariableListItem]
         if searchText.isEmpty {
             filtered = items
         } else {
@@ -75,15 +75,13 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
             }
         }
 
-        let sorted = filtered.sorted {
+        if showOverridesOnly {
+            filtered = filtered.filter { $0.hasOverride }
+        }
+
+        return filtered.sorted {
             $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending
         }
-
-        if showOverridesOnly {
-            return sorted.filter { $0.hasOverride }
-        }
-
-        return sorted
     }
 
 
@@ -92,24 +90,15 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
     }
 
 
-    var groupedVariables: [(group: ConfigVariableGroup?, items: [VariableListItem])] {
-        let allItems = variables
-        let grouped = Dictionary(grouping: allItems, by: \.group)
+    var groupedVariables: GroupedVariables {
+        let grouped = Dictionary(grouping: variables, by: \.group)
+        let sortedGroups = grouped.keys.compactMap { $0 }.sorted()
+        let groupedVariables = sortedGroups.map { (group: $0, items: grouped[$0]!) }
 
-        var result: [(group: ConfigVariableGroup?, items: [VariableListItem])] = []
-
-        let nonNilGroups = grouped.keys.compactMap { $0 }.sorted()
-        for group in nonNilGroups {
-            if let items = grouped[group] {
-                result.append((group: group, items: items))
-            }
-        }
-
-        if let ungrouped = grouped[nil] {
-            result.append((group: nil, items: ungrouped))
-        }
-
-        return result
+        return (
+            groupedVariables: groupedVariables,
+            remainder: grouped[nil] ?? [],
+        )
     }
 
 

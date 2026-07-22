@@ -42,35 +42,7 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomC
             List {
                 customContent
 
-                if viewModel.showOverridesOnly {
-                    Section(localizedStringResource("editorView.variablesSection.header")) {
-                        ForEach(viewModel.variables, id: \.key) { item in
-                            NavigationLink(value: item.key) {
-                                VariableRow(item: item)
-                            }
-                        }
-                    }
-                } else {
-                    ForEach(viewModel.groupedVariables, id: \.group) { section in
-                        if let group = section.group {
-                            Section(group.rawValue) {
-                                ForEach(section.items, id: \.key) { item in
-                                    NavigationLink(value: item.key) {
-                                        VariableRow(item: item)
-                                    }
-                                }
-                            }
-                        } else {
-                            Section {
-                                ForEach(section.items, id: \.key) { item in
-                                    NavigationLink(value: item.key) {
-                                        VariableRow(item: item)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                variablesSection
             }
             .navigationTitle(localizedStringResource("editorView.navigationTitle"))
             .navigationBarTitleDisplayMode(.inline)
@@ -105,6 +77,40 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomC
                 Button(localizedStringResource("editorView.saveAlert.cancelButton"), role: .cancel) {}
             } message: {
                 Text(localizedStringResource("editorView.clearAlert.message"))
+            }
+        }
+    }
+
+
+    @ViewBuilder
+    var variablesSection: some View {
+        if viewModel.showOverridesOnly {
+            Section(localizedStringResource("editorView.variablesSection.header")) {
+                ForEach(viewModel.variables, id: \.key) { item in
+                    NavigationLink(value: item.key) {
+                        VariableRow(item: item)
+                    }
+                }
+            }
+        } else {
+            ForEach(viewModel.groupedVariables.groupedVariables, id: \.group) { section in
+                Section(section.group.rawValue) {
+                    ForEach(section.items, id: \.key) { item in
+                        NavigationLink(value: item.key) {
+                            VariableRow(item: item)
+                        }
+                    }
+                }
+            }
+
+            if !viewModel.groupedVariables.remainder.isEmpty {
+                Section {
+                    ForEach(viewModel.groupedVariables.remainder, id: \.key) { item in
+                        NavigationLink(value: item.key) {
+                            VariableRow(item: item)
+                        }
+                    }
+                }
             }
         }
     }

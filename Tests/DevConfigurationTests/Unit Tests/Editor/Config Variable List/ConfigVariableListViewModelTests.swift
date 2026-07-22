@@ -349,7 +349,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
         let viewModel = makeViewModel(document: document)
 
         // exercise
-        let grouped = viewModel.groupedVariables
+        let grouped = viewModel.groupedVariables.groupedVariables
 
         // expect groups sorted alphabetically
         #expect(grouped.count == 2)
@@ -359,7 +359,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
 
 
     @Test
-    mutating func groupedVariablesPlacesUngroupedLast() {
+    mutating func groupedVariablesSeparatesUngroupedVariables() {
         // set up with one grouped and one ungrouped variable
         var metadataGrouped = ConfigVariableMetadata()
         metadataGrouped.displayName = "Grouped Var"
@@ -380,14 +380,13 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
         let viewModel = makeViewModel(document: document)
 
         // exercise
-        let grouped = viewModel.groupedVariables
+        let result = viewModel.groupedVariables
 
-        // expect grouped section first, ungrouped section last
-        #expect(grouped.count == 2)
-        #expect(grouped[0].group == ConfigVariableGroup("Alpha"))
-        #expect(grouped[0].items.count == 1)
-        #expect(grouped[1].group == nil)
-        #expect(grouped[1].items.count == 1)
+        // expect grouped and ungrouped variables returned separately
+        #expect(result.groupedVariables.count == 1)
+        #expect(result.groupedVariables[0].group == ConfigVariableGroup("Alpha"))
+        #expect(result.groupedVariables[0].items.count == 1)
+        #expect(result.remainder.count == 1)
     }
 
 
@@ -416,7 +415,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
         let viewModel = makeViewModel(document: document)
 
         // exercise
-        let grouped = viewModel.groupedVariables
+        let grouped = viewModel.groupedVariables.groupedVariables
 
         // expect items sorted by display name within the group
         #expect(grouped.count == 1)
@@ -451,7 +450,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
         viewModel.searchText = "Server"
 
         // exercise
-        let grouped = viewModel.groupedVariables
+        let grouped = viewModel.groupedVariables.groupedVariables
 
         // expect only the matching variable appears
         #expect(grouped.count == 1)

@@ -10,6 +10,7 @@ import Foundation
 /// A type representing a logical group for configuration variables in the editor UI.
 ///
 /// Variables with the same group are rendered together in a section with the group's name as the header.
+///
 /// Define groups as static members:
 ///
 ///     extension ConfigVariableGroup {
@@ -21,9 +22,11 @@ import Foundation
 ///
 ///     ConfigVariable(key: "api.timeout", defaultValue: 30)
 ///         .metadata(\.group, .networking)
+///
 public struct ConfigVariableGroup: Hashable, Sendable, Comparable {
     /// The human-readable name of the group, used as the section header in the editor.
     public let rawValue: String
+
 
     /// Creates a new configuration variable group.
     ///
@@ -31,6 +34,7 @@ public struct ConfigVariableGroup: Hashable, Sendable, Comparable {
     public init(_ rawValue: String) {
         self.rawValue = rawValue
     }
+
 
     public static func < (lhs: Self, rhs: Self) -> Bool {
         lhs.rawValue.localizedStandardCompare(rhs.rawValue) == .orderedAscending
@@ -41,6 +45,7 @@ public struct ConfigVariableGroup: Hashable, Sendable, Comparable {
 private struct GroupMetadataKey: ConfigVariableMetadataKey {
     static let defaultValue: ConfigVariableGroup? = nil
     static let keyDisplayText = localizedString("groupMetadata.keyDisplayText")
+
 
     static func displayText(for value: ConfigVariableGroup?) -> String? {
         value?.rawValue

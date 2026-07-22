@@ -20,6 +20,12 @@ protocol ConfigVariableListViewModeling: Observable {
     /// The associated detail view model type.
     associatedtype DetailViewModel: ConfigVariableDetailViewModeling
 
+    /// A typealias for conveniently referencing a tuple of grouped and ungrouped variables.
+    typealias GroupedVariables = (
+        groupedVariables: [(group: ConfigVariableGroup, items: [VariableListItem])],
+        remainder: [VariableListItem],
+    )
+
     /// The filtered and sorted list of variable items to display.
     var variables: [VariableListItem] { get }
 
@@ -34,9 +40,9 @@ protocol ConfigVariableListViewModeling: Observable {
 
     /// The variables grouped by their metadata group.
     ///
-    /// Each tuple contains a group (or `nil` for ungrouped variables) and the sorted items in that group.
-    /// Groups are sorted alphabetically. The `nil` group appears last.
-    var groupedVariables: [(group: ConfigVariableGroup?, items: [VariableListItem])] { get }
+    /// `groupedVariables` contains one tuple per group, each with the group and its sorted items; groups are sorted
+    /// alphabetically. `remainder` contains the sorted items with no group.
+    var groupedVariables: GroupedVariables { get }
 
     /// Whether the working copy has unsaved changes.
     var isDirty: Bool { get }
