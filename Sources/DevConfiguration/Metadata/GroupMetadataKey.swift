@@ -5,6 +5,7 @@
 //  Created by Duncan Lewis on 7/22/2026.
 //
 
+import DevFoundation
 import Foundation
 
 /// A type representing a logical group for configuration variables in the editor UI.
@@ -23,7 +24,7 @@ import Foundation
 ///     ConfigVariable(key: "api.timeout", defaultValue: 30)
 ///         .metadata(\.group, .networking)
 ///
-public struct ConfigVariableGroup: Hashable, Sendable, Comparable {
+public struct ConfigVariableGroup: TypedExtensibleEnum, Comparable {
     /// The human-readable name of the group, used as the section header in the editor.
     public let rawValue: String
 
@@ -45,11 +46,6 @@ public struct ConfigVariableGroup: Hashable, Sendable, Comparable {
 private struct GroupMetadataKey: ConfigVariableMetadataKey {
     static let defaultValue: ConfigVariableGroup? = nil
     static let keyDisplayText = localizedString("groupMetadata.keyDisplayText")
-
-
-    static func displayText(for value: ConfigVariableGroup?) -> String? {
-        value?.rawValue
-    }
 }
 
 
