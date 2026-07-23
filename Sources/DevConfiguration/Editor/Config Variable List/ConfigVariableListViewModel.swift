@@ -47,7 +47,7 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
 
     // MARK: - Variables
 
-    var variables: [VariableListItem] {
+    private var variables: [VariableListItem] {
         let items = document.registeredVariables.values.map { variable -> VariableListItem in
             let displayName = variable.displayName ?? variable.key.description
             let resolved = document.resolvedValue(forKey: variable.key)
@@ -90,15 +90,21 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
     }
 
 
-    var groupedVariables: GroupedVariables {
+    var variableSections: [VariableSection] {
         let grouped = Dictionary(grouping: variables, by: \.group)
         let sortedGroups = grouped.keys.compactMap { $0 }.sorted()
-        let groupedVariables = sortedGroups.map { (group: $0, items: grouped[$0]!) }
 
-        return (
-            groupedVariables: groupedVariables,
-            remainder: grouped[nil] ?? [],
-        )
+        var sections = sortedGroups.map { VariableSection(title: $0.rawValue, items: grouped[$0]!) }
+
+        if let remainder = grouped[nil], !remainder.isEmpty {
+            let title =
+                sections.isEmpty
+                ? localizedString("editorView.variablesSection.header")
+                : localizedString("editorView.remainderSection.header")
+            sections.append(VariableSection(title: title, items: remainder))
+        }
+
+        return sections
     }
 
 

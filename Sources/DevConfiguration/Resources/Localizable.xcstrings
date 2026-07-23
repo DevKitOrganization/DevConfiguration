@@ -281,16 +281,6 @@
         }
       }
     },
-    "editorView.overridesSection.header" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Variables with Overrides"
-          }
-        }
-      }
-    },
     "editorView.redoButton" : {
       "localizations" : {
         "en" : {

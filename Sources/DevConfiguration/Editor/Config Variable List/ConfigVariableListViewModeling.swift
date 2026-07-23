@@ -20,15 +20,6 @@ protocol ConfigVariableListViewModeling: Observable {
     /// The associated detail view model type.
     associatedtype DetailViewModel: ConfigVariableDetailViewModeling
 
-    /// A typealias for conveniently referencing a tuple of grouped and ungrouped variables.
-    typealias GroupedVariables = (
-        groupedVariables: [(group: ConfigVariableGroup, items: [VariableListItem])],
-        remainder: [VariableListItem],
-    )
-
-    /// The filtered and sorted list of variable items to display.
-    var variables: [VariableListItem] { get }
-
     /// The current search text for filtering variables.
     var searchText: String { get set }
 
@@ -38,11 +29,11 @@ protocol ConfigVariableListViewModeling: Observable {
     /// Whether any variable in the document has an active override.
     var hasAnyOverrides: Bool { get }
 
-    /// The variables grouped by their metadata group.
+    /// The filtered, sorted, and titled sections of variables to display.
     ///
-    /// `groupedVariables` contains one tuple per group, each with the group and its sorted items; groups are sorted
-    /// alphabetically. `remainder` contains the sorted items with no group.
-    var groupedVariables: GroupedVariables { get }
+    /// `variableSections` reflects the current search text and override filter. Each section's title is already
+    /// resolved for display, so the view can render the sections directly.
+    var variableSections: [VariableSection] { get }
 
     /// Whether the working copy has unsaved changes.
     var isDirty: Bool { get }
