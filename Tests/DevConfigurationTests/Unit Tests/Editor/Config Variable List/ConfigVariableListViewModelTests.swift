@@ -767,6 +767,24 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
     }
 
 
+    @Test
+    mutating func confirmClearAllOverridesClearsShowOverridesOnly() {
+        // set up with an override and the overrides-only filter engaged
+        let variable = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let document = makeDocument(registeredVariables: [variable])
+        let viewModel = makeViewModel(document: document)
+
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable.key)
+        viewModel.showOverridesOnly = true
+
+        // exercise
+        viewModel.confirmClearAllOverrides()
+
+        // expect the filter is turned back off
+        #expect(!viewModel.showOverridesOnly)
+    }
+
+
     // MARK: - undo
 
     @Test
