@@ -29,6 +29,7 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
     var searchText = ""
     var isShowingSaveAlert = false
     var isShowingClearAlert = false
+    var showOverridesOnly = false
 
 
     /// Creates a new list view model.
@@ -46,7 +47,7 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
 
     // MARK: - Variables
 
-    var variables: [VariableListItem] {
+    private var variables: [VariableListItem] {
         let items = document.registeredVariables.values.map { variable -> VariableListItem in
             let displayName = variable.displayName ?? variable.key.description
             let resolved = document.resolvedValue(forKey: variable.key)
@@ -59,11 +60,12 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
                 providerIndex: resolved?.providerIndex,
                 isSecret: variable.isSecret,
                 hasOverride: document.hasOverride(forKey: variable.key),
+                group: variable.group,
                 editorControl: variable.editorControl,
             )
         }
 
-        let filtered: [VariableListItem]
+        var filtered: [VariableListItem]
         if searchText.isEmpty {
             filtered = items
         } else {
@@ -73,7 +75,46 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
             }
         }
 
-        return filtered.sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
+        if showOverridesOnly {
+            filtered = filtered.filter { $0.hasOverride }
+        }
+
+        return filtered.sorted {
+            $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending
+        }
+    }
+
+
+    var hasAnyOverrides: Bool {
+        document.registeredVariables.values.contains { document.hasOverride(forKey: $0.key) }
+    }
+
+
+    var visibleVariableCount: Int {
+        variables.count
+    }
+
+
+    var totalVariableCount: Int {
+        document.registeredVariables.count
+    }
+
+
+    var variableSections: [VariableSection] {
+        let grouped = Dictionary(grouping: variables, by: \.group)
+        let sortedGroups = grouped.keys.compactMap { $0 }.sorted()
+
+        var sections = sortedGroups.map { VariableSection(title: $0.rawValue, items: grouped[$0]!) }
+
+        if let remainder = grouped[nil], !remainder.isEmpty {
+            let title =
+                sections.isEmpty
+                ? localizedString("editorView.variablesSection.header")
+                : localizedString("editorView.remainderSection.header")
+            sections.append(VariableSection(title: title, items: remainder))
+        }
+
+        return sections
     }
 
 

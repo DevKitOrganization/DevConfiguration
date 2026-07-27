@@ -25,15 +25,20 @@ final class ContentViewModel {
 
     let boolArrayVariable = ConfigVariable(key: "bool_array", defaultValue: [false, true, true, false])
         .metadata(\.displayName, "Bool Array Example")
+        .metadata(\.group, .arrays)
     let float64ArrayVariable = ConfigVariable(key: "float64_array", defaultValue: [0, 1, 2.78182, 3.14159])
         .metadata(\.displayName, "Float Array Example")
+        .metadata(\.group, .arrays)
     let intArrayVariable = ConfigVariable(key: "int_array", defaultValue: [1, 2, 4, 8, 16, 32])
         .metadata(\.displayName, "Int Array Example")
         .metadata(\.isEditable, false)
+        .metadata(\.group, .arrays)
     let stringArrayVariable = ConfigVariable(
         key: "string_array",
         defaultValue: ["Thom", "Jonny", "Ed", "Colin", "Phil"],
-    ).metadata(\.displayName, "String Array Example")
+    )
+    .metadata(\.displayName, "String Array Example")
+    .metadata(\.group, .arrays)
 
     let jsonVariable = ConfigVariable(
         key: "complexConfig",
@@ -43,9 +48,11 @@ final class ContentViewModel {
 
     let intBackedVariable = ConfigVariable(key: "favoriteCardSuit", defaultValue: CardSuit.spades, isSecret: true)
         .metadata(\.displayName, "Favorite Card Suit")
+        .metadata(\.group, .valueBacked)
 
     let stringBackedVariable = ConfigVariable(key: "favoriteBeatle", defaultValue: Beatle.john)
         .metadata(\.displayName, "Favorite Beatle")
+        .metadata(\.group, .valueBacked)
 
 
     init() {
@@ -87,6 +94,12 @@ final class ContentViewModel {
         jsonVariable = \(configVariableReader[jsonVariable])
         """
     }
+}
+
+
+extension ConfigVariableGroup {
+    static let arrays = ConfigVariableGroup("Arrays")
+    static let valueBacked = ConfigVariableGroup("Value-Backed Variables")
 }
 
 

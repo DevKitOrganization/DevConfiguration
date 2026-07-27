@@ -20,11 +20,26 @@ protocol ConfigVariableListViewModeling: Observable {
     /// The associated detail view model type.
     associatedtype DetailViewModel: ConfigVariableDetailViewModeling
 
-    /// The filtered and sorted list of variable items to display.
-    var variables: [VariableListItem] { get }
-
     /// The current search text for filtering variables.
     var searchText: String { get set }
+
+    /// Whether the list is filtered to show only variables with overrides.
+    var showOverridesOnly: Bool { get set }
+
+    /// Whether any variable in the document has an active override.
+    var hasAnyOverrides: Bool { get }
+
+    /// The number of variables currently visible in the list, reflecting the search text and override filter.
+    var visibleVariableCount: Int { get }
+
+    /// The total number of registered variables, regardless of the search text or override filter.
+    var totalVariableCount: Int { get }
+
+    /// The filtered, sorted, and titled sections of variables to display.
+    ///
+    /// `variableSections` reflects the current search text and override filter. Each section's title is already
+    /// resolved for display, so the view can render the sections directly.
+    var variableSections: [VariableSection] { get }
 
     /// Whether the working copy has unsaved changes.
     var isDirty: Bool { get }

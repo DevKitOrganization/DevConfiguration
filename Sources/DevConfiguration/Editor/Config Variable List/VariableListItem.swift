@@ -38,6 +38,9 @@ struct VariableListItem: Hashable, Sendable {
     /// Whether an editor override is active for this variable in the working copy.
     let hasOverride: Bool
 
+    /// The logical group for this variable, used for sectioning in the list view.
+    let group: ConfigVariableGroup?
+
     /// The editor control to use when editing this variable's value.
     let editorControl: EditorControl?
 }

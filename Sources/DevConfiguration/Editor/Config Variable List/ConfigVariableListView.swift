@@ -24,6 +24,8 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomC
     private let customContent: CustomContent
 
     @Environment(\.dismiss) private var dismiss
+    @FocusState var focusState: Bool
+    @State private var isPresentingSearch: Bool = false
 
 
     /// Creates a new list view.
@@ -42,13 +44,7 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomC
             List {
                 customContent
 
-                Section(localizedStringResource("editorView.variablesSection.header")) {
-                    ForEach(viewModel.variables, id: \.key) { item in
-                        NavigationLink(value: item.key) {
-                            VariableRow(item: item)
-                        }
-                    }
-                }
+                variablesSection
             }
             .navigationTitle(localizedStringResource("editorView.navigationTitle"))
             .navigationBarTitleDisplayMode(.inline)
@@ -56,8 +52,16 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomC
                 ConfigVariableDetailView(viewModel: viewModel.makeDetailViewModel(for: key))
             }
             .interactiveDismissDisabled(viewModel.isDirty)
-            .searchable(text: $viewModel.searchText)
+            .searchable(text: $viewModel.searchText, isPresented: $isPresentingSearch)
+            .searchFocused($focusState)
+            .onChange(of: isPresentingSearch) { oldValue, newValue in
+                Task {
+                    focusState = newValue
+                }
+            }
             .toolbar { toolbarContent }
+            .animation(.default, value: viewModel.showOverridesOnly)
+            .animation(.default, value: isPresentingSearch)
             .alert(localizedStringResource("editorView.saveAlert.title"), isPresented: $viewModel.isShowingSaveAlert) {
                 Button(localizedStringResource("editorView.saveAlert.saveButton")) {
                     viewModel.saveAndDismiss { dismiss() }
@@ -83,6 +87,20 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomC
                 Button(localizedStringResource("editorView.saveAlert.cancelButton"), role: .cancel) {}
             } message: {
                 Text(localizedStringResource("editorView.clearAlert.message"))
+            }
+        }
+    }
+
+
+    @ViewBuilder
+    var variablesSection: some View {
+        ForEach(viewModel.variableSections, id: \.title) { section in
+            Section(section.title) {
+                ForEach(section.items, id: \.key) { item in
+                    NavigationLink(value: item.key) {
+                        VariableRow(item: item)
+                    }
+                }
             }
         }
     }
@@ -127,6 +145,16 @@ extension ConfigVariableListView {
                 }
                 .disabled(!viewModel.canRedo)
 
+                Button {
+                    viewModel.showOverridesOnly.toggle()
+                } label: {
+                    Label(
+                        localizedStringResource("editorView.showOverridesOnlyButton"),
+                        systemImage: viewModel.showOverridesOnly ? "checkmark.circle.fill" : "circle",
+                    )
+                }
+                .disabled(!viewModel.hasAnyOverrides)
+
                 Divider()
 
                 Button(role: .destructive) {
@@ -138,6 +166,49 @@ extension ConfigVariableListView {
                 Label(localizedStringResource("editorView.overflowMenu.label"), systemImage: "ellipsis")
             }
         }
+
+        ToolbarItemGroup(placement: .bottomBar) {
+            if !focusState {
+                Toggle(isOn: $viewModel.showOverridesOnly) {
+                    Label(
+                        localizedStringResource("editorView.showOverridesOnlyButton"),
+                        systemImage: "line.3.horizontal.decrease",
+                    )
+                    .labelStyle(.iconOnly)
+                }
+                .toggleStyle(.button)
+                .disabled(!viewModel.hasAnyOverrides)
+
+                if viewModel.showOverridesOnly {
+                    Text(showingOverridesCountText)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize()
+                        .padding(.trailing, 4)
+                }
+            }
+        }
+
+        ToolbarSpacer(placement: .bottomBar)
+
+        if viewModel.showOverridesOnly && !isPresentingSearch {
+            ToolbarItem(placement: .bottomBar) {
+                Button(localizedString("editorView.search"), systemImage: "magnifyingglass") {
+                    isPresentingSearch = true
+                }
+            }
+        } else {
+            DefaultToolbarItem(kind: .search, placement: .bottomBar)
+        }
+    }
+
+
+    private var showingOverridesCountText: String {
+        String(
+            format: localizedString("editorView.showingOverridesCountLabel"),
+            viewModel.visibleVariableCount,
+            viewModel.totalVariableCount,
+        )
     }
 }
 
@@ -151,9 +222,10 @@ extension ConfigVariableListView {
 
 
         var body: some View {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(item.displayName)
-                    .font(.headline)
+                    .font(.subheadline)
+                    .bold()
 
                 Text(item.key.description)
                     .font(.caption.monospaced())
@@ -169,9 +241,8 @@ extension ConfigVariableListView {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
-                .padding(.top, 8)
+                .padding(.top, 6)
             }
-            .padding(.vertical, 2)
         }
     }
 }

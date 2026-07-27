@@ -201,6 +201,16 @@
         }
       }
     },
+    "groupMetadata.keyDisplayText" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Group"
+          }
+        }
+      }
+    },
     "editorView.clearAlert.clearButton" : {
       "localizations" : {
         "en" : {
@@ -281,6 +291,16 @@
         }
       }
     },
+    "editorView.remainderSection.header" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other Variables"
+          }
+        }
+      }
+    },
     "editorView.saveAlert.cancelButton" : {
       "localizations" : {
         "en" : {
@@ -337,6 +357,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Save"
+          }
+        }
+      }
+    },
+    "editorView.showOverridesOnlyButton" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show Overrides Only"
+          }
+        }
+      }
+    },
+    "editorView.showingOverridesCountLabel" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Showing %ld of %ld"
           }
         }
       }
