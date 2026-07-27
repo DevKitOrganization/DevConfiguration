@@ -175,6 +175,7 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
 
     func confirmClearAllOverrides() {
         document.removeAllOverrides()
+        showOverridesOnly = false
     }
 
 
