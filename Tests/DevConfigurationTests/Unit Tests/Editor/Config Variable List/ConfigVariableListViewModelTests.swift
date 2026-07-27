@@ -509,6 +509,50 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
     }
 
 
+    // MARK: - visibleVariableCount
+
+    @Test
+    mutating func visibleVariableCountReflectsCurrentFilters() {
+        // set up with two variables, one with an override
+        let variable1 = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let variable2 = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+
+        let document = makeDocument(registeredVariables: [variable1, variable2])
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable1.key)
+
+        let viewModel = makeViewModel(document: document)
+
+        // expect both variables are visible before filtering
+        #expect(viewModel.visibleVariableCount == 2)
+
+        // exercise by enabling the overrides-only filter
+        viewModel.showOverridesOnly = true
+
+        // expect only the overridden variable is visible
+        #expect(viewModel.visibleVariableCount == 1)
+    }
+
+
+    // MARK: - totalVariableCount
+
+    @Test
+    mutating func totalVariableCountIgnoresFilters() {
+        // set up with two variables, one with an override
+        let variable1 = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+        let variable2 = randomRegisteredVariable(defaultContent: .string(randomAlphanumericString()))
+
+        let document = makeDocument(registeredVariables: [variable1, variable2])
+        document.setOverride(.string(randomAlphanumericString()), forKey: variable1.key)
+
+        let viewModel = makeViewModel(document: document)
+        viewModel.showOverridesOnly = true
+        viewModel.searchText = "nonexistent search text"
+
+        // exercise & expect the total ignores both the search text and override filter
+        #expect(viewModel.totalVariableCount == 2)
+    }
+
+
     // MARK: - isDirty
 
     @Test

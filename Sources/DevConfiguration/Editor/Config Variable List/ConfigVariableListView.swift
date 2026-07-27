@@ -24,6 +24,8 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomC
     private let customContent: CustomContent
 
     @Environment(\.dismiss) private var dismiss
+    @FocusState var focusState: Bool
+    @State private var isPresentingSearch: Bool = false
 
 
     /// Creates a new list view.
@@ -50,8 +52,16 @@ struct ConfigVariableListView<ViewModel: ConfigVariableListViewModeling, CustomC
                 ConfigVariableDetailView(viewModel: viewModel.makeDetailViewModel(for: key))
             }
             .interactiveDismissDisabled(viewModel.isDirty)
-            .searchable(text: $viewModel.searchText)
+            .searchable(text: $viewModel.searchText, isPresented: $isPresentingSearch)
+            .searchFocused($focusState)
+            .onChange(of: isPresentingSearch) { oldValue, newValue in
+                Task {
+                    focusState = newValue
+                }
+            }
             .toolbar { toolbarContent }
+            .animation(.default, value: viewModel.showOverridesOnly)
+            .animation(.default, value: isPresentingSearch)
             .alert(localizedStringResource("editorView.saveAlert.title"), isPresented: $viewModel.isShowingSaveAlert) {
                 Button(localizedStringResource("editorView.saveAlert.saveButton")) {
                     viewModel.saveAndDismiss { dismiss() }
@@ -156,6 +166,49 @@ extension ConfigVariableListView {
                 Label(localizedStringResource("editorView.overflowMenu.label"), systemImage: "ellipsis")
             }
         }
+
+        ToolbarItemGroup(placement: .bottomBar) {
+            if !focusState {
+                Toggle(isOn: $viewModel.showOverridesOnly) {
+                    Label(
+                        localizedStringResource("editorView.showOverridesOnlyButton"),
+                        systemImage: "line.3.horizontal.decrease",
+                    )
+                    .labelStyle(.iconOnly)
+                }
+                .toggleStyle(.button)
+                .disabled(!viewModel.hasAnyOverrides)
+
+                if viewModel.showOverridesOnly {
+                    Text(showingOverridesCountText)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .fixedSize()
+                        .padding(.trailing, 4)
+                }
+            }
+        }
+
+        ToolbarSpacer(placement: .bottomBar)
+
+        if viewModel.showOverridesOnly && !isPresentingSearch {
+            ToolbarItem(placement: .bottomBar) {
+                Button(localizedString("editorView.search"), systemImage: "magnifyingglass") {
+                    isPresentingSearch = true
+                }
+            }
+        } else {
+            DefaultToolbarItem(kind: .search, placement: .bottomBar)
+        }
+    }
+
+
+    private var showingOverridesCountText: String {
+        String(
+            format: localizedString("editorView.showingOverridesCountLabel"),
+            viewModel.visibleVariableCount,
+            viewModel.totalVariableCount,
+        )
     }
 }
 

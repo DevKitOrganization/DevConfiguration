@@ -90,6 +90,16 @@ final class ConfigVariableListViewModel: ConfigVariableListViewModeling {
     }
 
 
+    var visibleVariableCount: Int {
+        variables.count
+    }
+
+
+    var totalVariableCount: Int {
+        document.registeredVariables.count
+    }
+
+
     var variableSections: [VariableSection] {
         let grouped = Dictionary(grouping: variables, by: \.group)
         let sortedGroups = grouped.keys.compactMap { $0 }.sorted()

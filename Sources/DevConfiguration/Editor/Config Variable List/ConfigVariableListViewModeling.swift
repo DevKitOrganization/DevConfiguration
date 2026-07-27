@@ -29,6 +29,12 @@ protocol ConfigVariableListViewModeling: Observable {
     /// Whether any variable in the document has an active override.
     var hasAnyOverrides: Bool { get }
 
+    /// The number of variables currently visible in the list, reflecting the search text and override filter.
+    var visibleVariableCount: Int { get }
+
+    /// The total number of registered variables, regardless of the search text or override filter.
+    var totalVariableCount: Int { get }
+
     /// The filtered, sorted, and titled sections of variables to display.
     ///
     /// `variableSections` reflects the current search text and override filter. Each section's title is already
