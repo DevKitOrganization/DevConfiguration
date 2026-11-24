@@ -8,3 +8,5 @@ DerivedData/
 .netrc
 Open Sourcing/
 .claude/settings.local.json
+
+.rumdl_cache/
