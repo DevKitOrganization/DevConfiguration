@@ -25,7 +25,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-configuration", from: "1.1.0"),
         .package(url: "https://github.com/DevKitOrganization/DevFoundation.git", from: "1.8.1"),
-        .package(url: "https://github.com/DevKitOrganization/DevTesting", from: "1.5.0"),
+        .package(url: "https://github.com/DevKitOrganization/DevTesting", from: "1.7.0"),
     ],
     targets: [
         .target(

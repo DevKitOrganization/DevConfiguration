@@ -1,5 +1,5 @@
 {
-  "originHash" : "bbbdb7212fb727d5c834927ac895df8ab4963c48c8553e7f6618b36673f23701",
+  "originHash" : "6f758be6a25ca1e9b83b6cbf4629ae8f1aacf7aaba9c78177eab6a6542ccf33e",
   "pins" : [
     {
       "identity" : "devfoundation",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/DevKitOrganization/DevTesting",
       "state" : {
-        "revision" : "9dea13f09c19c0521e9ff7b9f14fedb977423b99",
-        "version" : "1.5.0"
+        "revision" : "7df52d20dade53d58d818bb255236d45da26bbde",
+        "version" : "1.7.0"
       }
     },
     {
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-async-algorithms.git",
       "state" : {
-        "revision" : "6c050d5ef8e1aa6342528460db614e9770d7f804",
-        "version" : "1.1.1"
+        "revision" : "9d349bcc328ac3c31ce40e746b5882742a0d1272",
+        "version" : "1.1.3"
       }
     },
     {

@@ -21,7 +21,7 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
     var workingCopyDisplayName: String!
     let undoManager = UndoManager()
 
-    nonisolated(unsafe) var dismissStub: Stub<[RegisteredConfigVariable], Void>!
+    nonisolated(unsafe) var dismissStub = Stub<[RegisteredConfigVariable], Void>()
 
 
     init() {
@@ -29,7 +29,6 @@ struct ConfigVariableListViewModelTests: RandomValueGenerating {
         userDefaults.removeObject(forKey: "editorOverrides")
         editorOverrideProvider = EditorOverrideProvider(userDefaults: userDefaults)
         workingCopyDisplayName = randomAlphanumericString()
-        dismissStub = Stub()
     }
 
 
