@@ -1,10 +1,12 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.4
 
 import PackageDescription
 
 let swiftSettings: [SwiftSetting] = [
     .enableUpcomingFeature("ExistentialAny"),
+    .enableUpcomingFeature("ImmutableWeakCaptures"),
     .enableUpcomingFeature("MemberImportVisibility"),
+    .enableUpcomingFeature("NonisolatedNonsendingByDefault"),
 ]
 
 let package = Package(
@@ -19,8 +21,8 @@ let package = Package(
     products: [
         .library(
             name: "DevConfiguration",
-            targets: ["DevConfiguration"]
-        ),
+            targets: ["DevConfiguration"],
+        )
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-configuration", from: "1.1.0"),
@@ -35,9 +37,9 @@ let package = Package(
                 .product(name: "DevFoundation", package: "DevFoundation"),
             ],
             resources: [
-                .process("Resources"),
+                .process("Resources")
             ],
-            swiftSettings: swiftSettings
+            swiftSettings: swiftSettings,
         ),
         .testTarget(
             name: "DevConfigurationTests",
@@ -45,7 +47,7 @@ let package = Package(
                 "DevConfiguration",
                 "DevTesting",
             ],
-            swiftSettings: swiftSettings
+            swiftSettings: swiftSettings,
         ),
-    ]
+    ],
 )
