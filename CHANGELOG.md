@@ -1,12 +1,33 @@
 # DevConfiguration Changelog
 
 
-## 1.0.0: TBD
+## 1.0.0: November 24, 2026
 
-Description forthcoming.
+This is DevConfiguration’s first stable release. It requires Swift 6.4 (Xcode 27) to build. It also
+enables Swift’s `NonisolatedNonsendingByDefault` upcoming feature, so `ConfigVariableReader`’s
+`fetchValue` and `watchValue` functions now run on their caller’s actor instead of on the global
+concurrent executor.
 
 
-## 0.12.0: TBD
+## 0.13.1: July 27, 2026
+
+This is a small release that fixes a bug in which the overrides-only filter toggle in the config
+editor’s variable list could get stuck in an on, non-interactive state after clearing all overrides.
+
+
+## 0.13.0: July 27, 2026
+
+This release adds the ability to organize configuration variables into logical groups in the
+editor’s variable list, along with a filter for quickly finding overridden variables.
+
+  - Config variables can now be assigned a `ConfigVariableGroup` via the new `group` metadata key.
+    Variables sharing a group are rendered together under a section header; ungrouped variables
+    appear in a headerless section at the bottom of the list.
+  - The variable list can now be filtered to show only variables with overrides.
+  - Variable list rows are now more compact.
+
+
+## 0.12.0: June 24, 2026
 
 This release contains **breaking changes** to the configuration variable editor’s custom content
 API.
@@ -15,6 +36,8 @@ API.
     `customContent` view builder is responsible for providing its own `Section` views (or other list
     content).
   - The `customSection` view builder parameter has been renamed to `customContent`.
+  - If `customContent` contains multiple `Section` views, each is displayed in a grouped section of
+    its own.
 
 If you previously presented the editor with a custom section title and content, move the section
 title into a `Section` view inside `customContent`.
