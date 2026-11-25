@@ -27,6 +27,6 @@ struct ConfigVariableAccessFailedEventTests: RandomValueGenerating {
 
         // expect that the event stores the parameters
         #expect(event.key == key)
-        #expect(event.error as? MockError == error)
+        #expect(event.error as? ArbitraryError == error)
     }
 }

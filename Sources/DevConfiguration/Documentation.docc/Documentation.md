@@ -1,41 +1,43 @@
 # ``DevConfiguration``
 
-A type-safe wrapper around Swift Configuration with conveniences for type safety and app development. 
+A type-safe wrapper around Swift Configuration with conveniences for type safety and app
+development.
 
 
 ## Overview
 
-DevConfiguration is a type-safe configuration wrapper built on Apple’s Swift Configuration library. It provides 
-configuration management with extensible metadata, a variable management UI, and access logging via the event bus. 
+DevConfiguration is a type-safe configuration wrapper built on Apple’s Swift Configuration library.
+It provides configuration management with extensible metadata, a variable management UI, and access
+logging via the event bus.
 
 
 ## Topics
 
 ### Reading Variables
 
-- ``ConfigVariable``
-- ``ConfigVariableReader``
+  - ``ConfigVariable``
+  - ``ConfigVariableReader``
 
 ### Editor Interface
 
-- ``ConfigVariableEditor``
+  - ``ConfigVariableEditor``
 
 ### Variable Metadata
 
-- ``ConfigVariableMetadata``
-- ``ConfigVariableMetadataKey``
+  - ``ConfigVariableMetadata``
+  - ``ConfigVariableMetadataKey``
 
 ### Access Reporting
 
-- ``EventBusAccessReporter``
-- ``ConfigVariableAccessSucceededEvent``
-- ``ConfigVariableAccessFailedEvent``
-- ``ConfigVariableDecodingFailedEvent``
+  - ``EventBusAccessReporter``
+  - ``ConfigVariableAccessSucceededEvent``
+  - ``ConfigVariableAccessFailedEvent``
+  - ``ConfigVariableDecodingFailedEvent``
 
 ### Supporting Types
 
-- ``ConfigVariableContent``
-- ``CodableValueRepresentation``
-- ``EditorControl``
-- ``NamedConfigProvider``
-- ``RegisteredConfigVariable``
+  - ``ConfigVariableContent``
+  - ``CodableValueRepresentation``
+  - ``EditorControl``
+  - ``NamedConfigProvider``
+  - ``RegisteredConfigVariable``

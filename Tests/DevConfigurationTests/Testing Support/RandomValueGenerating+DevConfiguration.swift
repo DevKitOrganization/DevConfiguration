@@ -91,11 +91,6 @@ extension RandomValueGenerating {
     }
 
 
-    mutating func randomError() -> MockError {
-        return MockError(id: randomAlphanumericString())
-    }
-
-
     mutating func randomFloat64Array() -> [Float64] {
         return Array(count: randomInt(in: 0 ... 5)) { randomFloat64(in: -100_000 ... 100_000) }
     }

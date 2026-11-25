@@ -60,8 +60,8 @@ public struct CodableValueRepresentation: Sendable {
 
     /// Reads raw data synchronously from the reader based on this representation.
     ///
-    /// For string-backed representations, this reads a string value and converts it to `Data` using the representation’s
-    /// encoding. For data-backed representations, this reads a byte array and wraps it in `Data`.
+    /// For string-backed representations, this reads a string value and converts it to `Data` using the
+    /// representation’s encoding. For data-backed representations, this reads a byte array and wraps it in `Data`.
     ///
     /// - Parameters:
     ///   - reader: The configuration reader to read from.
@@ -165,8 +165,8 @@ public struct CodableValueRepresentation: Sendable {
 
     /// Watches for raw data changes from the reader based on this representation.
     ///
-    /// Each time the underlying configuration value changes, `onUpdate` is called with the new raw data (or `nil` if the
-    /// key is no longer present).
+    /// Each time the underlying configuration value changes, `onUpdate` is called with the new raw data (or `nil` if
+    /// the key is no longer present).
     ///
     /// - Parameters:
     ///   - reader: The configuration reader to watch.

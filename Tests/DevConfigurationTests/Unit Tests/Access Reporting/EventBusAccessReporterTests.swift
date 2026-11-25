@@ -135,6 +135,6 @@ struct EventBusAccessReporterTests: RandomValueGenerating {
         // expect that a ConfigVariableAccessFailedEvent was posted with the error
         let postedEvent = try #require(await eventStream.first { _ in true })
         #expect(postedEvent.key == key)
-        #expect(postedEvent.error as? MockError == error)
+        #expect(postedEvent.error as? ArbitraryError == error)
     }
 }

@@ -74,7 +74,8 @@ public struct ConfigVariableContent<Value>: Sendable where Value: Sendable {
     /// content type does not support editing.
     let parse: (@Sendable (_ input: String) -> ConfigContent?)?
 
-    /// Validates that a ``ConfigContent`` value can be decoded into a valid instance of the variable's destination type.
+    /// Validates that a ``ConfigContent`` value can be decoded into a valid instance of the variable’s destination
+    /// type.
     ///
     /// For primitive types where a successful parse guarantees a valid value, this is `nil`. For types like
     /// `RawRepresentable` enums or `Codable` values, this checks that the content actually maps to a valid instance of

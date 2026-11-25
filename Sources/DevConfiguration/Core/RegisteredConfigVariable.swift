@@ -53,7 +53,8 @@ public struct RegisteredConfigVariable: Sendable {
     /// editing.
     let parse: (@Sendable (_ input: String) -> ConfigContent?)?
 
-    /// Validates that a ``ConfigContent`` value can be decoded into a valid instance of the variable's destination type.
+    /// Validates that a ``ConfigContent`` value can be decoded into a valid instance of the variable’s destination
+    /// type.
     ///
     /// Returns `true` if the content is valid. When `nil`, a successful parse is considered sufficient validation.
     let validate: (@Sendable (_ content: ConfigContent) -> Bool)?
